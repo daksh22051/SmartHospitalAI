@@ -859,8 +859,8 @@ class EnvironmentManager:
                 "current_task": str(self.current_task) if self.current_task else "none"
             }
             
-            # Debug logging
-            logger.info(f"Sending state: {state_dict}")
+            # Keep state polling logs quiet in production; frontend calls this frequently.
+            logger.debug(f"Sending state: {state_dict}")
             
             return True, state_dict
             
@@ -2042,6 +2042,9 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', '7860'))
     print(f"Open your browser: http://localhost:{port}")
     print("Hospital Resource Management Dashboard Ready")
+
+    # Suppress per-request access logs in runtime to keep proof logs readable.
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
     # Emit one short baseline inference run at startup for deployment proof logs.
     # Keep this fast and stream directly so Hugging Face runtime logs always show
