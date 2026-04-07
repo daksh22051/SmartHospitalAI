@@ -87,5 +87,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 7860
 
 # Default command - run persistent Flask web process for Hugging Face Space.
-# web_interface.py runs one startup inference and prints [START]/[STEP]/[END]/INFERENCE_RESULT logs.
+# web_interface.py runs startup inference and serves the dashboard/API on PORT.
 CMD ["python", "web_interface.py"]
