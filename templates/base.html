@@ -6,7 +6,6 @@
     <title>{% block title %}Smart Hospital AI | Orchestration Hub{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='brand/logo_best.svg') }}?v=1" />
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/logo_best.svg') }}?v=1" />
-    <link rel="alternate icon" type="image/png" href="{{ url_for('static', filename='brand/logo.png') }}?v=3" />
     <link rel="shortcut icon" href="{{ url_for('static', filename='brand/logo_best.svg') }}?v=1" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -604,7 +603,7 @@
         <div class="topbar">
             <div class="topbar-left">
               <a class="brand-link" href="/" aria-label="Go to dashboard">
-                <img class="brand-logo" src="{{ url_for('static', filename='brand/logo_best.svg') }}?v=1" alt="Smart Hospital logo" onerror="this.onerror=null;this.src='{{ url_for('static', filename='brand/logo.png') }}?v=3';" />
+                <img class="brand-logo" src="{{ url_for('static', filename='brand/logo_best.svg') }}?v=1" alt="Smart Hospital logo" />
                 <div class="brand-stack">
                   <div class="brand-row">
                     <div class="brand">Smart Hospital AI</div>
