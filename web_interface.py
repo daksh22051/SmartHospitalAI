@@ -44,9 +44,25 @@ except Exception:
         )
         from smart_hospital_orchestration.tasks.advanced_tasks import easy, medium, hard
         from smart_hospital_orchestration.reward.advanced_reward import create_reward_calculator
-    except ImportError as e:
-        logger.error(f"Import error: {e}")
-        sys.exit(1)
+    except ImportError:
+        try:
+            # Final fallback for container runtime where package-name import may be unavailable.
+            from environment.hospital_env import HospitalEnv
+            from tasks.advanced_tasks import easy, medium, hard
+            from reward.advanced_reward import create_reward_calculator
+
+            # Load baseline_inference explicitly from file path to avoid conflict with root inference.py.
+            baseline_path = os.path.join(os.path.dirname(__file__), 'inference', 'baseline_inference.py')
+            spec = importlib.util.spec_from_file_location('baseline_inference_local', baseline_path)
+            if spec is None or spec.loader is None:
+                raise ImportError('Unable to resolve baseline_inference module spec')
+            baseline_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(baseline_module)
+            HospitalBaselineAgent = baseline_module.HospitalBaselineAgent
+            EpisodeRunner = baseline_module.EpisodeRunner
+        except ImportError as e:
+            logger.error(f"Import error: {e}")
+            sys.exit(1)
 
 app = Flask(__name__)
 
