@@ -450,6 +450,56 @@ It also prints a machine-readable summary line:
 
 - `INFERENCE_RESULT={...}`
 
+### Multi-Agent Extension Baseline
+
+Run the new coordinator policy that combines triage, capacity, and transfer specialists:
+
+```bash
+python run_multi_agent_baseline.py --task medium --seed 42 --max-steps 75
+```
+
+Output includes:
+
+- `MULTI_AGENT_RESULT={...}`
+
+### Benchmark Dashboard Generation
+
+Generate a visual HTML comparison for random/heuristic/ppo benchmark sections from grader output:
+
+```bash
+python evaluation/generate_benchmark_dashboard.py \
+  --report results/grader_result.json \
+  --output results/benchmark_dashboard.html
+```
+
+### Reward Ablation Report
+
+Run reward-component ablation experiments and save report JSON:
+
+```bash
+python validation/generate_reward_ablation_report.py \
+  --task medium --seed 42 --episodes 5 \
+  --output results/reward_ablation_report.json
+```
+
+### Stress Test Runner
+
+Run high-load stress scenarios and collect runtime/performance statistics:
+
+```bash
+python validation/run_stress_tests.py \
+  --task hard --episodes 30 --seed 500 --max-steps 120 \
+  --output results/stress_test_report.json
+```
+
+### Hugging Face Deploy Automation (PowerShell)
+
+Push latest commits to configured HF Space remote:
+
+```powershell
+./deploy_hf_space.ps1 -RemoteName hf -Branch master
+```
+
 ### PPO Training Tuning
 
 Run true PyTorch PPO training with tunable hyperparameters:

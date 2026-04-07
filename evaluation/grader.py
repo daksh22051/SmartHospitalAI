@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,8 +19,15 @@ from urllib.error import URLError
 
 import numpy as np
 
-from smart_hospital_orchestration.environment import HospitalEnv
-from smart_hospital_orchestration.inference.baseline_inference import HospitalBaselineAgent
+try:
+    from smart_hospital_orchestration.environment import HospitalEnv
+    from smart_hospital_orchestration.inference.baseline_inference import HospitalBaselineAgent
+except ModuleNotFoundError:
+    repo_root = Path(__file__).resolve().parents[2]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from smart_hospital_orchestration.environment import HospitalEnv
+    from smart_hospital_orchestration.inference.baseline_inference import HospitalBaselineAgent
 
 
 def _clamp(value: float, lo: float, hi: float) -> float:
