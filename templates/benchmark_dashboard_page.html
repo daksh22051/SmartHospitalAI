@@ -6,7 +6,7 @@
 <style>
   .benchmark-shell {
     display: grid;
-    gap: 14px;
+    gap: 16px;
   }
   .benchmark-head {
     display: flex;
@@ -38,6 +38,94 @@
     font-size: 12px;
     font-weight: 800;
   }
+  .benchmark-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .benchmark-card {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.90);
+    padding: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+  .benchmark-card .label {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .benchmark-card .value {
+    margin-top: 8px;
+    color: #0f172a;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+  .benchmark-card .hint {
+    margin-top: 7px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .benchmark-visual {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    padding: 14px;
+  }
+  .benchmark-visual-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .benchmark-visual-title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 900;
+  }
+  .benchmark-chart {
+    display: grid;
+    gap: 10px;
+  }
+  .benchmark-bar-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 60px;
+    gap: 10px;
+    align-items: center;
+  }
+  .benchmark-bar-label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: capitalize;
+  }
+  .benchmark-bar-track {
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, 0.22);
+  }
+  .benchmark-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #60a5fa, #34d399);
+    transition: width 0.35s ease;
+  }
+  .benchmark-bar-value {
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: right;
+  }
   .benchmark-frame-wrap {
     border-radius: 16px;
     border: 1px solid rgba(148, 163, 184, 0.20);
@@ -54,7 +142,12 @@
     background: #ffffff;
   }
   @media (max-width: 900px) {
+    .benchmark-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .benchmark-bar-row { grid-template-columns: 78px 1fr 52px; }
     .benchmark-frame { min-height: 520px; height: 70vh; }
+  }
+  @media (max-width: 560px) {
+    .benchmark-summary { grid-template-columns: 1fr; }
   }
 </style>
 {% endblock %}
@@ -69,8 +162,115 @@
     <a class="benchmark-btn" href="/benchmark_dashboard/raw" target="_blank" rel="noopener">Open Raw Report</a>
   </div>
 
+  <section class="benchmark-summary" id="benchmarkSummary">
+    <article class="benchmark-card">
+      <div class="label">Best Policy</div>
+      <div class="value" id="bestPolicy">--</div>
+      <div class="hint">Highest final score</div>
+    </article>
+    <article class="benchmark-card">
+      <div class="label">Top Final Score</div>
+      <div class="value" id="topScore">--</div>
+      <div class="hint">Out of 100</div>
+    </article>
+    <article class="benchmark-card">
+      <div class="label">Average Score</div>
+      <div class="value" id="avgScore">--</div>
+      <div class="hint">Across available policies</div>
+    </article>
+    <article class="benchmark-card">
+      <div class="label">Score Gap</div>
+      <div class="value" id="scoreGap">--</div>
+      <div class="hint">Top minus lowest score</div>
+    </article>
+  </section>
+
+  <section class="benchmark-visual">
+    <div class="benchmark-visual-head">
+      <h2 class="benchmark-visual-title">Final Score Distribution</h2>
+      <span class="benchmark-sub" id="benchmarkStatus">Parsing report...</span>
+    </div>
+    <div class="benchmark-chart" id="benchmarkChart"></div>
+  </section>
+
   <div class="benchmark-frame-wrap">
-    <iframe class="benchmark-frame" src="/benchmark_dashboard/raw" title="Benchmark Report"></iframe>
+    <iframe class="benchmark-frame" id="benchmarkFrame" src="/benchmark_dashboard/raw" title="Benchmark Report"></iframe>
   </div>
 </section>
+
+<script>
+  (function initBenchmarkInsights() {
+    const frame = document.getElementById('benchmarkFrame');
+    const statusEl = document.getElementById('benchmarkStatus');
+    const bestPolicyEl = document.getElementById('bestPolicy');
+    const topScoreEl = document.getElementById('topScore');
+    const avgScoreEl = document.getElementById('avgScore');
+    const scoreGapEl = document.getElementById('scoreGap');
+    const chartEl = document.getElementById('benchmarkChart');
+
+    function toNumber(value) {
+      const n = Number(String(value).replace(/[^0-9.-]/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function parseRows(doc) {
+      const table = doc.querySelector('table');
+      if (!table) return [];
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      return rows.map((row) => {
+        const cells = Array.from(row.querySelectorAll('td')).map((c) => c.textContent.trim());
+        return {
+          policy: cells[0] || 'unknown',
+          finalScore: toNumber(cells[cells.length - 1]),
+        };
+      }).filter((r) => r.policy);
+    }
+
+    function renderChart(data) {
+      if (!chartEl) return;
+      chartEl.innerHTML = data.map((item) => {
+        const width = Math.max(2, Math.min(100, item.finalScore));
+        return `
+          <div class="benchmark-bar-row">
+            <div class="benchmark-bar-label">${item.policy}</div>
+            <div class="benchmark-bar-track"><div class="benchmark-bar-fill" style="width:${width}%"></div></div>
+            <div class="benchmark-bar-value">${item.finalScore.toFixed(1)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSummary(data) {
+      if (!data.length) {
+        statusEl.textContent = 'No benchmark data found';
+        return;
+      }
+      const sorted = [...data].sort((a, b) => b.finalScore - a.finalScore);
+      const top = sorted[0];
+      const low = sorted[sorted.length - 1];
+      const avg = sorted.reduce((sum, item) => sum + item.finalScore, 0) / sorted.length;
+
+      bestPolicyEl.textContent = top.policy;
+      topScoreEl.textContent = top.finalScore.toFixed(1);
+      avgScoreEl.textContent = avg.toFixed(1);
+      scoreGapEl.textContent = (top.finalScore - low.finalScore).toFixed(1);
+      statusEl.textContent = `Loaded ${sorted.length} policies`;
+      renderChart(sorted);
+    }
+
+    function refreshFromFrame() {
+      try {
+        const doc = frame && frame.contentDocument;
+        if (!doc) return;
+        const data = parseRows(doc);
+        renderSummary(data);
+      } catch (_) {
+        statusEl.textContent = 'Unable to parse report';
+      }
+    }
+
+    if (frame) frame.addEventListener('load', refreshFromFrame);
+    setTimeout(refreshFromFrame, 800);
+  })();
+</script>
 {% endblock %}
