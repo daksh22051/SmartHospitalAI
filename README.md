@@ -1,3 +1,12 @@
+---
+title: SmartHospitalAI
+emoji: 🏥
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Smart Hospital Resource Orchestration  
 *Advanced Reinforcement Learning Environment for Hospital Resource Management*
 
