@@ -146,8 +146,49 @@
     .benchmark-bar-row { grid-template-columns: 78px 1fr 52px; }
     .benchmark-frame { min-height: 520px; height: 70vh; }
   }
+  @media (max-width: 700px) {
+    .benchmark-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .benchmark-title {
+      font-size: 21px;
+    }
+    .benchmark-btn {
+      width: 100%;
+      text-align: center;
+    }
+    .benchmark-visual-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .benchmark-bar-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
+    }
+    .benchmark-bar-row:last-child {
+      border-bottom: 0;
+    }
+    .benchmark-bar-value {
+      text-align: left;
+    }
+    .benchmark-frame-wrap {
+      min-height: 56vh;
+    }
+    .benchmark-frame {
+      height: 56vh;
+      min-height: 420px;
+    }
+  }
   @media (max-width: 560px) {
     .benchmark-summary { grid-template-columns: 1fr; }
+    .benchmark-frame {
+      min-height: 360px;
+    }
   }
 </style>
 {% endblock %}
@@ -226,6 +267,26 @@
       }).filter((r) => r.policy);
     }
 
+    function makeIframeResponsive(doc) {
+      if (!doc || !doc.head) return;
+      const styleId = 'benchmark-mobile-override-style';
+      if (doc.getElementById(styleId)) return;
+
+      const style = doc.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        html, body { max-width: 100%; overflow-x: hidden; }
+        body { padding: 14px !important; margin: 0 !important; }
+        table { width: 100% !important; border-collapse: collapse; }
+        @media (max-width: 760px) {
+          table { display: block; overflow-x: auto; white-space: nowrap; }
+          th, td { font-size: 12px !important; padding: 8px 10px !important; }
+          h1 { font-size: 34px !important; margin-bottom: 8px !important; }
+        }
+      `;
+      doc.head.appendChild(style);
+    }
+
     function renderChart(data) {
       if (!chartEl) return;
       chartEl.innerHTML = data.map((item) => {
@@ -262,6 +323,7 @@
       try {
         const doc = frame && frame.contentDocument;
         if (!doc) return;
+        makeIframeResponsive(doc);
         const data = parseRows(doc);
         renderSummary(data);
       } catch (_) {
