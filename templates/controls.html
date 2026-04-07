@@ -1,0 +1,1519 @@
+{% extends "base.html" %}
+
+{% block title %}Controls | Smart Hospital{% endblock %}
+
+{% block head_extra %}
+<style>
+  html.controls-loading .controls-grid {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  html.controls-loading .controls-skeleton {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .controls-skeleton {
+    display: none;
+    gap: 18px;
+    margin-bottom: -18px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  html.controls-loading .controls-skeleton {
+    display: grid;
+  }
+
+  .controls-skeleton .s-card,
+  .controls-skeleton .s-line,
+  .controls-skeleton .s-chip,
+  .controls-skeleton .s-box {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(241, 245, 249, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .controls-skeleton .s-card::after,
+  .controls-skeleton .s-line::after,
+  .controls-skeleton .s-chip::after,
+  .controls-skeleton .s-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.72), transparent);
+    animation: controlsShimmer 1.4s infinite;
+  }
+
+  .controls-skeleton .s-grid-12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .controls-skeleton .s-control {
+    grid-column: span 8;
+    min-height: 520px;
+    padding: 22px;
+  }
+
+  .controls-skeleton .s-side {
+    grid-column: span 4;
+    display: grid;
+    gap: 16px;
+  }
+
+  .controls-skeleton .s-toolbar {
+    display: grid;
+    grid-template-columns: 130px repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .controls-skeleton .s-btn { height: 42px; border-radius: 999px; }
+  .controls-skeleton .s-panel { min-height: 116px; padding: 16px; }
+  .controls-skeleton .s-panel-lg { min-height: 178px; }
+  .controls-skeleton .s-title { height: 18px; width: 38%; margin-bottom: 16px; }
+  .controls-skeleton .s-subtitle { height: 12px; width: 58%; margin-bottom: 10px; }
+  .controls-skeleton .s-line { height: 12px; width: 76%; margin-top: 10px; }
+  .controls-skeleton .s-line.short { width: 46%; }
+  .controls-skeleton .s-line.mid { width: 64%; }
+  .controls-skeleton .s-pill-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .controls-skeleton .s-chip { width: 84px; height: 26px; border-radius: 999px; }
+  .controls-skeleton .s-chip.wide { width: 110px; }
+
+  @keyframes controlsShimmer {
+    100% { transform: translateX(100%); }
+  }
+</style>
+<script>
+  document.body.classList.add('controls-page');
+  document.documentElement.classList.add('controls-loading');
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="controls-skeleton" aria-hidden="true">
+  
+  <section class="s-card s-control">
+    <div class="s-title"></div>
+    <div class="s-toolbar">
+      <div class="s-box"></div>
+      <div class="s-btn s-box"></div>
+      <div class="s-btn s-box"></div>
+      <div class="s-btn s-box"></div>
+      <div class="s-btn s-box"></div>
+      <div class="s-btn s-box"></div>
+    </div>
+    <div class="s-grid-12" style="margin-top:16px;">
+      <div class="s-card s-panel" style="grid-column: span 6;"></div>
+      <div class="s-card s-panel" style="grid-column: span 6;"></div>
+      <div class="s-card s-panel s-panel-lg" style="grid-column: span 4;"></div>
+      <div class="s-card s-panel s-panel-lg" style="grid-column: span 4;"></div>
+      <div class="s-card s-panel s-panel-lg" style="grid-column: span 4;"></div>
+    </div>
+  </section>
+
+  <div class="s-side">
+    <section class="s-card s-panel s-panel-lg">
+      <div class="s-subtitle"></div>
+      <div class="s-line short"></div>
+      <div class="s-line mid"></div>
+      <div class="s-line"></div>
+      <div class="s-pill-row">
+        <div class="s-chip"></div><div class="s-chip"></div>
+      </div>
+    </section>
+    <section class="s-card s-panel s-panel-lg">
+      <div class="s-subtitle"></div>
+      <div class="s-line short"></div>
+      <div class="s-line mid"></div>
+      <div class="s-line"></div>
+      <div class="s-pill-row">
+        <div class="s-chip"></div><div class="s-chip"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="controls-grid">
+  <section class="card control-center-card" style="grid-column: span 8; align-self: start;">
+    <h3 class="control-title">Control Center</h3>
+        <div class="control-actions">
+            <select id="taskSelect">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+          <button class="btn control-primary" onclick="initializeEnv()">Initialize</button>
+          <button class="btn control-primary" onclick="runEpisode()">Run Episode (50)</button>
+          <button class="btn control-danger-ghost" onclick="resetEnv()">Reset</button>
+        </div>
+
+        <div class="action-controls">
+          <button class="btn control-secondary" onclick="stepAction(0)">WAIT</button>
+          <button class="btn control-secondary" onclick="stepAction(1)">ALLOCATE</button>
+          <button class="btn control-secondary" onclick="stepAction(2)">ESCALATE</button>
+          <button class="btn control-secondary" onclick="stepAction(3)">DEFER</button>
+          <button class="btn control-secondary" onclick="stepAction(4)">REASSIGN</button>
+          <button class="btn control-autopilot is-off" id="autopilotBtn" aria-pressed="false" onclick="toggleAutoPilot()">⚪ Auto-Pilot: OFF</button>
+        </div>
+
+        <div class="row ops-row ops-feature-row" style="margin-top:18px; align-items:stretch;">
+            <div class="card ops-subcard ai-coach-card" style="flex:1; min-width:280px;">
+            <div class="muted ops-kicker">⏪ Time-Travel Recorder</div>
+                <div style="font-weight:900; font-size:18px; margin-top:8px;" id="tlFrames">Frames: -</div>
+            <div class="muted ops-note" id="tlLast" style="margin-top:4px;">Last: -</div>
+            <div class="row ops-button-row" style="margin-top:12px;">
+              <button class="btn control-secondary" onclick="exportTimeline()">Export JSON</button>
+              <button class="btn control-danger-ghost" onclick="clearTimeline()">Clear</button>
+              <a class="btn control-secondary" href="/" style="text-decoration:none;">Open Replay</a>
+                </div>
+            </div>
+
+            <div class="card ops-subcard ai-coach-card" style="flex:1; min-width:280px;">
+            <div class="muted ops-kicker">🧠 AI Coach</div>
+                <div style="font-weight:900; font-size:18px; margin-top:8px;" id="coachAction">Suggestion: -</div>
+            <div class="muted ops-note" id="coachReason" style="margin-top:4px;">-</div>
+            <div class="muted ops-note" id="coachContext" style="margin-top:6px;">-</div>
+            <div class="row ops-button-row" style="margin-top:12px;">
+              <button class="btn control-primary" onclick="runSuggestedAction()">Run Suggested Action</button>
+              <button class="btn control-secondary" onclick="refreshCoachAndTimeline()">Refresh</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row ops-row ops-feature-row" style="margin-top:18px; align-items:stretch;">
+            <div class="card ops-subcard risk-radar-card preview-card" data-preview="1" style="flex:1; min-width:280px;">
+            <div class="muted ops-kicker"><span class="pulse-icon pulse-icon--green"></span> Patient Risk Radar</div>
+            <div class="risk-preview-layout">
+                <div class="risk-ring risk-ring--calm" id="riskRing" aria-hidden="true">
+                  <div class="risk-ring-inner">
+                    <div class="risk-score" id="riskScore">21</div>
+                    <div class="risk-level" id="riskLevel">CALM</div>
+                  </div>
+                </div>
+                <div class="risk-copy">
+                  <div class="risk-banner" id="riskHeadline">OPERATIONAL FLOW IS STABLE</div>
+                  <div class="risk-summary" id="riskSummary">8 waiting • 6 beds free • 4 doctors free</div>
+                  <div class="risk-action" id="riskAction">Suggested move: Allocate</div>
+                  <div class="risk-pills">
+                    <span class="risk-pill" id="riskQueueChip">QUEUE 8</span>
+                    <span class="risk-pill" id="riskBedChip">BEDS 6</span>
+                    <span class="risk-pill" id="riskDoctorChip">DOCTORS 4</span>
+                    <span class="risk-pill risk-pill--ghost" id="riskCrisisChip">Crisis OFF</span>
+                  </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="card ops-subcard facility-card preview-card" data-preview="1" style="flex:1; min-width:280px;">
+            <div class="muted ops-kicker"><span class="bed-icon bed-icon--purple"></span> Facility Monitoring</div>
+            <div class="muted ops-note" style="margin-top:4px;">Dynamic OT/Lab status based on staffing, bed pressure, and crisis state.</div>
+              <div id="facilityList" class="facility-list" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="card ops-subcard blood-card preview-card" data-preview="1" style="flex:1; min-width:280px;">
+            <div class="muted ops-kicker"><span class="blood-icon blood-icon--red"></span> Blood Bank Inventory</div>
+            <div class="muted ops-note" style="margin-top:4px;">Live blood levels with CRITICAL / LOW / NORMAL severity bars.</div>
+                <div id="bloodGrid" class="blood-grid"></div>
+            </div>
+        </div>
+    </section>
+
+      <div class="controls-side-stack" style="grid-column: span 4; align-self: start;">
+      <section class="card live-stats-card" style="width: 100%;">
+        <h3>Live Stats</h3>
+        <div class="live-kpi-grid">
+          <div class="live-kpi-card live-kpi-card--task">
+            <div class="muted">Task</div>
+            <div class="kpi" id="taskText">-</div>
+          </div>
+          <div class="live-kpi-card">
+            <div class="muted">Total Reward</div>
+            <div class="kpi" id="rewardText">0.00</div>
+          </div>
+          <div class="live-kpi-card">
+            <div class="muted">Steps</div>
+            <div class="kpi" id="stepsText">0</div>
+          </div>
+        </div>
+        <hr class="live-stats-divider">
+        <div class="live-stat-group">
+          <div class="muted">Priority Queue (Waiting)</div>
+          <div class="live-chip-row">
+            <span id="redWaitingTag" class="mix-chip mix-chip--red">RED 0</span>
+            <span id="greenWaitingTag" class="mix-chip mix-chip--green">GREEN 0</span>
+          </div>
+        </div>
+        <div class="live-stat-group">
+          <div class="muted">Admitted Mix</div>
+          <div class="live-chip-row">
+            <span id="redAdmittedTag" class="mix-chip mix-chip--red">RED 0/0 Beds</span>
+            <span id="greenAdmittedTag" class="mix-chip mix-chip--green">GREEN 0/0 Beds</span>
+          </div>
+        </div>
+      </section>
+
+        <section class="card city-network-card" style="width: 100%;">
+          <h3>🏙️ City-Wide Resource Network</h3>
+          <div id="cityNetworkList" class="city-network-list"></div>
+        </section>
+        </div>
+
+    <!-- Keep the grid dense: show log in the left column and city network in the right column,
+         so we don't end up with a large empty gap under the Control Center card. -->
+    <section class="card" style="grid-column: span 7; align-self: start;">
+        <h3>Execution Log</h3>
+        <div id="log" class="log"></div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let totalReward = 0;
+let steps = 0;
+let autoPilotOn = false;
+let autoPilotTimer = null;
+let lastRewardValue = null;
+let rewardFlashTimer = null;
+
+async function fetchTimelineAll() {
+  try {
+    const res = await fetch('/api/timeline?limit=600&offset=0').then(r => r.json());
+    return res.success ? (Array.isArray(res.frames) ? res.frames : []) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function mapSuggestionToActionId(actionText) {
+  const a = String(actionText || '').trim().toUpperCase();
+  if (!a) return null;
+  if (a === 'HOLD' || a === 'WAIT') return 0;
+  if (a === 'ALLOCATE' || a === 'URGENT ALLOCATE') return 1;
+  if (a === 'ESCALATE') return 2;
+  if (a === 'DEFER') return 3;
+  if (a === 'REASSIGN') return 4;
+  return null;
+}
+
+async function exportTimeline() {
+  const frames = await fetchTimelineAll();
+  const payload = {
+    exported_at: new Date().toISOString(),
+    total: frames.length,
+    frames
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  a.href = url;
+  a.download = `hospital_timeline_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function clearTimeline() {
+  try {
+    await fetch('/api/timeline/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    pushLog('Timeline cleared');
+  } catch (_) {
+    pushLog('Timeline clear failed');
+  }
+  await refreshCoachAndTimeline();
+}
+
+async function refreshCoachAndTimeline() {
+  // Timeline badge
+  const tlFrames = document.getElementById('tlFrames');
+  const tlLast = document.getElementById('tlLast');
+  const coachAction = document.getElementById('coachAction');
+  const coachReason = document.getElementById('coachReason');
+  const coachContext = document.getElementById('coachContext');
+
+  try {
+    const [timelineFrames, statusData] = await Promise.all([
+      fetchTimelineAll(),
+      fetch('/api/status').then(r => r.json())
+    ]);
+
+    if (tlFrames) tlFrames.textContent = `Frames: ${timelineFrames.length}`;
+    if (tlLast) {
+      const last = timelineFrames.length ? timelineFrames[timelineFrames.length - 1] : null;
+      const evt = last ? `${last.event || 'FRAME'} • ${last.source || '-'}` : '-';
+      const step = last?.state?.step;
+      tlLast.textContent = last ? `Last: ${evt} | Step ${step ?? '-'}` : 'Last: -';
+    }
+
+    const s = statusData?.state || {};
+    const sugg = String(s.ai_suggestion_action || '-');
+    const reason = String(s.ai_suggestion_reason || '-');
+    const crisis = s.crisis_active ? 'ON' : 'OFF';
+    const ctx = `Step ${s.step ?? '-'} | Waiting ${s.waiting ?? '-'} | Beds ${s.available_beds ?? '-'} | Doctors ${s.available_doctors ?? '-'} | Crisis ${crisis}`;
+
+    if (coachAction) coachAction.textContent = `Suggestion: ${sugg}`;
+    if (coachReason) coachReason.textContent = reason;
+    if (coachContext) coachContext.textContent = ctx;
+  } catch (e) {
+    if (tlFrames) tlFrames.textContent = 'Frames: -';
+    if (tlLast) tlLast.textContent = 'Last: -';
+    if (coachAction) coachAction.textContent = 'Suggestion: -';
+    if (coachReason) coachReason.textContent = '-';
+    if (coachContext) coachContext.textContent = '-';
+  }
+}
+
+async function runSuggestedAction() {
+  try {
+    const statusData = await fetch('/api/status').then(r => r.json());
+    const s = statusData?.state || {};
+    const actionId = mapSuggestionToActionId(s.ai_suggestion_action);
+    if (actionId === null) {
+      showToast('No actionable suggestion available right now', 'error');
+      return;
+    }
+    await stepAction(actionId);
+  } catch (_) {
+    pushLog('Could not run suggested action');
+  }
+}
+
+function showToast(message, type = 'error') {
+  const toast = document.createElement('div');
+  const bg = type === 'error' ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg, #10b981, #047857)';
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 420px;
+    color: #fff;
+    background: ${bg};
+    padding: 12px 16px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    font-weight: 600;
+    opacity: 0;
+    transform: translateX(18px);
+    transition: all .25s ease;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(0)';
+  });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(18px)';
+    setTimeout(() => toast.remove(), 250);
+  }, 2600);
+}
+
+function enableControlMicroInteractions() {
+  const btns = document.querySelectorAll('.control-actions .btn, .action-controls .btn, .ops-button-row .btn, .ops-button-row a.btn');
+  btns.forEach((btn) => {
+    if (btn.dataset.rippleBound === '1') return;
+    btn.dataset.rippleBound = '1';
+    if (getComputedStyle(btn).position === 'static') {
+      btn.style.position = 'relative';
+    }
+    btn.style.overflow = 'hidden';
+    btn.addEventListener('click', (e) => {
+      const rect = btn.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      const size = Math.max(rect.width, rect.height) * 1.25;
+      ripple.style.position = 'absolute';
+      ripple.style.width = `${size}px`;
+      ripple.style.height = `${size}px`;
+      ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+      ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+      ripple.style.borderRadius = '50%';
+      ripple.style.background = 'rgba(255,255,255,0.45)';
+      ripple.style.transform = 'scale(0)';
+      ripple.style.opacity = '0.75';
+      ripple.style.pointerEvents = 'none';
+      ripple.style.transition = 'transform .45s ease, opacity .45s ease';
+      btn.appendChild(ripple);
+      requestAnimationFrame(() => {
+        ripple.style.transform = 'scale(1)';
+        ripple.style.opacity = '0';
+      });
+      setTimeout(() => ripple.remove(), 460);
+    });
+  });
+}
+
+function setAutoPilotVisual(isOn) {
+  const btn = document.getElementById('autopilotBtn');
+  if (!btn) return;
+  if (isOn) {
+    btn.textContent = '🟢 Auto-Pilot: ON';
+    btn.classList.add('is-on');
+    btn.classList.remove('is-off');
+    btn.setAttribute('aria-pressed', 'true');
+  } else {
+    btn.textContent = '⚪ Auto-Pilot: OFF';
+    btn.classList.remove('is-on');
+    btn.classList.add('is-off');
+    btn.setAttribute('aria-pressed', 'false');
+  }
+}
+
+function voiceAutoPilotEngagedOnce() {
+  // Fire once per "ON" transition; keep lightweight.
+  if (!window.HospitalVoice) return;
+  if (window.__autoPilotVoiceSpoken) return;
+  window.__autoPilotVoiceSpoken = true;
+  window.HospitalVoice.speak('AI Auto-Pilot engaged. Resource orchestration active.', { cooldownMs: 5000 });
+}
+
+async function runAutoPilotTick() {
+  const data = await fetch('/api/ai_action', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({})
+  }).then(r => r.json());
+
+  if (data.success) {
+    totalReward = Number(data.total_reward || 0);
+    steps = Number(data.episode_length || 0);
+    syncStats();
+    await refreshPriorityStats();
+    await refreshCoachAndTimeline();
+
+    const actionName = data.ai_action_name || data.step?.action_name || 'AI_ACTION';
+    const reward = Number(data.step?.reward || 0);
+    pushLog(`🤖 ${actionName} => reward ${reward.toFixed(2)}`);
+
+    const invalidAllocation = Boolean(data.invalid_action || data.step?.info?.invalid_allocation);
+    if (invalidAllocation) {
+      showToast('🚨 Action Failed: Penalty applied for invalid allocation!', 'error');
+      pushLog(`ALLOCATE invalid: ${data.error || data.step?.info?.error || 'No resources'} | penalty ${reward.toFixed(2)}`);
+    }
+
+    if (actionName === 'REASSIGN') {
+      const transfer = data.step?.info?.city_transfer;
+      const target = data.step?.info?.city_transfer_target;
+      const crisis = data.step?.info?.city_crisis;
+      if (transfer) {
+        showToast(`🌐 Reassigned to ${target}`, 'success');
+      } else if (crisis) {
+        showToast('🚨 City-wide Healthcare Crisis', 'error');
+      }
+    }
+  } else {
+    pushLog(`AI step failed: ${data.error || 'unknown error'}`);
+  }
+}
+
+function toggleAutoPilot() {
+  autoPilotOn = !autoPilotOn;
+
+  if (autoPilotOn) {
+    setAutoPilotVisual(true);
+    voiceAutoPilotEngagedOnce();
+    showToast('🤖 Auto-Pilot started', 'success');
+    pushLog('Auto-Pilot ON');
+    if (autoPilotTimer) clearInterval(autoPilotTimer);
+    autoPilotTimer = setInterval(() => {
+      runAutoPilotTick().catch((err) => pushLog(`AI error: ${err.message}`));
+    }, 900);
+  } else {
+    if (autoPilotTimer) {
+      clearInterval(autoPilotTimer);
+      autoPilotTimer = null;
+    }
+    setAutoPilotVisual(false);
+    window.__autoPilotVoiceSpoken = false;
+    showToast('🛑 Auto-Pilot stopped', 'success');
+    pushLog('Auto-Pilot OFF');
+  }
+}
+
+function pushLog(text) {
+  const log = document.getElementById('log');
+  const p = document.createElement('p');
+  p.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+  log.prepend(p);
+}
+
+function syncStats() {
+  const rewardEl = document.getElementById('rewardText');
+  const stepsEl = document.getElementById('stepsText');
+  const rewardNow = Number(totalReward || 0);
+
+  if (rewardEl) {
+    rewardEl.textContent = rewardNow.toFixed(2);
+    if (lastRewardValue !== null) {
+      const delta = rewardNow - Number(lastRewardValue);
+      if (Math.abs(delta) > 1e-9) {
+        rewardEl.classList.remove('reward-flash-up', 'reward-flash-down');
+        void rewardEl.offsetWidth;
+        rewardEl.classList.add(delta > 0 ? 'reward-flash-up' : 'reward-flash-down');
+        if (rewardFlashTimer) clearTimeout(rewardFlashTimer);
+        rewardFlashTimer = setTimeout(() => {
+          rewardEl.classList.remove('reward-flash-up', 'reward-flash-down');
+        }, 420);
+      }
+    }
+  }
+
+  if (stepsEl) stepsEl.textContent = String(steps);
+  lastRewardValue = rewardNow;
+}
+
+function updatePriorityTags(state = {}) {
+  const redWaiting = Number(state.red_waiting || 0);
+  const greenWaiting = Number(state.green_waiting || 0);
+  const redAdmitted = Number(state.red_admitted || 0);
+  const greenAdmitted = Number(state.green_admitted || 0);
+  const totalBeds = Math.max(0, Number(state.total_beds || 0));
+
+  document.getElementById('redWaitingTag').textContent = `RED ${redWaiting}`;
+  document.getElementById('greenWaitingTag').textContent = `GREEN ${greenWaiting}`;
+  document.getElementById('redAdmittedTag').textContent = `RED ${redAdmitted}/${totalBeds} Beds`;
+  document.getElementById('greenAdmittedTag').textContent = `GREEN ${greenAdmitted}/${totalBeds} Beds`;
+}
+
+function updateRiskRadar(state = {}) {
+  const redWaiting = Number(state.red_waiting || 0);
+  const greenWaiting = Number(state.green_waiting || 0);
+  const redAdmitted = Number(state.red_admitted || 0);
+  const greenAdmitted = Number(state.green_admitted || 0);
+  const availableBeds = Number(state.available_beds || 0);
+  const availableDoctors = Number(state.available_doctors || 0);
+  const crisisActive = Boolean(state.crisis_active);
+  const waiting = redWaiting + greenWaiting;
+
+  const queuePressure = Math.min(42, redWaiting * 7 + greenWaiting * 2);
+  const bedPressure = availableBeds <= 0 ? 28 : availableBeds < 3 ? 18 : availableBeds < 6 ? 10 : 0;
+  const doctorPressure = availableDoctors <= 0 ? 24 : availableDoctors < 2 ? 16 : availableDoctors < 4 ? 8 : 0;
+  const crisisPressure = crisisActive ? 22 : 0;
+  const admittedPressure = Math.min(10, redAdmitted * 2);
+  const score = Math.max(0, Math.min(100, Math.round(queuePressure + bedPressure + doctorPressure + crisisPressure + admittedPressure)));
+
+  const level = score >= 75 ? 'CRITICAL' : score >= 50 ? 'HIGH' : score >= 25 ? 'WATCH' : 'CALM';
+  const labelClass = score >= 75 ? 'risk-critical' : score >= 50 ? 'risk-high' : score >= 25 ? 'risk-watch' : 'risk-calm';
+  const ring = document.getElementById('riskRing');
+  const scoreEl = document.getElementById('riskScore');
+  const levelEl = document.getElementById('riskLevel');
+  const headlineEl = document.getElementById('riskHeadline');
+  const summaryEl = document.getElementById('riskSummary');
+  const actionEl = document.getElementById('riskAction');
+
+  if (ring) {
+    const color = score >= 75 ? '#ef4444' : score >= 50 ? '#f59e0b' : score >= 25 ? '#f97316' : '#22c55e';
+    ring.style.setProperty('--risk-angle', `${score * 3.6}deg`);
+    ring.style.setProperty('--risk-color', color);
+    ring.classList.toggle('risk-critical', score >= 75);
+    ring.classList.toggle('risk-high', score >= 50 && score < 75);
+    ring.classList.toggle('risk-watch', score >= 25 && score < 50);
+    ring.classList.toggle('risk-calm', score < 25);
+  }
+  if (scoreEl) scoreEl.textContent = String(score);
+  if (levelEl) {
+    levelEl.textContent = level;
+    levelEl.className = `risk-level ${labelClass}`;
+  }
+  if (headlineEl) {
+    headlineEl.textContent = score >= 75 ? 'Immediate escalation recommended' : score >= 50 ? 'Active pressure building' : score >= 25 ? 'Monitor the queue closely' : 'Operational flow looks stable';
+  }
+  if (summaryEl) {
+    summaryEl.textContent = `${waiting} waiting • ${availableBeds} beds free • ${availableDoctors} doctors free${crisisActive ? ' • crisis mode active' : ''}`;
+  }
+  if (actionEl) {
+    const suggested = score >= 75
+      ? 'Escalate'
+      : waiting > 0 && availableBeds > 0
+        ? 'Allocate'
+        : score >= 50 && availableBeds <= 0 && Number(state.city_available_beds || 0) > 0
+          ? 'Reassign'
+          : waiting > 0
+            ? 'Allocate'
+            : 'Wait';
+    actionEl.textContent = `Suggested move: ${suggested}`;
+  }
+
+  if (ring) {
+    ring.title = `Risk score ${score}/100`;
+  }
+
+  const copy = document.querySelector('.risk-copy');
+  if (copy) {
+    let meta = copy.querySelector('.risk-meta-strip');
+    if (!meta) {
+      meta = document.createElement('div');
+      meta.className = 'risk-meta-strip';
+      copy.insertBefore(meta, copy.querySelector('.risk-pills'));
+    }
+    const utilization = Math.max(0, 100 - Math.round((availableBeds / Math.max(1, Number(state.total_beds || availableBeds || 1))) * 100));
+    meta.innerHTML = `
+      <span class="risk-meta">Pressure <strong>${score}</strong></span>
+      <span class="risk-meta">Utilization <strong>${utilization}%</strong></span>
+      <span class="risk-meta">Queue <strong>${waiting}</strong></span>
+    `;
+  }
+
+  const queueChip = document.getElementById('riskQueueChip');
+  const bedChip = document.getElementById('riskBedChip');
+  const doctorChip = document.getElementById('riskDoctorChip');
+  const crisisChip = document.getElementById('riskCrisisChip');
+
+  if (queueChip) queueChip.textContent = `Queue ${waiting}`;
+  if (bedChip) bedChip.textContent = `Beds ${availableBeds}`;
+  if (doctorChip) doctorChip.textContent = `Doctors ${availableDoctors}`;
+  if (crisisChip) crisisChip.textContent = crisisActive ? 'Crisis ON' : 'Crisis OFF';
+}
+
+function updateCityNetwork(state = {}) {
+  const list = document.getElementById('cityNetworkList');
+  if (!list) return;
+
+  const hospitals = Array.isArray(state.city_hospitals) ? state.city_hospitals : [];
+  if (!hospitals.length) {
+    list.innerHTML = '<div class="city-network-empty">No city hospital data yet</div>';
+    return;
+  }
+
+  list.innerHTML = hospitals.map((h) => {
+    const available = Number(h.available_beds || 0);
+    const total = Number(h.total_beds || 0);
+    const pulseClass = available > 0 ? 'ok' : 'bad';
+    return `
+      <div class="city-row">
+        <div>
+          <div class="city-name">${h.name}</div>
+          <div class="city-cap">Beds Available: ${available}/${total}</div>
+        </div>
+        <span class="city-pulse ${pulseClass}"></span>
+      </div>
+    `;
+  }).join('');
+}
+
+async function refreshPriorityStats() {
+  try {
+    const statusData = await fetch('/api/status').then(r => r.json());
+    const state = statusData.state || {};
+    updatePriorityTags(state);
+    updateRiskRadar(state);
+    updateCityNetwork(state);
+    window.HospitalInfra && window.HospitalInfra.onStateUpdate(state, { mode: 'live' });
+  } catch (_) {
+    // no-op
+  }
+}
+
+async function hydrateFromServer() {
+  try {
+    const [historyData, statusData] = await Promise.all([
+      fetch('/api/episode_history').then(r => r.json()),
+      fetch('/api/status').then(r => r.json())
+    ]);
+
+    if (historyData.success) {
+      totalReward = Number(historyData.total_reward || 0);
+      steps = Number(historyData.total_steps || 0);
+      syncStats();
+
+      const history = historyData.history || [];
+      if (history.length > 0) {
+        // Rebuild last few log entries so page is not blank after navigation
+        const lastEntries = history.slice(-8);
+        lastEntries.forEach(item => {
+          const actionName = item.action_name || item.action || 'ACTION';
+          pushLog(`Recovered: ${actionName} => reward ${Number(item.reward || 0).toFixed(2)}`);
+        });
+      }
+    }
+
+    if (statusData && statusData.current_task) {
+      const task = String(statusData.current_task).toLowerCase();
+      document.getElementById('taskSelect').value = task;
+      document.getElementById('taskText').textContent = task.toUpperCase();
+      updatePriorityTags(statusData.state || {});
+      updateRiskRadar(statusData.state || {});
+      updateCityNetwork(statusData.state || {});
+    }
+
+    await refreshCoachAndTimeline();
+  } catch (e) {
+    pushLog('Could not hydrate previous state');
+  }
+}
+
+async function initializeEnv() {
+  const task = document.getElementById('taskSelect').value;
+  const data = await fetch('/api/init', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ task, seed: 42 })
+  }).then(r => r.json());
+
+  if (data.success) {
+    totalReward = 0; steps = 0; syncStats();
+    document.getElementById('taskText').textContent = task.toUpperCase();
+    await refreshPriorityStats();
+    pushLog(`Environment initialized (${task})`);
+  } else {
+    pushLog(`Init failed: ${data.error || 'unknown error'}`);
+  }
+}
+
+async function runEpisode() {
+  const task = document.getElementById('taskSelect').value;
+  const data = await fetch('/api/run_episode', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ task, max_steps: 50 })
+  }).then(r => r.json());
+
+  if (data.success) {
+    totalReward = Number(data.total_reward || 0);
+    steps = Number(data.steps || 0);
+    syncStats();
+    document.getElementById('taskText').textContent = task.toUpperCase();
+    await refreshPriorityStats();
+    pushLog(`Episode finished → reward ${totalReward.toFixed(2)}, steps ${steps}`);
+  } else {
+    pushLog(`Episode failed: ${data.error || 'unknown error'}`);
+  }
+}
+
+async function resetEnv() {
+  if (autoPilotTimer) {
+    clearInterval(autoPilotTimer);
+    autoPilotTimer = null;
+  }
+  autoPilotOn = false;
+  setAutoPilotVisual(false);
+  const task = document.getElementById('taskSelect').value;
+
+  const data = await fetch('/api/reset', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ seed: 42, task })
+  }).then(r => r.json());
+
+  if (data.success) {
+    totalReward = 0; steps = 0; syncStats();
+    await refreshPriorityStats();
+    document.getElementById('taskText').textContent = task.toUpperCase();
+    pushLog('Environment reset');
+  } else {
+    pushLog(`Reset failed: ${data.error || 'unknown error'}`);
+  }
+}
+
+async function stepAction(action) {
+  const data = await fetch('/api/step', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action })
+  }).then(r => r.json());
+
+  if (data.success) {
+    totalReward = Number(data.total_reward || 0);
+    steps = Number(data.episode_length || 0);
+    syncStats();
+    await refreshPriorityStats();
+    pushLog(`Action ${data.step.action_name} => reward ${Number(data.step.reward).toFixed(2)}`);
+
+    const invalidAllocation = Boolean(data.invalid_action || data.step?.info?.invalid_allocation);
+    if (action === 1 && invalidAllocation) {
+      showToast('🚨 Action Failed: Penalty applied for invalid allocation!', 'error');
+      pushLog(`ALLOCATE invalid: ${data.error || data.step?.info?.error || 'No resources'} | penalty ${Number(data.step.reward || 0).toFixed(2)}`);
+    }
+
+    if (action === 4) {
+      const transfer = data.step?.info?.city_transfer;
+      const target = data.step?.info?.city_transfer_target;
+      const crisis = data.step?.info?.city_crisis;
+      if (transfer) {
+        showToast(`🌐 Reassigned to ${target}`, 'success');
+      } else if (crisis) {
+        showToast('🚨 City-wide Healthcare Crisis', 'error');
+      }
+    }
+  } else {
+    pushLog(`Step failed: ${data.error || 'unknown error'}`);
+  }
+}
+
+async function bootControls() {
+  try {
+    document.getElementById('taskText').textContent = document.getElementById('taskSelect').value.toUpperCase();
+    syncStats();
+    await hydrateFromServer();
+    setInterval(refreshPriorityStats, 3000);
+    setInterval(() => refreshCoachAndTimeline().catch(() => {}), 4000);
+    enableControlMicroInteractions();
+  } finally {
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('controls-loading');
+      document.documentElement.classList.add('controls-ready');
+    });
+  }
+}
+
+bootControls();
+</script>
+
+<style>
+.controls-page .shell,
+.controls-page .shell-content {
+  max-width: none;
+  width: 100%;
+}
+
+.controls-page .shell {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.controls-page .content {
+  margin-top: 18px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.85fr);
+  width: 100%;
+  gap: 24px;
+}
+
+.controls-grid > .card {
+  animation: controlsFadeIn .55s ease both;
+}
+
+@keyframes controlsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.controls-grid .card {
+  padding: 24px !important;
+}
+
+.controls-side-stack {
+  display: grid;
+  gap: 18px;
+}
+
+@media (max-width: 1180px) {
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-center-card,
+  .controls-side-stack,
+  .controls-grid > .card {
+    grid-column: span 12 !important;
+  }
+}
+
+.control-center-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(241, 246, 255, 0.88));
+}
+
+.control-center-card::before {
+  content: '';
+  position: absolute;
+  inset: -25% -20% auto auto;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0));
+  pointer-events: none;
+}
+
+.ops-subcard {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.85));
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1e293b;
+  transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  padding: 16px;
+}
+
+.ops-subcard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.ai-coach-card {
+  border: 1px solid rgba(59, 130, 246, 0.42);
+  background: linear-gradient(165deg, rgba(219, 234, 254, 0.9), rgba(255, 255, 255, 0.92));
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 10px 26px rgba(59, 130, 246, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  animation: aiCoachGlow 2.8s ease-in-out infinite;
+}
+
+.risk-radar-card {
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(253, 230, 138, 0.42), rgba(253, 230, 138, 0) 30%),
+    radial-gradient(circle at 84% 18%, rgba(251, 191, 36, 0.18), rgba(251, 191, 36, 0) 26%),
+    linear-gradient(165deg, rgba(255, 247, 237, 0.97), rgba(255, 255, 255, 0.95));
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.08), 0 10px 26px rgba(245, 158, 11, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.ops-feature-row {
+  gap: 14px;
+}
+
+.preview-card {
+  padding: 18px 18px 16px;
+}
+
+.pulse-icon,
+.bed-icon,
+.blood-icon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 50%;
+}
+
+.pulse-icon--green {
+  background: radial-gradient(circle at 35% 35%, #dfffe8 0%, #22c55e 56%, #16a34a 100%);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12), 0 0 14px rgba(34, 197, 94, 0.45);
+  animation: pulseGlow 1.8s ease-in-out infinite;
+}
+
+.bed-icon--purple {
+  background: radial-gradient(circle at 35% 35%, #f3e8ff 0%, #8b5cf6 56%, #6d28d9 100%);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.10);
+}
+
+.blood-icon--red {
+  background: radial-gradient(circle at 35% 35%, #ffe4e6 0%, #f43f5e 56%, #be123c 100%);
+  box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.10);
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.risk-preview-layout {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.risk-ring--calm {
+  --risk-color: #f59e0b;
+  background: conic-gradient(from -90deg, #f97316 0 92deg, #f59e0b 92deg 170deg, #f3f4f6 170deg 360deg);
+}
+
+.risk-banner {
+  font-size: 16px;
+  line-height: 1.15;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: #374151;
+}
+
+.risk-radar-shell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.risk-ring {
+  --risk-angle: 0deg;
+  --risk-color: #22c55e;
+  width: 106px;
+  height: 106px;
+  border-radius: 50%;
+  padding: 8px;
+  background: conic-gradient(from -90deg, var(--risk-color) 0 var(--risk-angle), rgba(148, 163, 184, 0.14) var(--risk-angle) 360deg);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  flex: 0 0 auto;
+}
+
+.risk-ring-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 252, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.risk-score {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+.risk-level {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.risk-level.risk-calm { color: #059669; }
+.risk-level.risk-watch { color: #d97706; }
+.risk-level.risk-high { color: #ea580c; }
+.risk-level.risk-critical { color: #dc2626; }
+
+.risk-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.risk-headline {
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.risk-summary,
+.risk-action {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #475569;
+}
+
+.risk-action {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.risk-summary {
+  font-size: 12px;
+  color: #475569;
+}
+
+.risk-action {
+  font-size: 12px;
+}
+
+.risk-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.risk-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  font-size: 11px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.risk-meta strong {
+  font-size: 11px;
+  color: #1d4ed8;
+}
+
+.risk-pill--ghost {
+  background: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.risk-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(248, 250, 252, 0.92);
+  color: #334155;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+@keyframes aiCoachGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.16), 0 10px 26px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.28), 0 14px 32px rgba(59, 130, 246, 0.3), 0 0 24px rgba(96, 165, 250, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  }
+}
+
+.ops-subcard .muted {
+  color: #64748b;
+}
+
+.risk-radar-card .card-head {
+  margin-bottom: 2px;
+}
+
+.risk-radar-card .muted {
+  color: #8a5a08;
+}
+
+.risk-radar-card .risk-summary,
+.risk-radar-card .risk-action {
+  font-weight: 650;
+}
+
+@media (max-width: 880px) {
+  .risk-preview-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .risk-copy {
+    width: 100%;
+  }
+}
+
+.facility-card .facility-list {
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.facility-card .facility-row {
+  min-height: 46px;
+  padding: 10px 12px;
+}
+
+.facility-card .facility-left {
+  min-width: 0;
+  flex: 1;
+}
+
+.facility-card .facility-meta {
+  min-width: 140px;
+  gap: 8px;
+}
+
+.facility-card .mini-progress {
+  width: 100px;
+}
+
+.blood-card .blood-grid {
+  margin-top: 10px;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.blood-card .blood-cell {
+  padding: 10px;
+  gap: 7px;
+  border-radius: 11px;
+}
+
+.blood-card .blood-bar-wrap {
+  height: 40px;
+}
+
+.blood-card .blood-type {
+  font-size: 12px;
+}
+
+.blood-card .blood-pct {
+  font-size: 11px;
+}
+
+.control-actions,
+.action-controls {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.control-actions .btn,
+.action-controls .btn {
+  min-height: 40px;
+  min-width: 118px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.control-actions .btn:hover,
+.action-controls .btn:hover,
+.ops-button-row .btn:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.control-actions .btn:active,
+.action-controls .btn:active,
+.ops-button-row .btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+#log {
+  padding: 16px 18px;
+  line-height: 1.6;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+#log p {
+  line-height: 1.6;
+  margin: 0 0 6px 0;
+}
+
+@keyframes autopilotPulse {
+  0% { box-shadow: 0 0 0 0 rgba(34,197,94,.55), 0 0 16px rgba(34,197,94,.65); }
+  70% { box-shadow: 0 0 0 10px rgba(34,197,94,0), 0 0 26px rgba(34,197,94,.9); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0), 0 0 16px rgba(34,197,94,.65); }
+}
+
+.city-network-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.85));
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.live-stats-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(232, 245, 255, 0.9));
+  border-color: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.live-stats-card .kpi {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.live-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.live-kpi-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.72));
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.live-kpi-card:hover {
+  border-color: rgba(59, 130, 246, 0.32);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.14);
+  transform: translateY(-1px);
+}
+
+.live-kpi-card .muted {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.live-kpi-card .kpi {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #1e293b;
+}
+
+#rewardText,
+#stepsText {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  display: inline-block;
+}
+
+#rewardText {
+  min-width: 7ch;
+}
+
+#stepsText {
+  min-width: 4ch;
+}
+
+#rewardText.reward-flash-up {
+  animation: rewardFlashUp 0.42s ease;
+}
+
+#rewardText.reward-flash-down {
+  animation: rewardFlashDown 0.42s ease;
+}
+
+@keyframes rewardFlashUp {
+  0% { color: #1e293b; text-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+  45% { color: #15803d; text-shadow: 0 0 16px rgba(34, 197, 94, 0.5); }
+  100% { color: #1e293b; text-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes rewardFlashDown {
+  0% { color: #1e293b; text-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  45% { color: #b91c1c; text-shadow: 0 0 16px rgba(239, 68, 68, 0.5); }
+  100% { color: #1e293b; text-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.live-kpi-card--task .kpi {
+  letter-spacing: 0.01em;
+  font-size: 36px;
+}
+
+.live-stats-divider {
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+  margin: 12px 0 10px;
+}
+
+.live-stat-group {
+  margin-top: 8px;
+}
+
+.live-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.mix-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
+}
+
+.mix-chip--red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.mix-chip--green {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+@media (max-width: 960px) {
+  .live-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-kpi-card .kpi,
+  .live-kpi-card--task .kpi {
+    font-size: 30px;
+  }
+}
+
+.city-network-list {
+  display: grid;
+  gap: 8px;
+}
+
+.city-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.city-name {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.city-cap {
+  color: #64748b;
+  font-size: .86rem;
+}
+
+.city-network-empty {
+  color: #64748b;
+  font-size: .9rem;
+}
+
+.city-pulse {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.city-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  animation: cityPulse 1.4s infinite;
+}
+
+.city-pulse.ok { background: #22c55e; }
+.city-pulse.ok::after { background: rgba(34, 197, 94, .28); }
+.city-pulse.bad { background: #ef4444; }
+.city-pulse.bad::after { background: rgba(239, 68, 68, .25); }
+
+@keyframes cityPulse {
+  0% { transform: scale(0.9); opacity: .65; }
+  70% { transform: scale(1.2); opacity: .12; }
+  100% { transform: scale(0.9); opacity: .65; }
+}
+</style>
+{% endblock %}
+

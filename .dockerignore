@@ -1,0 +1,130 @@
+# Smart Hospital Resource Orchestration - .dockerignore
+
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation
+docs/_build/
+*.md
+!README.md
+!CHANGELOG.md
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+logs/
+temp/
+
+# Data and models (mount these as volumes)
+data/
+models_artifacts/
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pth
+*.pt
+
+# Keep source-code models package required by inference.py
+!models/
+!models/**
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Configuration files with secrets
+.env
+.env.local
+.env.*.local
+config/secrets.yaml
+
+# Docker files (except the main Dockerfile)
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Large files and binaries
+*.tar.gz
+*.zip
+*.rar
+*.exe
+*.dmg
+*.bin
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Mac specific
+.DS_Store

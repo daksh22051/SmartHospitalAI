@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # Main application service
+  hospital-env:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-hospital-orchestration:latest
+    container_name: hospital-orchestration
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./checkpoints:/app/checkpoints
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env
+    command: python -c "print('Hospital Orchestration Environment Ready')"
+    
+  # Training service
+  training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-hospital-orchestration:latest
+    container_name: hospital-training
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./checkpoints:/app/checkpoints
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env
+    command: python -m smart_hospital_orchestration.main train --config config/configs/medium.yaml --algorithm ppo --timesteps 300000 --save-path /app/checkpoints/ppo_medium.pt
+    profiles:
+      - training
+      
+  # Evaluation service
+  evaluation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-hospital-orchestration:latest
+    container_name: hospital-evaluation
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./checkpoints:/app/checkpoints:ro
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - LLM_GRADER_ENDPOINT=${LLM_GRADER_ENDPOINT:-}
+      - LLM_GRADER_API_KEY=${LLM_GRADER_API_KEY:-}
+      - LLM_GRADER_MODEL=${LLM_GRADER_MODEL:-gpt-4.1-mini}
+    env_file:
+      - .env
+    command: python -m smart_hospital_orchestration.evaluation.grader --task medium --episodes 5 --seed 42 --policy heuristic --rubric-profile hackathon_v1 --output /app/results/grader_result.json --save-history --history-dir /app/results/grader_history
+    profiles:
+      - evaluation
+      
+  # Jupyter notebook service for experimentation
+  notebook:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-hospital-orchestration:latest
+    container_name: hospital-notebook
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env
+    command: >
+      bash -c "pip install jupyter &&
+               jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root"
+    profiles:
+      - notebook

@@ -1,0 +1,2807 @@
+{% extends "base.html" %}
+
+{% block title %}3D View | Smart Hospital{% endblock %}
+
+{% block head_extra %}
+<style>
+    #threeContainer {
+        width: 100%;
+        height: 600px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        position: relative;
+        background:
+            radial-gradient(120% 90% at 20% 10%, rgba(96, 165, 250, 0.14), transparent 60%),
+            linear-gradient(180deg, rgba(241, 245, 249, 0.95), rgba(226, 232, 240, 0.98));
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+    #threeContainer canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .viz-layout {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 14px;
+        align-items: start;
+    }
+    .viz-stage {
+        min-width: 0;
+    }
+    .viz-side-stack {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+    }
+    .control-panel {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        width: max-content;
+        max-width: calc(100% - 32px);
+        padding: 8px;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.62);
+        border: 1px solid rgba(96, 165, 250, 0.28);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.32);
+        z-index: 2;
+    }
+    .control-panel .btn {
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        min-height: 34px;
+        padding: 7px 12px;
+        border-radius: 10px;
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(226, 232, 240, 0.95));
+        border: 1px solid rgba(148, 163, 184, 0.46);
+        color: #0f172a;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.16);
+    }
+    .control-panel .btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(59, 130, 246, 0.55);
+        box-shadow: 0 8px 18px rgba(30, 64, 175, 0.22);
+    }
+    .view-mode-indicator {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: rgba(248, 250, 252, 0.92);
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
+    }
+    .transition-banner {
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-10px);
+        border-radius: 999px;
+        border: 1px solid rgba(96, 165, 250, 0.45);
+        background: rgba(15, 23, 42, 0.82);
+        color: #eff6ff;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.25px;
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        z-index: 4;
+    }
+    .transition-banner.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    .ward-focus-indicator {
+        position: absolute;
+        left: 50%;
+        bottom: 74px;
+        transform: translateX(-50%);
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(96, 165, 250, 0.45);
+        background: rgba(7, 18, 43, 0.76);
+        color: #e5efff;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        backdrop-filter: blur(8px);
+        pointer-events: none;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+    }
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .legend-dot.red { background: #ff3b3b; box-shadow: 0 0 8px rgba(255, 59, 59, 0.6); }
+    .legend-dot.green { background: #20c997; box-shadow: 0 0 8px rgba(32, 201, 151, 0.6); }
+    .legend-dot.yellow { background: #facc15; box-shadow: 0 0 8px rgba(250, 204, 21, 0.6); }
+    .stats-overlay {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        backdrop-filter: blur(10px);
+        color: var(--text);
+    }
+    .capacity-overlay {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(30, 41, 59, 0.78));
+        color: #e2e8f0;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 12px 30px rgba(2, 6, 23, 0.28);
+    }
+    .capacity-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: #93c5fd;
+        margin-bottom: 8px;
+    }
+    .capacity-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .ward-util-strip {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .ward-util-chip {
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: rgba(15, 23, 42, 0.52);
+        padding: 6px 7px;
+        text-align: left;
+    }
+    .ward-util-chip .k {
+        font-size: 9px;
+        color: #93c5fd;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+    }
+    .ward-util-chip .v {
+        font-size: 12px;
+        color: #f8fafc;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+    .capacity-pill {
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: rgba(15, 23, 42, 0.56);
+    }
+    .capacity-pill .k {
+        font-size: 11px;
+        letter-spacing: 0.3px;
+        color: #94a3b8;
+        margin-bottom: 4px;
+    }
+    .capacity-pill .v {
+        font-size: 18px;
+        font-weight: 800;
+        color: #f8fafc;
+        line-height: 1;
+    }
+    .capacity-track {
+        margin-top: 6px;
+        height: 5px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.24);
+        overflow: hidden;
+    }
+    .capacity-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        transition: width 0.45s ease, background 0.3s ease;
+    }
+    .capacity-fill.beds {
+        background: linear-gradient(90deg, #34d399, #2dd4bf);
+    }
+    .capacity-fill.doctors {
+        background: linear-gradient(90deg, #60a5fa, #22d3ee);
+    }
+    .stats-overlay h4 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .stats-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 13px;
+        margin-bottom: 4px;
+        color: var(--text);
+    }
+    .stats-row .label { color: var(--muted); }
+    .stats-row .value { font-weight: 700; }
+    .loading-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(241, 245, 249, 0.95);
+        z-index: 100;
+        transition: opacity 0.5s ease;
+    }
+    .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .loading-text {
+        font-size: 18px;
+        font-weight: 700;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+    .camera-preset {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.58);
+        border: 1px solid rgba(96, 165, 250, 0.26);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.3);
+        z-index: 2;
+    }
+    .camera-preset .btn {
+        font-size: 11px;
+        padding: 6px 10px;
+        min-width: 80px;
+        border-radius: 10px;
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(226, 232, 240, 0.95));
+        border: 1px solid rgba(148, 163, 184, 0.44);
+        color: #0f172a;
+        font-weight: 700;
+    }
+    .ward-shortcuts {
+        position: absolute;
+        top: 58px;
+        right: 16px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        max-width: calc(100% - 32px);
+        justify-content: flex-end;
+        z-index: 2;
+        padding: 8px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+    }
+    .ward-shortcuts .btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 6px 10px;
+        background: rgba(248, 250, 252, 0.94);
+        border: 1px solid rgba(148, 163, 184, 0.42);
+        color: #0f172a;
+    }
+    .ward-shortcuts .btn.is-active {
+        background: linear-gradient(135deg, rgba(30, 64, 175, 0.95), rgba(59, 130, 246, 0.9));
+        color: #eff6ff;
+        border-color: rgba(59, 130, 246, 0.65);
+        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
+    }
+    .scene-guide {
+        position: relative;
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(30, 41, 59, 0.78));
+        color: #dbeafe;
+        padding: 10px 12px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 12px 30px rgba(2, 6, 23, 0.33);
+        font-size: 12px;
+        z-index: 1;
+    }
+    .scene-guide-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: #93c5fd;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .scene-guide-list {
+        display: grid;
+        gap: 4px;
+        color: #cbd5e1;
+    }
+    .scene-guide-list span {
+        color: #f8fafc;
+        font-weight: 700;
+    }
+    .guide-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .guide-actions .btn {
+        font-size: 11px;
+        padding: 7px 10px;
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.62);
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        color: #e2e8f0;
+    }
+    .guide-actions .btn:hover {
+        background: rgba(30, 64, 175, 0.55);
+        border-color: rgba(96, 165, 250, 0.5);
+    }
+    .bed-tooltip {
+        position: absolute;
+        z-index: 4;
+        display: none;
+        pointer-events: none;
+        min-width: 130px;
+        max-width: 190px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        background: rgba(15, 23, 42, 0.92);
+        color: #e2e8f0;
+        padding: 8px 9px;
+        box-shadow: 0 12px 26px rgba(2, 6, 23, 0.42);
+        backdrop-filter: blur(6px);
+    }
+    .bed-tooltip .ttl {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: #93c5fd;
+        margin-bottom: 3px;
+    }
+    .bed-tooltip .val {
+        font-size: 13px;
+        font-weight: 800;
+        color: #f8fafc;
+        line-height: 1.2;
+    }
+    #threeContainer.cinematic-mode .stats-overlay,
+    #threeContainer.cinematic-mode .ward-shortcuts,
+    #threeContainer.cinematic-mode .control-panel,
+    #threeContainer.cinematic-mode .camera-preset,
+    #threeContainer.cinematic-mode .ward-focus-indicator {
+        opacity: 0;
+        transform: translateY(8px);
+        pointer-events: none;
+    }
+    #threeContainer .stats-overlay,
+    #threeContainer .ward-shortcuts,
+    #threeContainer .control-panel,
+    #threeContainer .camera-preset,
+    #threeContainer .ward-focus-indicator {
+        transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    
+    /* Patient Flow Card Styles */
+    .patient-flow-card h3, .resource-status-card h3 {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .flow-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    .flow-metric-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9));
+        border-radius: 14px;
+        padding: 18px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .flow-metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .flow-metric-icon {
+        margin-bottom: 12px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .red-metric .flow-metric-icon { background: rgba(239, 68, 68, 0.1); }
+    .green-metric .flow-metric-icon { background: rgba(16, 185, 129, 0.1); }
+    .time-metric .flow-metric-icon { background: rgba(245, 158, 11, 0.1); }
+    .flow-metric-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+    .flow-metric-value {
+        display: block;
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .red-value { color: #ef4444; }
+    .green-value { color: #10b981; }
+    .time-value { color: #f59e0b; }
+    .flow-metric-indicator {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 6px;
+        height: 100%;
+    }
+    .red-indicator { background: linear-gradient(180deg, #ef4444, #dc2626); }
+    .green-indicator { background: linear-gradient(180deg, #10b981, #059669); }
+    .flow-metric-bar {
+        margin-top: 14px;
+        height: 6px;
+        background: rgba(245, 158, 11, 0.15);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .flow-metric-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    
+    /* Resource Status Card Styles */
+    .resource-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    .resource-metric-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9));
+        border-radius: 14px;
+        padding: 20px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease;
+    }
+    .resource-metric-card:hover {
+        transform: translateY(-2px);
+    }
+    .resource-metric-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .resource-metric-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .resource-metric-value {
+        font-size: 36px;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 12px;
+    }
+    .beds-value {
+        color: #14b8a6;
+    }
+    .resource-progress-bar {
+        height: 8px;
+        background: rgba(99, 102, 241, 0.12);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    .resource-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #6366f1, #818cf8);
+        border-radius: 4px;
+        transition: width 0.5s ease, background 0.3s ease;
+    }
+    .resource-progress-fill.warning {
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+    .resource-progress-fill.critical {
+        background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+    .resource-metric-status {
+        font-size: 12px;
+        font-weight: 600;
+        color: #10b981;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .resource-metric-status::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .resource-metric-status.warning {
+        color: #f59e0b;
+    }
+    .resource-metric-status.critical {
+        color: #ef4444;
+    }
+    .resource-beds-indicator {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+    .beds-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: #e2e8f0;
+        transition: background 0.3s ease;
+    }
+    .beds-dot.available {
+        background: linear-gradient(135deg, #14b8a6, #2dd4bf);
+        box-shadow: 0 2px 6px rgba(20, 184, 166, 0.3);
+    }
+    .beds-dot.occupied {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    }
+    
+    @media (max-width: 768px) {
+        .viz-layout {
+            grid-template-columns: 1fr;
+        }
+        .capacity-overlay {
+            position: relative;
+            width: auto;
+            max-width: none;
+            padding: 8px;
+        }
+        .capacity-grid {
+            gap: 8px;
+        }
+        .ward-util-strip {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .capacity-pill .v {
+            font-size: 16px;
+        }
+        .ward-shortcuts {
+            top: 116px;
+            right: 12px;
+            max-width: 210px;
+            padding: 6px;
+        }
+        .control-panel {
+            max-width: calc(100% - 24px);
+            left: 12px;
+            bottom: 12px;
+            gap: 6px;
+            padding: 6px;
+        }
+        .control-panel .btn {
+            min-height: 32px;
+            padding: 6px 10px;
+        }
+        .camera-preset {
+            right: 12px;
+            bottom: 12px;
+            padding: 6px;
+        }
+        .ward-focus-indicator {
+            bottom: 66px;
+        }
+        .viz-side-stack {
+            gap: 10px;
+        }
+        .flow-metrics-grid {
+            grid-template-columns: 1fr;
+        }
+        .resource-metrics-grid {
+            grid-template-columns: 1fr;
+        }
+        .flow-metric-value {
+            font-size: 28px;
+        }
+        .resource-metric-value {
+            font-size: 30px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid dashboard-grid">
+    <section class="card" style="grid-column: span 12;">
+        <div class="card-head">
+            <h3>3D Hospital Visualization</h3>
+            <div class="card-head-meta">
+                <div class="row" style="gap: 16px;">
+                    <div class="legend-item"><span class="legend-dot red"></span><span>Critical (RED)</span></div>
+                    <div class="legend-item"><span class="legend-dot green"></span><span>Stable (GREEN)</span></div>
+                    <div class="legend-item"><span class="legend-dot yellow"></span><span>Waiting</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="viz-layout">
+            <div class="viz-stage">
+            <div id="threeContainer">
+                <div class="loading-overlay" id="loadingOverlay">
+                    <span class="loading-text">Initializing 3D Scene...</span>
+                </div>
+                <div class="stats-overlay" id="statsOverlay">
+                    <h4>Live Stats</h4>
+                    <div class="stats-row"><span class="label">Patients:</span><span class="value" id="statPatients">-</span></div>
+                    <div class="stats-row"><span class="label">Waiting:</span><span class="value" id="statWaiting">-</span></div>
+                    <div class="stats-row"><span class="label">Red Waiting:</span><span class="value" id="statRedWaiting">-</span></div>
+                    <div class="stats-row"><span class="label">Admitted:</span><span class="value" id="statAdmitted">-</span></div>
+                    <div class="stats-row"><span class="label">Doctors:</span><span class="value" id="statDoctors">-</span></div>
+                    <div class="stats-row"><span class="label">Beds Available:</span><span class="value" id="statBeds">-</span></div>
+                    <div class="stats-row"><span class="label">Avg Wait:</span><span class="value" id="statAvgWait">-</span></div>
+                    <div class="stats-row"><span class="label">Step:</span><span class="value" id="statStep">-</span></div>
+                </div>
+                <div class="view-mode-indicator" id="viewMode">Orbit View</div>
+                <div class="transition-banner" id="transitionBanner">Exploring Hospital</div>
+                <div class="ward-shortcuts">
+                    <button class="btn" data-ward="GENERAL" onclick="focusWard('GENERAL')">General Beds</button>
+                    <button class="btn" data-ward="EMERGENCY" onclick="focusWard('EMERGENCY')">Emergency</button>
+                    <button class="btn" data-ward="ICU" onclick="focusWard('ICU')">ICU</button>
+                    <button class="btn" data-ward="OPD" onclick="focusWard('OPD')">OPD</button>
+                </div>
+                <div class="ward-focus-indicator" id="wardFocus">Focus: OVERVIEW</div>
+                <div class="control-panel">
+                    <button class="btn" onclick="toggleAutoRotate()">Auto Rotate: ON</button>
+                    <button class="btn" onclick="toggleParticles()">Particles: ON</button>
+                    <button class="btn" onclick="resetCamera()">Reset Camera</button>
+                    <button class="btn" onclick="toggleWireframe()">Wireframe</button>
+                    <button class="btn" id="cinematicBtn" onclick="toggleCinematicMode()">Cinematic: OFF</button>
+                </div>
+                <div class="camera-preset">
+                    <button class="btn" onclick="setCameraPreset('front')">Front</button>
+                    <button class="btn" onclick="setCameraPreset('top')">Top</button>
+                    <button class="btn" onclick="setCameraPreset('side')">Side</button>
+                </div>
+                <div class="bed-tooltip" id="bedTooltip">
+                    <div class="ttl">Bed</div>
+                    <div class="val">-</div>
+                </div>
+            </div>
+            </div>
+
+            <div class="viz-side-stack">
+                <aside class="capacity-overlay" id="capacityOverlay">
+                    <div class="capacity-title">Bed and Staff Capacity</div>
+                    <div class="capacity-grid">
+                        <div class="capacity-pill">
+                            <div class="k">Beds In Use</div>
+                            <div class="v" id="bedCapacityText">-</div>
+                            <div class="capacity-track"><div class="capacity-fill beds" id="bedCapacityFill"></div></div>
+                        </div>
+                        <div class="capacity-pill">
+                            <div class="k">Doctors On Duty</div>
+                            <div class="v" id="doctorCapacityText">-</div>
+                            <div class="capacity-track"><div class="capacity-fill doctors" id="doctorCapacityFill"></div></div>
+                        </div>
+                    </div>
+                    <div class="ward-util-strip">
+                        <div class="ward-util-chip"><div class="k">Emergency</div><div class="v" id="utilEmergency">-</div></div>
+                        <div class="ward-util-chip"><div class="k">General Beds</div><div class="v" id="utilGeneral">-</div></div>
+                        <div class="ward-util-chip"><div class="k">ICU</div><div class="v" id="utilIcu">-</div></div>
+                        <div class="ward-util-chip"><div class="k">OPD</div><div class="v" id="utilOpd">-</div></div>
+                    </div>
+                </aside>
+
+                <div class="scene-guide" id="sceneGuide">
+                    <div class="scene-guide-title">How to Read This 3D Scene</div>
+                    <div class="scene-guide-list">
+                        <div><span>GENERAL:</span> Main bed ward with bed occupancy status.</div>
+                        <div><span>EMERGENCY:</span> RED critical intake and triage zone.</div>
+                        <div><span>Bed light:</span> Green = free bed, Red = occupied bed.</div>
+                        <div><span>Moving lines:</span> Patient allocation path to assigned bed.</div>
+                    </div>
+                    <div class="guide-actions">
+                        <button class="btn" id="tourBtn" onclick="toggleGuidedTour()">Start Guided Tour</button>
+                        <button class="btn" onclick="focusWard('GENERAL')">Jump to Beds</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card patient-flow-card" style="grid-column: span 6;">
+        <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: -4px;">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Patient Flow
+        </h3>
+        <div class="flow-metrics-grid">
+            <div class="flow-metric-card red-metric">
+                <div class="flow-metric-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="flow-metric-content">
+                    <span class="flow-metric-label">RED Waiting</span>
+                    <span class="flow-metric-value red-value" id="redWaitingCount">0</span>
+                </div>
+                <div class="flow-metric-indicator red-indicator"></div>
+            </div>
+            <div class="flow-metric-card green-metric">
+                <div class="flow-metric-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <div class="flow-metric-content">
+                    <span class="flow-metric-label">GREEN Waiting</span>
+                    <span class="flow-metric-value green-value" id="greenWaitingCount">0</span>
+                </div>
+                <div class="flow-metric-indicator green-indicator"></div>
+            </div>
+            <div class="flow-metric-card time-metric">
+                <div class="flow-metric-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="flow-metric-content">
+                    <span class="flow-metric-label">Avg Wait Time</span>
+                    <span class="flow-metric-value time-value" id="avgWaitTime">0 min</span>
+                </div>
+                <div class="flow-metric-bar">
+                    <div class="flow-metric-bar-fill" id="waitTimeBar" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card resource-status-card" style="grid-column: span 6;">
+        <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: -4px;">
+                <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>
+            </svg>
+            Resource Status
+        </h3>
+        <div class="resource-metrics-grid">
+            <div class="resource-metric-card">
+                <div class="resource-metric-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <span class="resource-metric-label">System Load</span>
+                </div>
+                <div class="resource-metric-value" id="systemLoad">0.0%</div>
+                <div class="resource-progress-bar">
+                    <div class="resource-progress-fill" id="systemLoadBar" style="width: 0%;"></div>
+                </div>
+                <div class="resource-metric-status" id="systemLoadStatus">Optimal</div>
+            </div>
+            <div class="resource-metric-card">
+                <div class="resource-metric-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    <span class="resource-metric-label">City Beds Available</span>
+                </div>
+                <div class="resource-metric-value beds-value" id="cityBeds">14</div>
+                <div class="resource-beds-indicator">
+                    <span class="beds-dot available"></span>
+                    <span class="beds-dot available"></span>
+                    <span class="beds-dot available"></span>
+                    <span class="beds-dot available"></span>
+                    <span class="beds-dot available"></span>
+                </div>
+                <div class="resource-metric-status good" id="cityBedsStatus">Sufficient Capacity</div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===== Three.js 3D Hospital Visualization =====
+(function() {
+    let scene, camera, renderer, controls;
+    let hospital, patientGroups = { redWaiting: [], greenWaiting: [], redAllocated: [], greenAllocated: [] };
+    let resourceBars = { doctors: null, beds: null };
+    let particles, particleSystem;
+    let autoRotate = true;
+    let showParticles = true;
+    let wireframeMode = false;
+    let animationId;
+    let starfield = null;
+    let wardMeshes = [];
+    let wardLabels = [];
+    let bedRowLabels = [];
+    let beds = [];
+    let allocationLines = [];
+    let selectedWardId = null;
+    let hoveredWardId = null;
+    let latestState = null;
+    let cinematicMode = false;
+    let guidedTourTimer = null;
+    let guidedTourIndex = 0;
+
+    // Simple orbit camera state (so click-to-zoom can tween it)
+    // NOTE: do not reference THREE here (bootloader may load it later).
+    const orbit = {
+        rotX: 0.42,
+        rotY: 2.95,
+        zoom: 20,
+        lookAt: { x: 0, y: 2.6, z: -1.1 },
+        lookAtV: null,
+    };
+
+    const tween = {
+        active: false,
+        t0: 0,
+        dur: 900,
+        from: { rotX: 0, rotY: 0, zoom: 24, lookAt: { x: 0, y: 3.5, z: 0 } },
+        to:   { rotX: 0, rotY: 0, zoom: 24, lookAt: { x: 0, y: 3.5, z: 0 } },
+    };
+
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function ensureOrbitVectors() {
+        if (!orbit.lookAtV && window.THREE) {
+            orbit.lookAtV = new THREE.Vector3(orbit.lookAt.x, orbit.lookAt.y, orbit.lookAt.z);
+        }
+        if (orbit.lookAtV) {
+            orbit.lookAtV.set(orbit.lookAt.x, orbit.lookAt.y, orbit.lookAt.z);
+        }
+    }
+
+    function setOrbitInstant({ rotX, rotY, zoom, lookAt }) {
+        if (typeof rotX === 'number') orbit.rotX = rotX;
+        if (typeof rotY === 'number') orbit.rotY = rotY;
+        if (typeof zoom === 'number') orbit.zoom = zoom;
+        if (lookAt && typeof lookAt.x === 'number') {
+            orbit.lookAt = { x: lookAt.x, y: lookAt.y, z: lookAt.z };
+        }
+        ensureOrbitVectors();
+    }
+
+    function startOrbitTween(to) {
+        const now = performance.now();
+        tween.active = true;
+        tween.t0 = now;
+        tween.from = {
+            rotX: orbit.rotX,
+            rotY: orbit.rotY,
+            zoom: orbit.zoom,
+            lookAt: { x: orbit.lookAt.x, y: orbit.lookAt.y, z: orbit.lookAt.z },
+        };
+        tween.to = {
+            rotX: typeof to.rotX === 'number' ? to.rotX : orbit.rotX,
+            rotY: typeof to.rotY === 'number' ? to.rotY : orbit.rotY,
+            zoom: typeof to.zoom === 'number' ? to.zoom : orbit.zoom,
+            lookAt: to.lookAt ? { x: to.lookAt.x, y: to.lookAt.y, z: to.lookAt.z } : { x: orbit.lookAt.x, y: orbit.lookAt.y, z: orbit.lookAt.z },
+        };
+    }
+
+    function updateOrbitTween(nowMs) {
+        if (!tween.active) return;
+        const t = clamp((nowMs - tween.t0) / tween.dur, 0, 1);
+        const e = easeInOutCubic(t);
+        orbit.rotX = lerp(tween.from.rotX, tween.to.rotX, e);
+        orbit.rotY = lerp(tween.from.rotY, tween.to.rotY, e);
+        orbit.zoom = lerp(tween.from.zoom, tween.to.zoom, e);
+        orbit.lookAt = {
+            x: lerp(tween.from.lookAt.x, tween.to.lookAt.x, e),
+            y: lerp(tween.from.lookAt.y, tween.to.lookAt.y, e),
+            z: lerp(tween.from.lookAt.z, tween.to.lookAt.z, e),
+        };
+        ensureOrbitVectors();
+        if (t >= 1) tween.active = false;
+    }
+
+    function applyOrbitCamera() {
+        if (!camera || !orbit.lookAtV) return;
+        const x = Math.sin(orbit.rotY) * Math.cos(orbit.rotX) * orbit.zoom;
+        const z = Math.cos(orbit.rotY) * Math.cos(orbit.rotX) * orbit.zoom;
+        const y = Math.sin(orbit.rotX) * orbit.zoom;
+        camera.position.set(orbit.lookAtV.x + x, orbit.lookAtV.y + y, orbit.lookAtV.z + z);
+        camera.lookAt(orbit.lookAtV);
+    }
+    
+    const COLORS = {
+        red: 0xff3b3b,
+        green: 0x20c997,
+        yellow: 0xfacc15,
+        primary: 0xff6b3d,
+        blue: 0x3b82f6,
+        white: 0xffffff,
+        dark: 0x1a1a2e,
+        accent: 0x60a5fa
+    };
+
+    // Hospital wards in local hospital coordinates
+    // (Positions roughly match the new glass building footprint)
+    // NOTE: stored as plain numbers; converted to THREE.Vector3 only after Three.js is loaded.
+    const WARDS = {
+        EMERGENCY: { id: 'EMERGENCY', label: 'EMERGENCY', color: COLORS.red, center: { x: -4.8, y: 0.15, z: 3.3 }, size: { x: 5.0, y: 0.2, z: 4.2 }, focus: { lookAt: { x: -4.8, y: 2.4, z: 3.3 }, rotX: 0.15, rotY: 0.65, zoom: 14 } },
+        OPD:       { id: 'OPD', label: 'OPD', color: COLORS.primary, center: { x: 0.0, y: 0.15, z: 3.3 }, size: { x: 4.4, y: 0.2, z: 4.2 }, focus: { lookAt: { x: 0.0, y: 2.6, z: 3.3 }, rotX: 0.12, rotY: 0.0, zoom: 15 } },
+        ICU:       { id: 'ICU', label: 'ICU', color: COLORS.accent, center: { x: 4.8, y: 0.15, z: 3.3 }, size: { x: 5.0, y: 0.2, z: 4.2 }, focus: { lookAt: { x: 4.8, y: 2.6, z: 3.3 }, rotX: 0.15, rotY: -0.65, zoom: 14 } },
+        GENERAL:   { id: 'GENERAL', label: 'GENERAL', color: COLORS.green, center: { x: 0.0, y: 0.15, z: -2.4 }, size: { x: 11.0, y: 0.2, z: 5.2 }, focus: { lookAt: { x: 0.0, y: 2.4, z: -2.4 }, rotX: 0.18, rotY: 3.14, zoom: 16 } },
+        DRONE_PAD: { id: 'DRONE_PAD', label: 'DRONE PAD', color: COLORS.blue, center: { x: 6.9, y: 6.25, z: -5.8 }, size: { x: 3.6, y: 0.2, z: 3.6 }, focus: { lookAt: { x: 6.9, y: 6.25, z: -5.8 }, rotX: 0.75, rotY: -0.45, zoom: 16 } },
+    };
+
+    function setLoading(text) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (!overlay) return;
+        const t = overlay.querySelector('.loading-text');
+        if (t) t.textContent = String(text || 'Initializing 3D Scene...');
+        overlay.classList.remove('hidden');
+    }
+
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (!overlay) return;
+        overlay.classList.add('hidden');
+    }
+
+    function showError(message) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (!overlay) return;
+        const t = overlay.querySelector('.loading-text');
+        if (t) {
+            t.style.animation = 'none';
+            t.style.opacity = '1';
+            t.style.textAlign = 'center';
+            t.style.maxWidth = '680px';
+            t.textContent = String(message || 'Failed to initialize 3D scene.');
+        }
+        overlay.classList.remove('hidden');
+    }
+
+    function isWebGLAvailable() {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            return !!(gl && window.WebGLRenderingContext);
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.async = true;
+            s.onload = () => resolve(true);
+            s.onerror = () => reject(new Error('Failed to load: ' + src));
+            document.head.appendChild(s);
+        });
+    }
+
+    async function ensureThree() {
+        if (window.THREE) return true;
+        // Prefer local vendored Three.js to avoid CDN blocks/404s.
+        const sources = [
+            '/static/vendor/three/three.min.js',
+            // Fallbacks (if local file missing)
+            'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js',
+            'https://unpkg.com/three@0.150.1/build/three.min.js'
+        ];
+        for (const src of sources) {
+            try {
+                await loadScript(src);
+                if (window.THREE) return true;
+            } catch (_) {}
+        }
+        return false;
+    }
+
+    function init() {
+        const container = document.getElementById('threeContainer');
+        if (!container) return;
+
+        if (!window.THREE) {
+            showError('Three.js failed to load. Check your internet/proxy settings.');
+            return;
+        }
+
+        if (!isWebGLAvailable()) {
+            showError('WebGL is disabled/unavailable. Enable browser hardware acceleration to view 3D.');
+            return;
+        }
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        // Now that THREE is available, initialize orbit vectors.
+        ensureOrbitVectors();
+
+        // Scene
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x070a12, 0.015);
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+        camera.position.set(0, 8, orbit.zoom);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // Lights + environment
+        setupLights();
+
+        // Ground
+        createGround();
+
+        // Hospital Building
+        createHospital();
+
+        // Resource Bars
+        createResourceBars();
+
+        // Background stars (toggleable via existing UI)
+        createParticles();
+
+        // Events
+        window.addEventListener('resize', onResize);
+        setupMouseControls();
+        setupWardPicking();
+
+        // Hide loading (immediately after first paint)
+        hideLoading();
+
+        // Start animation
+        animate();
+    }
+
+    function setupLights() {
+        // Global illumination-ish base
+        const hemi = new THREE.HemisphereLight(0x8aa7ff, 0x0b1024, 0.35);
+        scene.add(hemi);
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.22);
+        scene.add(ambient);
+
+        // Key directional (soft)
+        const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+        sun.position.set(10, 18, 10);
+        sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+        sun.shadow.camera.near = 0.5;
+        sun.shadow.camera.far = 60;
+        sun.shadow.camera.left = -26;
+        sun.shadow.camera.right = 26;
+        sun.shadow.camera.top = 26;
+        sun.shadow.camera.bottom = -26;
+        scene.add(sun);
+
+        // Neon interior point lights (wards)
+        const p1 = new THREE.PointLight(0x2f6bff, 1.2, 22);
+        p1.position.set(0, 4.2, 0);
+        scene.add(p1);
+
+        const pEmergency = new THREE.PointLight(0xff2d2d, 1.15, 16);
+        pEmergency.position.set(-6.0, 2.6, 4.0);
+        scene.add(pEmergency);
+
+        const pGeneral = new THREE.PointLight(0x21ffb3, 0.9, 18);
+        pGeneral.position.set(0.0, 2.2, -2.5);
+        scene.add(pGeneral);
+
+        // Stars env map for subtle glass reflections
+        const env = buildStarEnvMap();
+        if (env) {
+            scene.environment = env;
+            scene.background = env;
+        } else {
+            scene.background = new THREE.Color(0xf1f5f9);
+        }
+    }
+
+    function buildStarEnvMap() {
+        try {
+            const size = 256;
+            function face() {
+                const c = document.createElement('canvas');
+                c.width = size;
+                c.height = size;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillRect(0, 0, size, size);
+                for (let i = 0; i < 520; i++) {
+                    const x = Math.random() * size;
+                    const y = Math.random() * size;
+                    const r = Math.random() * 1.4;
+                    const a = 0.35 + Math.random() * 0.65;
+                    ctx.fillStyle = `rgba(170, 210, 255, ${a})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                // subtle nebula tint
+                const g = ctx.createRadialGradient(size * 0.25, size * 0.25, 0, size * 0.25, size * 0.25, size * 0.8);
+                g.addColorStop(0, 'rgba(46, 113, 255, 0.10)');
+                g.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, size, size);
+                return c;
+            }
+
+            const faces = [face(), face(), face(), face(), face(), face()];
+            const cube = new THREE.CubeTexture(faces);
+            cube.needsUpdate = true;
+            return cube;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function createGround() {
+        const groundGeo = new THREE.PlaneGeometry(90, 90);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color: 0x040816,
+            roughness: 0.95,
+            metalness: 0.1,
+            emissive: 0x01030a,
+            emissiveIntensity: 0.45,
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.02;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Cyber-blue grid floor
+        const grid = new THREE.GridHelper(80, 80, 0x2f6bff, 0x0a1a2a);
+        grid.position.y = 0.001;
+        grid.material.opacity = 0.75;
+        grid.material.transparent = true;
+        scene.add(grid);
+
+        // Slight glowing border frame
+        const frameGeo = new THREE.RingGeometry(39.4, 40.0, 128);
+        const frameMat = new THREE.MeshBasicMaterial({ color: 0x2f6bff, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+        const frame = new THREE.Mesh(frameGeo, frameMat);
+        frame.rotation.x = -Math.PI / 2;
+        frame.position.y = 0.003;
+        scene.add(frame);
+    }
+
+    function createHospital() {
+        // Reset scene objects (for hot reload / repeated init safety)
+        wardMeshes = [];
+        wardLabels = [];
+        bedRowLabels = [];
+        beds = [];
+        allocationLines.forEach(l => scene.remove(l));
+        allocationLines = [];
+
+        hospital = new THREE.Group();
+        hospital.name = 'Hospital';
+
+        // Patient + allocation line layers (so they rotate with the hospital)
+        const patientLayer = new THREE.Group();
+        patientLayer.name = 'Patients';
+        hospital.userData.patientLayer = patientLayer;
+        hospital.add(patientLayer);
+
+        const lineLayer = new THREE.Group();
+        lineLayer.name = 'AllocationLines';
+        hospital.userData.lineLayer = lineLayer;
+        hospital.add(lineLayer);
+
+        const building = createGlassBuilding({ width: 14.0, height: 9.0, depth: 10.5, floors: 3 });
+        building.position.set(0, 4.5, 0);
+        hospital.add(building);
+
+        // Ward plates (clickable)
+        const wardGroup = new THREE.Group();
+        wardGroup.name = 'Wards';
+        const wardKeys = ['EMERGENCY', 'OPD', 'ICU', 'GENERAL'];
+        wardKeys.forEach((k) => {
+            const w = WARDS[k];
+            const plate = createWardPlate(w);
+            wardMeshes.push(plate);
+            wardGroup.add(plate);
+            const label = createWardLabelSprite(w.label, w.color);
+            label.position.set(w.center.x, w.center.y + 1.35, w.center.z);
+            label.userData.wardId = w.id;
+            wardLabels.push(label);
+            wardGroup.add(label);
+        });
+        hospital.add(wardGroup);
+
+        // Drone pad (roof)
+        {
+            const w = WARDS.DRONE_PAD;
+            const pad = createWardPlate(w);
+            wardMeshes.push(pad);
+            hospital.add(pad);
+        }
+
+        // Beds + equipment
+        const assets = new THREE.Group();
+        assets.name = 'Assets';
+        createBedsAndEquipment(assets);
+        hospital.add(assets);
+
+        // Place hospital on ground
+        hospital.position.set(0, 0, 0);
+        scene.add(hospital);
+
+        // Keep text clutter low in overview and emphasize only relevant zones.
+        updateContextLabels();
+    }
+
+    function createGlassBuilding({ width, height, depth, floors }) {
+        const g = new THREE.Group();
+
+        // Glass shell
+        const shellGeo = new THREE.BoxGeometry(width, height, depth);
+        const glassMat = new THREE.MeshPhysicalMaterial({
+            color: 0x0b1838,
+            roughness: 0.12,
+            metalness: 0.0,
+            transmission: 0.82,
+            thickness: 0.35,
+            transparent: true,
+            opacity: 0.18,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.15,
+        });
+        const shell = new THREE.Mesh(shellGeo, glassMat);
+        shell.castShadow = true;
+        shell.receiveShadow = true;
+        g.add(shell);
+
+        // Fake fresnel rim shell for extra glass edge glow
+        const rimMat = new THREE.MeshBasicMaterial({
+            color: 0x7fb0ff,
+            transparent: true,
+            opacity: 0.08,
+            side: THREE.BackSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+        });
+        const rim = new THREE.Mesh(new THREE.BoxGeometry(width * 1.01, height * 1.01, depth * 1.01), rimMat);
+        g.add(rim);
+
+        // Frame lines
+        const edges = new THREE.EdgesGeometry(shellGeo, 18);
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0x2f6bff, transparent: true, opacity: 0.55 });
+        const edgeLines = new THREE.LineSegments(edges, edgeMat);
+        g.add(edgeLines);
+
+        // Floors + interior grids
+        const floorMat = new THREE.MeshStandardMaterial({
+            color: 0x06102a,
+            roughness: 0.95,
+            metalness: 0.1,
+            emissive: 0x081a3e,
+            emissiveIntensity: 0.35,
+        });
+
+        for (let i = 1; i <= floors; i++) {
+            const y = -height / 2 + (i * height) / (floors + 1);
+            const floor = new THREE.Mesh(new THREE.BoxGeometry(width * 0.98, 0.12, depth * 0.98), floorMat);
+            floor.position.set(0, y, 0);
+            floor.receiveShadow = true;
+            g.add(floor);
+
+            const grid = new THREE.GridHelper(Math.max(width, depth) * 0.95, 20, 0x2f6bff, 0x0a1a2a);
+            grid.position.set(0, y + 0.065, 0);
+            grid.material.transparent = true;
+            grid.material.opacity = 0.35;
+            g.add(grid);
+        }
+
+        // Interior partitions + corridor lanes on main floor (real-hospital feel)
+        const partitionMat = new THREE.MeshStandardMaterial({
+            color: 0x10244f,
+            roughness: 0.6,
+            metalness: 0.2,
+            emissive: 0x123985,
+            emissiveIntensity: 0.18,
+            transparent: true,
+            opacity: 0.9,
+        });
+        const laneMat = new THREE.MeshBasicMaterial({
+            color: 0x52a5ff,
+            transparent: true,
+            opacity: 0.32,
+            blending: THREE.AdditiveBlending,
+        });
+        const mainFloorY = -height / 2 + height / (floors + 1) + 0.18;
+        const wallA = new THREE.Mesh(new THREE.BoxGeometry(width * 0.008, 1.35, depth * 0.9), partitionMat);
+        wallA.position.set(-width * 0.16, mainFloorY + 0.62, 0);
+        g.add(wallA);
+        const wallB = new THREE.Mesh(new THREE.BoxGeometry(width * 0.008, 1.35, depth * 0.9), partitionMat);
+        wallB.position.set(width * 0.16, mainFloorY + 0.62, 0);
+        g.add(wallB);
+        const wallC = new THREE.Mesh(new THREE.BoxGeometry(width * 0.48, 1.35, depth * 0.01), partitionMat);
+        wallC.position.set(0, mainFloorY + 0.62, depth * 0.05);
+        g.add(wallC);
+
+        const lane1 = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.76, 0.24), laneMat);
+        lane1.rotation.x = -Math.PI / 2;
+        lane1.position.set(0, mainFloorY + 0.07, depth * 0.06);
+        g.add(lane1);
+        const lane2 = new THREE.Mesh(new THREE.PlaneGeometry(0.24, depth * 0.8), laneMat);
+        lane2.rotation.x = -Math.PI / 2;
+        lane2.position.set(0, mainFloorY + 0.071, 0);
+        g.add(lane2);
+
+        // Interior columns
+        const colGeo = new THREE.CylinderGeometry(0.12, 0.12, height * 0.96, 10);
+        const colMat = new THREE.MeshStandardMaterial({ color: 0x0d214a, roughness: 0.75, metalness: 0.25, emissive: 0x0b1a3e, emissiveIntensity: 0.25 });
+        const colXs = [-width * 0.32, 0, width * 0.32];
+        const colZs = [-depth * 0.28, depth * 0.28];
+        colXs.forEach(x => {
+            colZs.forEach(z => {
+                const c = new THREE.Mesh(colGeo, colMat);
+                c.position.set(x, 0, z);
+                c.castShadow = true;
+                g.add(c);
+            });
+        });
+
+        // Entrance canopy (glass)
+        const canopyGeo = new THREE.BoxGeometry(width * 0.55, 0.18, 2.6);
+        const canopyMat = new THREE.MeshPhysicalMaterial({
+            color: 0x0b1838,
+            roughness: 0.08,
+            metalness: 0.0,
+            transmission: 0.75,
+            thickness: 0.22,
+            transparent: true,
+            opacity: 0.28,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.10,
+        });
+        const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+        canopy.position.set(0, -height * 0.22, depth * 0.52);
+        canopy.castShadow = true;
+        g.add(canopy);
+
+        // Neon sign
+        const signGeo = new THREE.PlaneGeometry(width * 0.35, 0.9);
+        const signMat = new THREE.MeshBasicMaterial({ color: 0x2f6bff, transparent: true, opacity: 0.65 });
+        const sign = new THREE.Mesh(signGeo, signMat);
+        sign.position.set(0, height * 0.12, depth * 0.51);
+        g.add(sign);
+
+        return g;
+    }
+
+    function createWardPlate(w) {
+        const geo = new THREE.BoxGeometry(w.size.x, w.size.y, w.size.z);
+        const mat = new THREE.MeshStandardMaterial({
+            color: 0x07122b,
+            roughness: 0.85,
+            metalness: 0.1,
+            emissive: w.color,
+            emissiveIntensity: 0.25,
+            transparent: true,
+            opacity: 0.92,
+        });
+        const plate = new THREE.Mesh(geo, mat);
+        plate.position.set(w.center.x, w.center.y, w.center.z);
+        plate.userData.wardId = w.id;
+        plate.userData.focus = w.focus;
+        plate.userData.baseEmissiveIntensity = 0.25;
+        plate.receiveShadow = true;
+
+        // Outline
+        const edges = new THREE.EdgesGeometry(geo, 1);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: w.color, transparent: true, opacity: 0.75 }));
+        plate.add(line);
+        return plate;
+    }
+
+    function updateWardFocusLabel(wardId) {
+        const node = document.getElementById('wardFocus');
+        if (!node) return;
+        node.textContent = `Focus: ${wardId || 'OVERVIEW'}`;
+    }
+
+    function applyWardHighlights() {
+        wardMeshes.forEach((plate) => {
+            const id = plate?.userData?.wardId;
+            const mat = plate?.material;
+            if (!id || !mat) return;
+            const base = plate.userData.baseEmissiveIntensity || 0.25;
+            if (id === selectedWardId) {
+                mat.emissiveIntensity = base + 0.45;
+                mat.opacity = 0.98;
+            } else if (id === hoveredWardId) {
+                mat.emissiveIntensity = base + 0.28;
+                mat.opacity = 0.96;
+            } else {
+                mat.emissiveIntensity = base;
+                mat.opacity = 0.9;
+            }
+        });
+        updateContextLabels();
+    }
+
+    function updateContextLabels() {
+        const activeWard = selectedWardId || hoveredWardId || null;
+        wardLabels.forEach((label) => {
+            const wardId = label?.userData?.wardId;
+            if (!wardId) return;
+            const show = activeWard ? wardId === activeWard : wardId === 'GENERAL';
+            label.visible = show;
+            if (label.material) {
+                label.material.opacity = activeWard ? 0.92 : 0.62;
+            }
+        });
+
+        const showRows = activeWard === 'GENERAL';
+        bedRowLabels.forEach((label) => {
+            if (!label) return;
+            label.visible = showRows;
+        });
+    }
+
+    function createWardLabelSprite(text, color) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 192;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Glow background
+        ctx.fillStyle = 'rgba(5, 10, 24, 0.55)';
+        roundRect(ctx, 22, 44, 468, 104, 22);
+        ctx.fill();
+
+        // Neon stroke
+        ctx.strokeStyle = `rgba(${(color >> 16) & 255}, ${(color >> 8) & 255}, ${color & 255}, 0.75)`;
+        ctx.lineWidth = 5;
+        roundRect(ctx, 22, 44, 468, 104, 22);
+        ctx.stroke();
+
+        ctx.font = 'bold 52px Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = `rgba(${(color >> 16) & 255}, ${(color >> 8) & 255}, ${color & 255}, 0.75)`;
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#eaf2ff';
+        ctx.fillText(String(text), canvas.width / 2, canvas.height / 2 + 6);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.9 });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(3.4, 1.25, 1);
+        return sprite;
+    }
+
+    function createAssetLabelSprite(text, color = 0x60a5fa) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 420;
+        canvas.height = 140;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'rgba(2, 8, 23, 0.72)';
+        roundRect(ctx, 12, 26, 396, 88, 18);
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(${(color >> 16) & 255}, ${(color >> 8) & 255}, ${color & 255}, 0.82)`;
+        ctx.lineWidth = 4;
+        roundRect(ctx, 12, 26, 396, 88, 18);
+        ctx.stroke();
+
+        ctx.font = 'bold 34px Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillText(String(text), canvas.width / 2, canvas.height / 2 + 2);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(2.6, 0.95, 1);
+        sprite.visible = false;
+        return sprite;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    function createBedsAndEquipment(parent) {
+        // Beds in GENERAL ward: bed frame + mattress + pillow + occupancy strip
+        const frameMatBase = new THREE.MeshStandardMaterial({
+            color: 0x0f172a,
+            roughness: 0.42,
+            metalness: 0.58,
+            emissive: 0x1d4ed8,
+            emissiveIntensity: 0.06,
+        });
+        const mattressMatBase = new THREE.MeshStandardMaterial({
+            color: 0xe2e8f0,
+            roughness: 0.82,
+            metalness: 0.04,
+            emissive: 0x0f172a,
+            emissiveIntensity: 0.05,
+        });
+        const glowMatBase = new THREE.MeshStandardMaterial({
+            color: 0x0b1220,
+            roughness: 0.88,
+            metalness: 0.1,
+            emissive: COLORS.green,
+            emissiveIntensity: 0.12,
+            transparent: true,
+            opacity: 0.36,
+        });
+        const stripMatBase = new THREE.MeshStandardMaterial({
+            color: 0x22c55e,
+            emissive: 0x22c55e,
+            emissiveIntensity: 0.65,
+            roughness: 0.32,
+            metalness: 0.2,
+        });
+        const frameGeo = new THREE.BoxGeometry(1.08, 0.20, 0.62);
+        const mattressGeo = new THREE.BoxGeometry(0.90, 0.12, 0.50);
+        const pillowGeo = new THREE.BoxGeometry(0.20, 0.08, 0.24);
+        const headGeo = new THREE.BoxGeometry(0.10, 0.34, 0.62);
+        const railGeo = new THREE.BoxGeometry(0.08, 0.16, 0.06);
+        const stripGeo = new THREE.BoxGeometry(0.18, 0.07, 0.08);
+        const glowGeo = new THREE.PlaneGeometry(1.16, 0.74);
+        const monitorPostGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.35, 8);
+        const monitorHeadGeo = new THREE.BoxGeometry(0.18, 0.12, 0.04);
+        const patientBodyGeo = new THREE.CapsuleGeometry(0.09, 0.28, 4, 8);
+        const patientHeadGeo = new THREE.SphereGeometry(0.07, 10, 10);
+
+        const base = WARDS.GENERAL.center;
+        const rows = 2;
+        const cols = 4;
+        const dx = 2.4;
+        const dz = 1.5;
+        let idx = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const bed = new THREE.Group();
+                const frameMat = frameMatBase.clone();
+                const mattressMat = mattressMatBase.clone();
+                const glowMat = glowMatBase.clone();
+                const stripMat = stripMatBase.clone();
+
+                const frame = new THREE.Mesh(frameGeo, frameMat);
+                frame.castShadow = true;
+                frame.receiveShadow = true;
+                bed.add(frame);
+
+                const mattress = new THREE.Mesh(mattressGeo, mattressMat);
+                mattress.position.y = 0.15;
+                mattress.castShadow = true;
+                bed.add(mattress);
+
+                const pillow = new THREE.Mesh(pillowGeo, mattressMat.clone());
+                pillow.position.set(-0.28, 0.23, 0);
+                bed.add(pillow);
+
+                const head = new THREE.Mesh(headGeo, frameMat.clone());
+                head.position.set(-0.50, 0.07, 0);
+                bed.add(head);
+
+                const railLeft = new THREE.Mesh(railGeo, frameMat.clone());
+                railLeft.position.set(0.08, 0.13, -0.28);
+                bed.add(railLeft);
+
+                const railRight = new THREE.Mesh(railGeo, frameMat.clone());
+                railRight.position.set(0.08, 0.13, 0.28);
+                bed.add(railRight);
+
+                const statusStrip = new THREE.Mesh(stripGeo, stripMat);
+                statusStrip.position.set(0.48, 0.18, 0);
+                bed.add(statusStrip);
+
+                const monitorPost = new THREE.Mesh(monitorPostGeo, frameMat.clone());
+                monitorPost.position.set(-0.48, 0.20, 0.24);
+                bed.add(monitorPost);
+
+                const monitorLightMat = new THREE.MeshStandardMaterial({
+                    color: 0x22c55e,
+                    emissive: 0x22c55e,
+                    emissiveIntensity: 0.9,
+                    roughness: 0.25,
+                    metalness: 0.2,
+                });
+                const monitorLight = new THREE.Mesh(monitorHeadGeo, monitorLightMat);
+                monitorLight.position.set(-0.48, 0.39, 0.24);
+                bed.add(monitorLight);
+
+                const patientDummy = new THREE.Group();
+                const patientBody = new THREE.Mesh(
+                    patientBodyGeo,
+                    new THREE.MeshStandardMaterial({
+                        color: 0xe2e8f0,
+                        roughness: 0.84,
+                        metalness: 0.04,
+                    })
+                );
+                patientBody.rotation.z = Math.PI / 2;
+                patientBody.position.set(0.06, 0.23, 0);
+                patientDummy.add(patientBody);
+
+                const patientHead = new THREE.Mesh(
+                    patientHeadGeo,
+                    new THREE.MeshStandardMaterial({
+                        color: 0xf8d7c5,
+                        roughness: 0.9,
+                        metalness: 0.02,
+                    })
+                );
+                patientHead.position.set(-0.24, 0.26, 0);
+                patientDummy.add(patientHead);
+                patientDummy.visible = false;
+                bed.add(patientDummy);
+
+                const glow = new THREE.Mesh(glowGeo, glowMat);
+                glow.rotation.x = -Math.PI / 2;
+                glow.position.y = 0.16;
+                bed.add(glow);
+
+                bed.position.set(
+                    base.x - (cols - 1) * dx * 0.5 + c * dx,
+                    0.28,
+                    base.z - 1.2 - r * dz
+                );
+                bed.userData.bedIndex = idx++;
+                bed.userData.frameMat = frameMat;
+                bed.userData.mattressMat = mattressMat;
+                bed.userData.statusStrip = statusStrip;
+                bed.userData.glow = glow;
+                bed.userData.monitorLight = monitorLight;
+                bed.userData.patientDummy = patientDummy;
+                bed.userData.monitorPhase = Math.random() * Math.PI * 2;
+                bed.userData.isOccupied = false;
+                beds.push(bed);
+                parent.add(bed);
+            }
+
+            const rowLabel = createAssetLabelSprite(`BED ROW ${r + 1}`, 0x2dd4bf);
+            rowLabel.position.set(base.x + 5.6, 1.35, base.z - 1.2 - r * dz);
+            bedRowLabels.push(rowLabel);
+            parent.add(rowLabel);
+        }
+
+        // Equipment shapes (OPD / ICU)
+        const equipMat = new THREE.MeshStandardMaterial({
+            color: 0x0b1838,
+            roughness: 0.35,
+            metalness: 0.35,
+            emissive: 0x2f6bff,
+            emissiveIntensity: 0.10,
+        });
+        const mri = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.14, 16, 48), equipMat);
+        mri.position.set(WARDS.OPD.center.x + 0.0, WARDS.OPD.center.y + 0.65, WARDS.OPD.center.z + 0.2);
+        mri.rotation.x = Math.PI / 2;
+        parent.add(mri);
+
+        const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.0, 12), equipMat);
+        vent.position.set(WARDS.ICU.center.x + 0.9, WARDS.ICU.center.y + 0.7, WARDS.ICU.center.z + 0.2);
+        parent.add(vent);
+    }
+
+    function setupWardPicking() {
+        if (!renderer || !camera) return;
+
+        const canvas = renderer.domElement;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function setCursor(style) {
+            try { canvas.style.cursor = style; } catch (_) {}
+        }
+
+        function pick(ev) {
+            const rect = canvas.getBoundingClientRect();
+            const x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+            mouse.set(x, y);
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(wardMeshes, true);
+            if (!hits || hits.length === 0) return null;
+
+            // Find first object in chain that has focus metadata
+            for (const h of hits) {
+                let o = h.object;
+                while (o) {
+                    if (o.userData && o.userData.focus) return o;
+                    o = o.parent;
+                }
+            }
+            return null;
+        }
+
+        function pickBed(ev) {
+            const rect = canvas.getBoundingClientRect();
+            const x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+            mouse.set(x, y);
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(beds, true);
+            if (!hits || hits.length === 0) return null;
+
+            for (const h of hits) {
+                let o = h.object;
+                while (o) {
+                    if (o.userData && typeof o.userData.bedIndex === 'number') return o;
+                    o = o.parent;
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('mousemove', (ev) => {
+            const bedHit = pickBed(ev);
+            if (bedHit) {
+                hoveredWardId = null;
+                applyWardHighlights();
+                showBedTooltip(ev, bedHit);
+                setCursor('pointer');
+                return;
+            }
+
+            const hit = pick(ev);
+            hoveredWardId = hit?.userData?.wardId || null;
+            applyWardHighlights();
+            hideBedTooltip();
+            setCursor(hit ? 'pointer' : 'grab');
+        });
+
+        canvas.addEventListener('click', (ev) => {
+            const bedHit = pickBed(ev);
+            if (bedHit) {
+                const bedNo = Number(bedHit.userData.bedIndex || 0) + 1;
+                const occupied = bedHit?.userData?.isOccupied ? 'Occupied' : 'Available';
+                document.getElementById('viewMode').textContent = `Bed ${bedNo} · ${occupied}`;
+                return;
+            }
+
+            const hit = pick(ev);
+            if (!hit) return;
+            const f = hit.userData.focus;
+            selectedWardId = hit.userData.wardId || null;
+            updateWardFocusLabel(selectedWardId);
+            applyWardHighlights();
+            setShortcutActiveWard(selectedWardId);
+            document.getElementById('viewMode').textContent = `${selectedWardId} Ward`;
+
+            // Smooth zoom into ward section
+            startOrbitTween({ rotX: f.rotX, rotY: f.rotY, zoom: f.zoom, lookAt: f.lookAt });
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            hideBedTooltip();
+            hoveredWardId = null;
+            applyWardHighlights();
+            setCursor('grab');
+        });
+
+        // Initial cursor
+        setCursor('grab');
+    }
+
+    function createBuilding(width, height, depth, color) {
+        const group = new THREE.Group();
+        
+        const geo = new THREE.BoxGeometry(width, height, depth);
+        const mat = new THREE.MeshStandardMaterial({
+            color: color,
+            roughness: 0.7,
+            metalness: 0.3
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+
+        // Roof accent
+        const roofGeo = new THREE.BoxGeometry(width + 0.5, 0.3, depth + 0.5);
+        const roofMat = new THREE.MeshStandardMaterial({
+            color: COLORS.primary,
+            emissive: COLORS.primary,
+            emissiveIntensity: 0.3
+        });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.y = height / 2 + 0.15;
+        group.add(roof);
+
+        return group;
+    }
+
+    function createCanopy() {
+        const group = new THREE.Group();
+        
+        const canopyGeo = new THREE.BoxGeometry(8, 0.2, 3);
+        const canopyMat = new THREE.MeshStandardMaterial({
+            color: 0x2a2a4a,
+            roughness: 0.5,
+            metalness: 0.5
+        });
+        const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+        group.add(canopy);
+
+        // Pillars
+        const pillarGeo = new THREE.CylinderGeometry(0.15, 0.15, 2.5, 8);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3a3a5a });
+        
+        const positions = [[-3.5, -1.25, 1], [3.5, -1.25, 1], [-3.5, -1.25, -1], [3.5, -1.25, -1]];
+        positions.forEach(pos => {
+            const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+            pillar.position.set(...pos);
+            pillar.castShadow = true;
+            group.add(pillar);
+        });
+
+        return group;
+    }
+
+    function createWindows(building) {
+        const windowMat = new THREE.MeshStandardMaterial({
+            color: 0xff6b3d,
+            emissive: 0xff6b3d,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        // Front windows
+        for (let i = -2; i <= 2; i++) {
+            const winGeo = new THREE.PlaneGeometry(1.5, 1.2);
+            const win = new THREE.Mesh(winGeo, windowMat);
+            win.position.set(i * 2.2, 2, 4.01);
+            building.add(win);
+        }
+
+        // Side windows
+        for (let i = -1; i <= 1; i++) {
+            const winGeo = new THREE.PlaneGeometry(1.2, 1);
+            const winL = new THREE.Mesh(winGeo, windowMat.clone());
+            winL.position.set(-6.01, 2, i * 2);
+            winL.rotation.y = Math.PI / 2;
+            building.add(winL);
+
+            const winR = new THREE.Mesh(winGeo, windowMat.clone());
+            winR.position.set(6.01, 2, i * 2);
+            winR.rotation.y = -Math.PI / 2;
+            building.add(winR);
+        }
+    }
+
+    function createPatientZones(building) {
+        // RED zone (left side)
+        const redZone = createZone(0xff3b3b, 'RED');
+        redZone.position.set(-3, 0.5, -2);
+        building.add(redZone);
+
+        // GREEN zone (right side)
+        const greenZone = createZone(0x20c997, 'GREEN');
+        greenZone.position.set(3, 0.5, -2);
+        building.add(greenZone);
+    }
+
+    function createZone(color, label) {
+        const group = new THREE.Group();
+
+        const baseGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 6);
+        const baseMat = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.4,
+            transparent: true,
+            opacity: 0.8
+        });
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        group.add(base);
+
+        // Glow ring
+        const ringGeo = new THREE.TorusGeometry(1.6, 0.08, 8, 32);
+        const ringMat = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.8
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.2;
+        group.add(ring);
+
+        return group;
+    }
+
+    function createResourceBars() {
+        const barGroup = new THREE.Group();
+
+        // Doctor bar
+        const docBar = createResourceBar(COLORS.blue, 'DOCTORS');
+        docBar.position.set(-10, 1, 8);
+        barGroup.add(docBar);
+        resourceBars.doctors = docBar;
+
+        // Bed bar
+        const bedBar = createResourceBar(COLORS.green, 'BEDS');
+        bedBar.position.set(10, 1, 8);
+        barGroup.add(bedBar);
+        resourceBars.beds = bedBar;
+
+        scene.add(barGroup);
+    }
+
+    function createResourceBar(color, label) {
+        const group = new THREE.Group();
+
+        // Base
+        const baseGeo = new THREE.BoxGeometry(2, 0.2, 2);
+        const baseMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        group.add(base);
+
+        // Fill bar (initially empty)
+        const fillGeo = new THREE.BoxGeometry(1.6, 0.1, 1.6);
+        const fillMat = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.5
+        });
+        const fill = new THREE.Mesh(fillGeo, fillMat);
+        fill.position.y = 0.15;
+        fill.scale.y = 0;
+        group.add(fill);
+        group.userData.fillBar = fill;
+        group.userData.maxHeight = 5;
+        group.userData.color = color;
+
+        return group;
+    }
+
+    function createParticles() {
+        const particleCount = 500;
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 50;
+            positions[i * 3 + 1] = Math.random() * 20;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+
+            const color = Math.random() > 0.5 ? new THREE.Color(COLORS.primary) : new THREE.Color(COLORS.accent);
+            colors[i * 3] = color.r;
+            colors[i * 3 + 1] = color.g;
+            colors[i * 3 + 2] = color.b;
+
+            sizes[i] = 0.1 + Math.random() * 0.2;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.15,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+    }
+
+    function updatePatientVisualization(state) {
+        latestState = state || null;
+        const redCount = Math.min(parseInt(state.red_waiting) || 0, 10);
+        const greenCount = Math.min(parseInt(state.green_waiting) || 0, 10);
+        const redAllocatedCount = Math.min(parseInt(state.red_admitted) || 0, 10);
+        const greenAllocatedCount = Math.min(parseInt(state.green_admitted) || 0, 10);
+
+        // Waiting patients in wards
+        updatePatientGroup(patientGroups.redWaiting, redCount, COLORS.red, 'EMERGENCY', 'waiting');
+        updatePatientGroup(patientGroups.greenWaiting, greenCount, COLORS.green, 'GENERAL', 'waiting');
+
+        // Allocated/admitted patients: connect to beds
+        updatePatientGroup(patientGroups.redAllocated, redAllocatedCount, COLORS.red, 'GENERAL', 'allocated');
+        updatePatientGroup(patientGroups.greenAllocated, greenAllocatedCount, COLORS.green, 'GENERAL', 'allocated');
+
+        updateAllocationLines(state);
+
+        // Update stats overlay
+        document.getElementById('statPatients').textContent = state.total_patients ?? '-';
+        document.getElementById('statWaiting').textContent = state.waiting ?? '-';
+        document.getElementById('statRedWaiting').textContent = state.red_waiting ?? '-';
+        document.getElementById('statAdmitted').textContent = state.admitted ?? '-';
+        document.getElementById('statDoctors').textContent = `${state.available_doctors ?? '-'}/${state.total_doctors ?? '-'}`;
+        document.getElementById('statBeds').textContent = `${state.available_beds ?? '-'}/${state.total_beds ?? '-'}`;
+        document.getElementById('statAvgWait').textContent = `${(state.avg_wait_time || 0).toFixed(1)} min`;
+        document.getElementById('statStep').textContent = state.step ?? '-';
+
+        // Update cards
+        document.getElementById('redWaitingCount').textContent = redCount;
+        document.getElementById('greenWaitingCount').textContent = greenCount;
+        document.getElementById('avgWaitTime').textContent = `${(state.avg_wait_time || 0).toFixed(1)} min`;
+        document.getElementById('systemLoad').textContent = `${((state.system_load || 0) * 100).toFixed(1)}%`;
+        document.getElementById('cityBeds').textContent = state.city_available_beds ?? '-';
+
+        updateCapacityOverlay(state);
+        updateBedOccupancyVisuals(state);
+    }
+
+    function updateCapacityOverlay(state) {
+        const bedText = document.getElementById('bedCapacityText');
+        const bedFill = document.getElementById('bedCapacityFill');
+        const docText = document.getElementById('doctorCapacityText');
+        const docFill = document.getElementById('doctorCapacityFill');
+
+        const toNum = (v) => {
+            const n = Number(v);
+            return Number.isFinite(n) ? n : 0;
+        };
+
+        const totalBeds = Math.max(1, Math.round(toNum(state?.total_beds) || beds.length || 1));
+        const availableBeds = Math.max(0, Math.min(totalBeds, Math.round(toNum(state?.available_beds))));
+        const occupiedBeds = Math.max(0, totalBeds - availableBeds);
+
+        const totalDoctors = Math.max(1, Math.round(toNum(state?.total_doctors) || 1));
+        const availableDoctors = Math.max(0, Math.min(totalDoctors, Math.round(toNum(state?.available_doctors))));
+        const onDutyDoctors = Math.max(0, totalDoctors - availableDoctors);
+
+        const bedRatio = Math.min(occupiedBeds / totalBeds, 1);
+        const doctorRatio = Math.min(onDutyDoctors / totalDoctors, 1);
+
+        if (bedText) bedText.textContent = `${occupiedBeds}/${totalBeds}`;
+        if (docText) docText.textContent = `${onDutyDoctors}/${totalDoctors}`;
+        if (bedFill) bedFill.style.width = `${(bedRatio * 100).toFixed(1)}%`;
+        if (docFill) docFill.style.width = `${(doctorRatio * 100).toFixed(1)}%`;
+
+        const emergencyNode = document.getElementById('utilEmergency');
+        const generalNode = document.getElementById('utilGeneral');
+        const icuNode = document.getElementById('utilIcu');
+        const opdNode = document.getElementById('utilOpd');
+        const emergencyQueue = Math.max(0, Math.round(toNum(state?.red_waiting)));
+        const criticalAdmitted = Math.max(0, Math.round(toNum(state?.red_admitted)));
+        const opdQueue = Math.max(0, Math.round(toNum(state?.green_waiting)));
+
+        if (emergencyNode) emergencyNode.textContent = `${emergencyQueue} waiting`;
+        if (generalNode) generalNode.textContent = `${occupiedBeds}/${totalBeds} occupied`;
+        if (icuNode) icuNode.textContent = `${criticalAdmitted} critical`;
+        if (opdNode) opdNode.textContent = `${opdQueue} waiting`;
+    }
+
+    function setShortcutActiveWard(wardId) {
+        const btns = document.querySelectorAll('.ward-shortcuts .btn[data-ward]');
+        btns.forEach((btn) => {
+            const isActive = wardId && btn.getAttribute('data-ward') === wardId;
+            btn.classList.toggle('is-active', Boolean(isActive));
+        });
+    }
+
+    function showBedTooltip(ev, bed) {
+        const tip = document.getElementById('bedTooltip');
+        const container = document.getElementById('threeContainer');
+        if (!tip || !container || !bed) return;
+
+        const idx = Number(bed?.userData?.bedIndex || 0) + 1;
+        const occupied = Boolean(bed?.userData?.isOccupied);
+        const status = occupied ? 'Occupied' : 'Available';
+        const val = tip.querySelector('.val');
+        if (val) val.textContent = `BED-${String(idx).padStart(2, '0')}  ${status}`;
+
+        const rect = container.getBoundingClientRect();
+        const x = (ev.clientX - rect.left) + 14;
+        const y = (ev.clientY - rect.top) - 14;
+        tip.style.left = `${Math.max(10, Math.min(rect.width - 170, x))}px`;
+        tip.style.top = `${Math.max(10, Math.min(rect.height - 52, y))}px`;
+        tip.style.display = 'block';
+    }
+
+    function hideBedTooltip() {
+        const tip = document.getElementById('bedTooltip');
+        if (tip) tip.style.display = 'none';
+    }
+
+    function updateBedOccupancyVisuals(state) {
+        if (!beds || !beds.length) return;
+
+        const totalBeds = Math.max(1, parseInt(state?.total_beds) || beds.length || 1);
+        const availableBeds = Math.max(0, parseInt(state?.available_beds) || 0);
+        const occupiedBeds = Math.max(0, Math.min(beds.length, totalBeds - availableBeds));
+
+        beds.forEach((bed, idx) => {
+            const occupied = idx < occupiedBeds;
+            const frameMat = bed?.userData?.frameMat;
+            const mattressMat = bed?.userData?.mattressMat;
+            const statusStrip = bed?.userData?.statusStrip;
+            const glow = bed?.userData?.glow;
+            const monitorLight = bed?.userData?.monitorLight;
+            const patientDummy = bed?.userData?.patientDummy;
+
+            bed.userData.isOccupied = occupied;
+
+            if (frameMat) {
+                frameMat.emissive.setHex(occupied ? 0xef4444 : 0x1d4ed8);
+                frameMat.emissiveIntensity = occupied ? 0.14 : 0.06;
+            }
+            if (mattressMat) {
+                mattressMat.color.setHex(occupied ? 0xfef2f2 : 0xe2e8f0);
+            }
+            if (statusStrip && statusStrip.material) {
+                statusStrip.material.color.setHex(occupied ? 0xef4444 : 0x22c55e);
+                statusStrip.material.emissive.setHex(occupied ? 0xef4444 : 0x22c55e);
+            }
+            if (glow && glow.material) {
+                glow.material.emissive.setHex(occupied ? 0xef4444 : 0x22c55e);
+                glow.material.opacity = occupied ? 0.58 : 0.36;
+            }
+            if (monitorLight && monitorLight.material) {
+                monitorLight.material.color.setHex(occupied ? 0xef4444 : 0x22c55e);
+                monitorLight.material.emissive.setHex(occupied ? 0xef4444 : 0x22c55e);
+            }
+            if (patientDummy) {
+                patientDummy.visible = occupied;
+            }
+        });
+    }
+
+    function animateBedMonitors(time) {
+        if (!beds || !beds.length) return;
+        beds.forEach((bed) => {
+            const monitorLight = bed?.userData?.monitorLight;
+            const patientDummy = bed?.userData?.patientDummy;
+            const occupied = Boolean(bed?.userData?.isOccupied);
+            const phase = bed?.userData?.monitorPhase || 0;
+            if (!monitorLight || !monitorLight.material) return;
+
+            if (occupied) {
+                const pulse = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(time * 6.8 + phase));
+                monitorLight.material.emissiveIntensity = 0.85 + 1.3 * pulse;
+                monitorLight.scale.setScalar(0.95 + 0.18 * pulse);
+                if (patientDummy) {
+                    patientDummy.position.y = Math.sin(time * 2.0 + phase) * 0.012;
+                }
+            } else {
+                monitorLight.material.emissiveIntensity = 0.65;
+                monitorLight.scale.setScalar(1);
+                if (patientDummy) {
+                    patientDummy.position.y = 0;
+                }
+            }
+        });
+    }
+
+    function wardPoint(wardId, index, count) {
+        const w = WARDS[wardId] || WARDS.GENERAL;
+        const cx = w.center.x;
+        const cz = w.center.z;
+        const sx = w.size.x * 0.42;
+        const sz = w.size.z * 0.36;
+
+        // deterministic-ish layout: simple grid
+        const cols = Math.max(2, Math.ceil(Math.sqrt(Math.max(1, count))));
+        const r = Math.floor(index / cols);
+        const c = index % cols;
+        const px = cx - sx + (2 * sx) * (cols === 1 ? 0.5 : (c / (cols - 1)));
+        const pz = cz - sz + (2 * sz) * (cols === 1 ? 0.5 : (r / (cols - 1)));
+        return { x: px, y: 0.62, z: pz };
+    }
+
+    function updatePatientGroup(group, count, color, wardId, role) {
+        const layer = hospital?.userData?.patientLayer || scene;
+
+        // Create patient sphere if doesn't exist
+        while (group.length < count) {
+            const geo = new THREE.SphereGeometry(0.3, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.75,
+                transparent: true,
+                opacity: 0.9
+            });
+            const sphere = new THREE.Mesh(geo, mat);
+            sphere.castShadow = true;
+
+            sphere.userData.offset = Math.random() * Math.PI * 2;
+            sphere.userData.role = role;
+            sphere.userData.wardId = wardId;
+            sphere.userData.baseY = 0.62;
+            sphere.userData.seed = Math.random();
+            // bed assignment (only for allocated)
+            sphere.userData.bedIndex = null;
+            
+            layer.add(sphere);
+            group.push(sphere);
+        }
+
+        // Hide extra patients
+        for (let i = count; i < group.length; i++) {
+            group[i].visible = false;
+        }
+        for (let i = 0; i < count; i++) {
+            group[i].visible = true;
+
+            // Position in ward
+            const p = wardPoint(wardId, i, count);
+            group[i].position.set(p.x, p.y, p.z);
+            group[i].userData.baseY = p.y;
+
+            // Assign bed if allocated
+            if (role === 'allocated') {
+                group[i].userData.bedIndex = i; // map 0..N to first beds
+            } else {
+                group[i].userData.bedIndex = null;
+            }
+        }
+    }
+
+    function clearAllocationLines() {
+        const lineLayer = hospital?.userData?.lineLayer || null;
+        if (lineLayer) {
+            allocationLines.forEach((l) => {
+                if (l?.userData?.beacon) lineLayer.remove(l.userData.beacon);
+                lineLayer.remove(l);
+            });
+        } else {
+            allocationLines.forEach((l) => {
+                if (l?.userData?.beacon) scene.remove(l.userData.beacon);
+                scene.remove(l);
+            });
+        }
+        allocationLines = [];
+    }
+
+    function updateAllocationLines(state) {
+        clearAllocationLines();
+
+        const lineLayer = hospital?.userData?.lineLayer || scene;
+        const allocated = [...patientGroups.redAllocated, ...patientGroups.greenAllocated].filter(p => p && p.visible);
+        if (!allocated.length) return;
+
+        const usableBeds = beds || [];
+        const totalBeds = Math.max(1, parseInt(state?.total_beds) || usableBeds.length || 1);
+        const availableBeds = Math.max(0, parseInt(state?.available_beds) || 0);
+        const occupiedBeds = Math.max(0, Math.min(usableBeds.length, totalBeds - availableBeds));
+        const bedSlots = occupiedBeds > 0 ? occupiedBeds : Math.min(allocated.length, usableBeds.length);
+        const max = Math.min(allocated.length, bedSlots);
+        for (let i = 0; i < max; i++) {
+            const p = allocated[i];
+            const bedIndex = i % Math.max(1, bedSlots);
+            const b = usableBeds[bedIndex];
+            if (!p || !b) continue;
+
+            // Bed world position inside hospital group coordinates
+            const bedPos = new THREE.Vector3();
+            b.getWorldPosition(bedPos);
+            // Convert to hospital local coordinates
+            hospital.worldToLocal(bedPos);
+
+            const start = p.position.clone();
+            const end = bedPos.clone();
+            end.y = Math.max(end.y, 0.35);
+
+            const mid = start.clone().lerp(end, 0.5);
+            mid.y += 0.45;
+            const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+            const points = curve.getPoints(20);
+            const geom = new THREE.BufferGeometry().setFromPoints(points);
+            const color = (p.material && p.material.color) ? p.material.color.getHex() : COLORS.accent;
+            const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.6 });
+            const line = new THREE.Line(geom, mat);
+            line.renderOrder = 2;
+            line.userData.curve = curve;
+            line.userData.phase = Math.random() * Math.PI * 2;
+
+            // Moving pulse beacon along the line
+            const beacon = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 10, 10),
+                new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 })
+            );
+            line.userData.beacon = beacon;
+            allocationLines.push(line);
+            lineLayer.add(line);
+            lineLayer.add(beacon);
+        }
+    }
+
+    function animateAllocationLines(time) {
+        allocationLines.forEach((line, idx) => {
+            if (!line || !line.material) return;
+            const phase = line.userData.phase || 0;
+            line.material.opacity = 0.45 + 0.3 * (0.5 + 0.5 * Math.sin(time * 3.2 + phase + idx * 0.11));
+
+            const beacon = line.userData.beacon;
+            const curve = line.userData.curve;
+            if (beacon && curve) {
+                const t = (time * 0.22 + (phase * 0.17)) % 1;
+                const pos = curve.getPoint(t);
+                beacon.position.copy(pos);
+                beacon.scale.setScalar(0.9 + 0.35 * Math.sin(time * 5.0 + phase));
+            }
+        });
+    }
+
+    function updateResourceBars(state) {
+        const doctors = state.available_doctors || 0;
+        const totalDoctors = state.total_doctors || 1;
+        const beds = state.available_beds || 0;
+        const totalBeds = state.total_beds || 1;
+
+        updateBar(resourceBars.doctors, doctors, totalDoctors);
+        updateBar(resourceBars.beds, beds, totalBeds);
+        
+        // Update UI stats panels
+        updateUIStats(state);
+    }
+    
+    function updateUIStats(state) {
+        // Patient Flow section
+        const redWaiting = state.red_waiting || 0;
+        const greenWaiting = state.green_waiting || 0;
+        const avgWait = state.avg_wait_time || 0;
+        
+        const redEl = document.getElementById('redWaitingCount');
+        const greenEl = document.getElementById('greenWaitingCount');
+        const avgEl = document.getElementById('avgWaitTime');
+        const waitBar = document.getElementById('waitTimeBar');
+        
+        if (redEl) redEl.textContent = redWaiting;
+        if (greenEl) greenEl.textContent = greenWaiting;
+        if (avgEl) avgEl.textContent = avgWait.toFixed(1) + ' min';
+        
+        // Wait time bar (max 30 min scale)
+        if (waitBar) {
+            const waitPercent = Math.min((avgWait / 30) * 100, 100);
+            waitBar.style.width = waitPercent + '%';
+        }
+        
+        // Resource Status section
+        const systemLoad = state.system_load || 0;
+        const cityBeds = state.city_available_beds || 0;
+        
+        const loadEl = document.getElementById('systemLoad');
+        const loadBar = document.getElementById('systemLoadBar');
+        const loadStatus = document.getElementById('systemLoadStatus');
+        const cityBedsEl = document.getElementById('cityBeds');
+        const cityBedsStatus = document.getElementById('cityBedsStatus');
+        
+        if (loadEl) loadEl.textContent = (systemLoad * 100).toFixed(1) + '%';
+        if (loadBar) {
+            const loadPercent = systemLoad * 100;
+            loadBar.style.width = loadPercent + '%';
+            loadBar.classList.remove('warning', 'critical');
+            if (loadPercent > 80) loadBar.classList.add('critical');
+            else if (loadPercent > 60) loadBar.classList.add('warning');
+        }
+        if (loadStatus) {
+            loadStatus.classList.remove('warning', 'critical');
+            if (systemLoad > 0.8) {
+                loadStatus.textContent = 'Critical Load';
+                loadStatus.classList.add('critical');
+            } else if (systemLoad > 0.6) {
+                loadStatus.textContent = 'High Load';
+                loadStatus.classList.add('warning');
+            } else {
+                loadStatus.textContent = 'Optimal';
+            }
+        }
+        
+        if (cityBedsEl) cityBedsEl.textContent = cityBeds;
+        if (cityBedsStatus) {
+            cityBedsStatus.classList.remove('warning', 'critical', 'good');
+            if (cityBeds < 5) {
+                cityBedsStatus.textContent = 'Critical Shortage';
+                cityBedsStatus.classList.add('critical');
+            } else if (cityBeds < 10) {
+                cityBedsStatus.textContent = 'Limited Capacity';
+                cityBedsStatus.classList.add('warning');
+            } else {
+                cityBedsStatus.textContent = 'Sufficient Capacity';
+                cityBedsStatus.classList.add('good');
+            }
+        }
+        
+        // Update beds dots indicator
+        const bedsDots = document.querySelectorAll('.beds-dot');
+        const bedsRatio = Math.min(cityBeds / 20, 1);
+        const activeDots = Math.ceil(bedsRatio * bedsDots.length);
+        bedsDots.forEach((dot, i) => {
+            dot.classList.toggle('available', i < activeDots);
+        });
+    }
+
+    function updateBar(barGroup, current, total) {
+        if (!barGroup || !barGroup.userData.fillBar) return;
+        
+        const fill = barGroup.userData.fillBar;
+        const maxHeight = barGroup.userData.maxHeight;
+        const ratio = Math.min(current / total, 1);
+        
+        fill.scale.y = ratio * maxHeight;
+        fill.position.y = 0.15 + (ratio * maxHeight) / 2;
+    }
+
+    function setupMouseControls() {
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: orbit.rotX, y: orbit.rotY };
+        let zoom = orbit.zoom;
+
+        const canvas = renderer.domElement;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+
+            rotation.y += deltaX * 0.005;
+            rotation.x += deltaY * 0.005;
+            rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, rotation.x));
+
+            // sync into orbit (so animate() can apply it)
+            orbit.rotX = rotation.x;
+            orbit.rotY = rotation.y;
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener('mouseup', () => isDragging = false);
+        canvas.addEventListener('mouseleave', () => isDragging = false);
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom += e.deltaY * 0.02;
+            zoom = Math.max(10, Math.min(40, zoom));
+            orbit.zoom = zoom;
+        });
+
+        // Keep for backward compatibility (camera preset buttons reference this)
+        canvas.userData = { rotation, getZoom: () => zoom };
+    }
+
+    function animate() {
+        animationId = requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const time = now * 0.001;
+
+        // Animate patients
+        const allPatients = [
+            ...patientGroups.redWaiting,
+            ...patientGroups.greenWaiting,
+            ...patientGroups.redAllocated,
+            ...patientGroups.greenAllocated,
+        ];
+
+        allPatients.forEach((patient) => {
+            if (!patient || !patient.visible) return;
+
+            const wardId = patient.userData.wardId;
+            const isEmergency = wardId === 'EMERGENCY';
+            const isGeneral = wardId === 'GENERAL';
+
+            // RED pulse intensely in EMERGENCY
+            if (isEmergency) {
+                const pulse = 0.65 + 0.45 * (0.5 + 0.5 * Math.sin(time * 5.2 + patient.userData.offset));
+                patient.scale.setScalar(pulse);
+                if (patient.material) patient.material.emissiveIntensity = 1.0 + 0.8 * pulse;
+            } else {
+                patient.scale.setScalar(1.0);
+                if (patient.material) patient.material.emissiveIntensity = 0.75;
+            }
+
+            // GREEN move slowly in GENERAL
+            if (isGeneral && patient.userData.role === 'waiting') {
+                const drift = 0.18;
+                patient.position.x += Math.sin(time * 0.35 + patient.userData.offset) * 0.0025;
+                patient.position.z += Math.cos(time * 0.32 + patient.userData.offset) * 0.0025;
+                patient.position.x = clamp(patient.position.x, WARDS.GENERAL.center.x - WARDS.GENERAL.size.x * drift, WARDS.GENERAL.center.x + WARDS.GENERAL.size.x * drift);
+                patient.position.z = clamp(patient.position.z, WARDS.GENERAL.center.z - WARDS.GENERAL.size.z * drift, WARDS.GENERAL.center.z + WARDS.GENERAL.size.z * drift);
+            }
+
+            // subtle bob
+            patient.position.y = patient.userData.baseY + Math.sin(time * 2.2 + patient.userData.offset) * 0.08;
+            patient.rotation.y += 0.01;
+        });
+
+        // Animate particles
+        if (particleSystem && showParticles) {
+            particleSystem.rotation.y += 0.0005;
+            const positions = particleSystem.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i + 1] += Math.sin(time + positions[i]) * 0.002;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Auto rotate
+        if (autoRotate && hospital) {
+            hospital.rotation.y += 0.002;
+        }
+
+        animateAllocationLines(time);
+        animateBedMonitors(time);
+
+        // Update camera (supports click-to-zoom tween)
+        updateOrbitTween(now);
+        applyOrbitCamera();
+
+        renderer.render(scene, camera);
+    }
+
+    function onResize() {
+        const container = document.getElementById('threeContainer');
+        if (!container) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
+
+    // Global control functions
+    window.toggleAutoRotate = function() {
+        autoRotate = !autoRotate;
+        document.querySelector('.control-panel .btn').textContent = `Auto Rotate: ${autoRotate ? 'ON' : 'OFF'}`;
+    };
+
+    window.toggleParticles = function() {
+        showParticles = !showParticles;
+        if (particleSystem) particleSystem.visible = showParticles;
+        document.querySelectorAll('.control-panel .btn')[1].textContent = `Particles: ${showParticles ? 'ON' : 'OFF'}`;
+    };
+
+    window.resetCamera = function() {
+        selectedWardId = null;
+        hoveredWardId = null;
+        updateWardFocusLabel(null);
+        applyWardHighlights();
+        setShortcutActiveWard(null);
+        document.getElementById('viewMode').textContent = 'Overview View';
+        showTransitionBanner('Overview');
+        startOrbitTween({ rotX: 0.42, rotY: 2.95, zoom: 20, lookAt: { x: 0, y: 2.6, z: -1.1 } });
+    };
+
+    window.focusWard = function(wardId) {
+        const ward = WARDS[wardId];
+        if (!ward) return;
+        const f = ward.focus;
+        selectedWardId = wardId;
+        hoveredWardId = null;
+        updateWardFocusLabel(wardId);
+        applyWardHighlights();
+        setShortcutActiveWard(wardId);
+        document.getElementById('viewMode').textContent = `${wardId} Ward`;
+        showTransitionBanner(`${wardId} Ward`);
+        startOrbitTween({ rotX: f.rotX, rotY: f.rotY, zoom: f.zoom, lookAt: f.lookAt });
+    };
+
+    function showTransitionBanner(text) {
+        const node = document.getElementById('transitionBanner');
+        if (!node) return;
+        node.textContent = String(text || 'Exploring Hospital');
+        node.classList.add('show');
+        if (node.__hideTimer) clearTimeout(node.__hideTimer);
+        node.__hideTimer = setTimeout(() => {
+            node.classList.remove('show');
+        }, 1300);
+    }
+
+    function setCinematicVisualState(isOn) {
+        const container = document.getElementById('threeContainer');
+        const btn = document.getElementById('cinematicBtn');
+        if (container) container.classList.toggle('cinematic-mode', Boolean(isOn));
+        if (btn) btn.textContent = `Cinematic: ${isOn ? 'ON' : 'OFF'}`;
+        if (isOn) {
+            showTransitionBanner('Cinematic Mode');
+        }
+    }
+
+    window.toggleCinematicMode = function() {
+        cinematicMode = !cinematicMode;
+        setCinematicVisualState(cinematicMode);
+    };
+
+    function stopGuidedTour() {
+        if (guidedTourTimer) {
+            clearInterval(guidedTourTimer);
+            guidedTourTimer = null;
+        }
+        const tourBtn = document.getElementById('tourBtn');
+        if (tourBtn) tourBtn.textContent = 'Start Guided Tour';
+    }
+
+    window.toggleGuidedTour = function() {
+        if (guidedTourTimer) {
+            stopGuidedTour();
+            showTransitionBanner('Guided Tour Stopped');
+            return;
+        }
+
+        const sequence = ['GENERAL', 'EMERGENCY', 'ICU', 'OPD'];
+        const tourBtn = document.getElementById('tourBtn');
+        if (tourBtn) tourBtn.textContent = 'Stop Guided Tour';
+
+        guidedTourIndex = 0;
+        focusWard(sequence[guidedTourIndex]);
+        showTransitionBanner(`Tour: ${sequence[guidedTourIndex]}`);
+
+        guidedTourTimer = setInterval(() => {
+            guidedTourIndex += 1;
+            if (guidedTourIndex >= sequence.length) {
+                stopGuidedTour();
+                resetCamera();
+                showTransitionBanner('Tour Complete');
+                return;
+            }
+            focusWard(sequence[guidedTourIndex]);
+            showTransitionBanner(`Tour: ${sequence[guidedTourIndex]}`);
+        }, 2600);
+    };
+
+    window.toggleWireframe = function() {
+        wireframeMode = !wireframeMode;
+        scene.traverse((obj) => {
+            if (obj.isMesh && obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(m => m.wireframe = wireframeMode);
+                } else {
+                    obj.material.wireframe = wireframeMode;
+                }
+            }
+        });
+    };
+
+    window.setCameraPreset = function(preset) {
+        switch(preset) {
+            case 'front':
+                startOrbitTween({ rotX: 0.08, rotY: 0.0, zoom: 22, lookAt: { x: 0, y: 3.2, z: 0.5 } });
+                break;
+            case 'top':
+                startOrbitTween({ rotX: 1.02, rotY: 0.0, zoom: 20, lookAt: { x: 0, y: 2.2, z: 0 } });
+                break;
+            case 'side':
+                startOrbitTween({ rotX: 0.12, rotY: Math.PI / 2, zoom: 22, lookAt: { x: 0, y: 3.2, z: 0 } });
+                break;
+        }
+        document.getElementById('viewMode').textContent = `${preset.charAt(0).toUpperCase() + preset.slice(1)} View`;
+    };
+
+    // Data polling
+    async function fetchAndUpdate() {
+        try {
+            const res = await fetch('/api/get_state');
+            const data = await res.json();
+            if (data.success && data.state) {
+                updatePatientVisualization(data.state);
+                updateResourceBars(data.state);
+            }
+        } catch (e) {
+            console.warn('Failed to fetch state:', e);
+        }
+    }
+
+    // Initialize
+    async function boot() {
+        setLoading('Initializing 3D Scene...');
+        try {
+            const ok = await ensureThree();
+            if (!ok) {
+                showError('Could not load Three.js. Local vendor + CDN fallbacks failed to load.');
+                return;
+            }
+            init();
+        } catch (e) {
+            showError((e && e.message) ? e.message : 'Failed to initialize 3D scene.');
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+
+    // Poll for updates
+    setInterval(fetchAndUpdate, 3000);
+    fetchAndUpdate();
+})();
+</script>
+{% endblock %}

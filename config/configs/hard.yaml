@@ -1,0 +1,92 @@
+description: Hard difficulty hospital scenario
+
+environment:
+  duration: 336
+  time_step: 1
+  random_seed: null
+
+  resources:
+    icu_beds: 30
+    target_utilization: 0.90
+    equipment_per_bed:
+      - ventilator
+      - monitor
+      - infusion_pump
+      - defibrillator
+      - dialysis_machine
+    shared_equipment:
+      portable_xray: 3
+      ecmo_machines: 2
+    maintenance_schedule: random
+    equipment_failure_rate: 0.02
+    surge_capacity: 5
+
+  staff:
+    doctors: 15
+    max_patients_per_doctor: 5
+    specialties:
+      - general
+      - cardiology
+      - neurology
+      - trauma
+      - pediatrics
+      - icu_specialist
+    shift_duration: 12
+    overtime_threshold: 60
+    burnout_factor: true
+
+  patients:
+    arrival_rate: 7.0
+    arrival_pattern: burst
+    burst_probability: 0.1
+    burst_multiplier: 3.0
+    priority_distribution:
+      critical: 0.20
+      high: 0.30
+      medium: 0.30
+      low: 0.20
+    avg_stay_duration: 96
+    condition_deterioration_rate: 0.05
+    readmission_rate: 0.10
+    complication_rate: 0.08
+
+  events:
+    enable_emergencies: true
+    emergency_frequency: 0.05
+    enable_mass_casualty: true
+    mass_casualty_probability: 0.02
+
+state:
+  state_dim: 256
+  include_patient_history: true
+  history_length: 24
+  include_doctor_workload: true
+  include_doctor_fatigue: true
+  include_resource_queue: true
+  include_equipment_status: true
+  include_time_features: true
+  include_predicted_arrivals: true
+  normalization: standardize
+
+reward:
+  reward_weights:
+    patient_outcome: 1.5
+    resource_utilization: 0.4
+    waiting_time: -0.5
+    workload_balance: 0.3
+    operational_cost: -0.2
+    emergency_response: 0.5
+    staff_wellbeing: 0.2
+  use_reward_shaping: true
+  target_utilization: 0.90
+  max_wait_threshold: 1.5
+  gamma: 0.99
+  death_penalty: -10.0
+
+agent:
+  action_space_type: multi_discrete
+  action_dimensions: [10, 10, 5, 5]
+  learning_rate: 0.0001
+  exploration_schedule: exponential_decay
+  recurrent_architecture: true
+  attention_mechanism: true

@@ -1,0 +1,1165 @@
+{% extends "base.html" %}
+
+{% block title %}Clinical Ops | Smart Hospital{% endblock %}
+
+{% block head_extra %}
+<style>
+  .clinical-shell { gap: 18px; }
+  .clinical-hero { padding: 18px 20px; }
+
+  .future-row { padding: 12px 14px; gap: 14px; }
+  .future-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .dept-pill {
+    font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase;
+    border-radius: 999px; padding: 4px 8px; border: 1px solid transparent;
+  }
+  .dept-pill.lab { color: #1d4ed8; background: rgba(59, 130, 246, 0.16); border-color: rgba(59, 130, 246, 0.32); }
+  .dept-pill.therapy { color: #7c3aed; background: rgba(139, 92, 246, 0.16); border-color: rgba(139, 92, 246, 0.34); }
+  .dept-pill.dialysis { color: #0f766e; background: rgba(20, 184, 166, 0.16); border-color: rgba(20, 184, 166, 0.34); }
+  .dept-pill.ot { color: #92400e; background: rgba(245, 158, 11, 0.16); border-color: rgba(245, 158, 11, 0.34); }
+  .dept-pill.radiology { color: #be123c; background: rgba(244, 63, 94, 0.14); border-color: rgba(244, 63, 94, 0.30); }
+
+  .next-ghost {
+    border: 1px solid rgba(100, 116, 139, 0.35); background: rgba(255, 255, 255, 0.62); color: #334155;
+    border-radius: 12px; padding: 7px 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer; transition: all .2s ease;
+  }
+  .next-ghost:hover {
+    transform: translateY(-1px); border-color: rgba(59, 130, 246, 0.45); color: #1d4ed8; background: rgba(239, 246, 255, 0.9);
+  }
+
+  .live-shell {
+    position: relative; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.78); padding: 14px; overflow: hidden;
+  }
+  .live-shell::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 18px; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.35), rgba(59, 130, 246, 0));
+  }
+  .live-shell.is-live::before { opacity: 1; animation: clinicalPulse 1.9s ease-in-out infinite; }
+  @keyframes clinicalPulse {
+    0%, 100% { transform: scale(1); filter: blur(0px); }
+    50% { transform: scale(1.018); filter: blur(0.2px); }
+  }
+  .live-success-btn { margin-top: 12px; width: 100%; justify-content: center; font-weight: 900; }
+
+  .audit-timeline {
+    margin-top: 10px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-left: 28px;
+  }
+  .audit-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #e2e8f0;
+  }
+  .audit-item {
+    position: relative; display: grid; grid-template-columns: 108px 1fr; gap: 14px;
+    padding: 14px 12px 14px 14px; border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.25); background: rgba(255, 255, 255, 0.72);
+  }
+  .audit-dot {
+    position: absolute;
+    left: -24px;
+    top: 20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.22);
+    background: #64748b;
+  }
+  .audit-dot.success { background: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.24); }
+  .audit-dot.triggered { background: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.24); }
+  .audit-dot.warning { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.24); }
+  .audit-time { font-size: 11px; font-weight: 600; color: #94a3b8; letter-spacing: .03em; }
+  .audit-title { font-weight: 800; color: #1e293b; }
+  .audit-meta { margin-top: 4px; color: #64748b; font-size: 12px; }
+
+  /* ========== Patient Queue Styles ========== */
+  .patient-queue { display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; }
+  .queue-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.9); border: 1px solid rgba(148,163,184,0.2); transition: all 0.2s ease; }
+  .queue-item:hover { transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .queue-item.priority-red { border-left: 4px solid #ef4444; background: linear-gradient(90deg, rgba(239,68,68,0.08), transparent); }
+  .queue-item.priority-yellow { border-left: 4px solid #f59e0b; background: linear-gradient(90deg, rgba(245,158,11,0.08), transparent); }
+  .queue-item.priority-green { border-left: 4px solid #22c55e; }
+  .queue-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #f1f5f9; }
+  .queue-avatar.red { background: rgba(239,68,68,0.15); animation: pulse-bg 1.5s infinite; }
+  .queue-avatar.yellow { background: rgba(245,158,11,0.15); }
+  .queue-avatar.green { background: rgba(34,197,94,0.15); }
+  @keyframes pulse-bg { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  .queue-info { flex: 1; }
+  .queue-name { font-weight: 700; color: #1e293b; font-size: 14px; }
+  .queue-details { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .queue-rank { display: inline-flex; align-items: center; justify-content: center; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; color: #475569; background: rgba(148,163,184,0.16); }
+  .queue-wait { text-align: right; }
+  .queue-wait-time { font-size: 18px; font-weight: 800; color: #1e293b; }
+  .queue-wait-time.new { color: #0f766e; font-size: 12px; letter-spacing: 0.06em; }
+  .queue-wait-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ========== Doctor Schedule Styles ========== */
+  .doctor-schedule { display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; }
+  .doctor-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.8); border: 1px solid rgba(148,163,184,0.18); transition: all 0.2s ease; }
+  .doctor-item:hover { background: rgba(255,255,255,1); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .doctor-item.on-duty { border-left: 3px solid #22c55e; }
+  .doctor-item.in-surgery { border-left: 3px solid #f59e0b; }
+  .doctor-item.off-duty { opacity: 0.6; }
+  .doctor-avatar { font-size: 24px; }
+  .doctor-info { flex: 1; }
+  .doctor-name { font-weight: 700; color: #1e293b; font-size: 13px; }
+  .doctor-specialty { font-size: 11px; color: #64748b; }
+  .doctor-status { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .doctor-status.on-duty { background: rgba(34,197,94,0.15); color: #16a34a; }
+  .doctor-status.in-surgery { background: rgba(245,158,11,0.15); color: #d97706; }
+  .doctor-status.off-duty { background: rgba(148,163,184,0.15); color: #64748b; }
+
+  /* ========== Emergency Timeline Styles ========== */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-left: 28px;
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #e2e8f0;
+  }
+  .timeline-item {
+    position: relative;
+    padding: 14px 14px 14px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(255, 255, 255, 0.74);
+  }
+  .timeline-dot { position: absolute; left: -24px; top: 20px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px rgba(148,163,184,0.28); }
+  .timeline-dot.critical { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.3); animation: pulse-dot 1.5s infinite; }
+  .timeline-dot.triggered { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.28); }
+  .timeline-dot.warning { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.3); }
+  .timeline-dot.success { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
+  .timeline-dot.info { background: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+  @keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+  .timeline-content { }
+  .timeline-time { font-size: 11px; color: #94a3b8; font-weight: 600; letter-spacing: 0.03em; }
+  .timeline-title { font-weight: 700; color: #1e293b; font-size: 13px; margin-top: 2px; }
+  .timeline-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  /* ========== Advanced Intelligence Split Section ========== */
+  .intel-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+  .intel-card {
+    grid-column: span 6;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(241,245,249,0.86));
+    padding: 12px;
+    min-height: 150px;
+  }
+  .intel-card h4 { margin: 0 0 8px; font-size: 14px; color: #0f172a; }
+  .intel-line { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 5px 0; border-bottom: 1px dashed rgba(148,163,184,0.28); }
+  .intel-line strong { color: #0f172a; }
+  .intel-meter { height: 7px; border-radius: 999px; background: rgba(148,163,184,0.25); overflow: hidden; margin-top: 8px; }
+  .intel-meter > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #10b981, #22c55e); transition: width .35s ease, background .35s ease; }
+  .intel-meter > span.warn { background: linear-gradient(90deg, #f59e0b, #f97316); }
+  .intel-meter > span.critical { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .intel-whatif { display: grid; gap: 7px; }
+  .intel-whatif label { font-size: 12px; color: #334155; font-weight: 600; display: grid; gap: 4px; }
+  .intel-strip { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+  .intel-dot { height: 11px; border-radius: 4px; background: rgba(148,163,184,0.25); }
+  .intel-dot.l1 { background: rgba(234,179,8,0.65); }
+  .intel-dot.l2 { background: rgba(249,115,22,0.75); }
+  .intel-dot.l3 { background: rgba(239,68,68,0.9); }
+  .intel-network { display: grid; gap: 7px; }
+  .intel-network-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 10px;
+    background: rgba(248,250,252,0.9);
+    padding: 8px 10px;
+  }
+  .intel-network-item strong { color: #0f172a; }
+  .intel-mini-chart { height: 70px; margin-top: 6px; }
+  .intel-risk-wrap { height: 150px; }
+  #clinicalRiskRadar { width: 100%; height: 100%; }
+
+  @media (max-width: 980px) {
+    .intel-card { grid-column: span 12; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid dashboard-grid clinical-shell">
+  <section class="card clinical-hero" style="grid-column: span 12;">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div>
+        <h3 style="margin:0;">Clinical Ops</h3>
+        <div class="muted" style="margin-top:6px;">Patient queue management, doctor scheduling, and emergency timeline.</div>
+      </div>
+      <div class="row" style="gap:10px;">
+        <button class="btn" onclick="forceClinicalSync()">Refresh</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Patient Queue Section -->
+  <section class="card" style="grid-column: span 6;" id="patientQueueCard">
+    <div class="card-head" style="margin-bottom: 12px;">
+      <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Patient Queue</h3>
+      <span class="card-summary" id="queueSummary" style="font-size:12px;color:#64748b;">0 waiting</span>
+    </div>
+    <div class="patient-queue" id="patientQueue">
+      <p class="muted">Loading queue...</p>
+    </div>
+  </section>
+
+  <!-- Doctor Schedule Section -->
+  <section class="card" style="grid-column: span 6;" id="doctorScheduleCard">
+    <div class="card-head" style="margin-bottom: 12px;">
+      <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Doctor Schedule</h3>
+      <span class="card-summary" id="doctorSummary" style="font-size:12px;color:#64748b;">0 on duty</span>
+    </div>
+    <div class="doctor-schedule" id="doctorSchedule">
+      <p class="muted">Loading schedule...</p>
+    </div>
+  </section>
+
+  <!-- Emergency Timeline Section -->
+  <section class="card" style="grid-column: span 12;" id="emergencyTimelineCard">
+    <div class="card-head" style="margin-bottom: 12px;">
+      <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Emergency Timeline</h3>
+      <span class="card-summary" id="timelineSummary" style="font-size:12px;color:#64748b;">Live</span>
+    </div>
+    <div class="timeline" id="emergencyTimeline">
+      <p class="muted">Loading timeline...</p>
+    </div>
+  </section>
+
+  <section class="card" style="grid-column: span 12;" id="advancedIntelligenceCard">
+    <div class="card-head" style="margin-bottom: 12px;">
+      <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>Advanced Intelligence Hub</h3>
+      <span class="card-summary" id="advIntelSummary" style="font-size:12px;color:#64748b;">Balanced</span>
+    </div>
+    <div class="intel-grid">
+      <article class="intel-card">
+        <h4>Predictive + What-If</h4>
+        <div class="intel-line"><span>10-min load</span><strong id="advLoad10">0%</strong></div>
+        <div class="intel-meter"><span id="advLoad10Meter"></span></div>
+        <div class="intel-line"><span>30-min load</span><strong id="advLoad30">0%</strong></div>
+        <div class="intel-meter"><span id="advLoad30Meter"></span></div>
+        <div class="intel-whatif" style="margin-top:8px;">
+          <label>Incoming Surge
+            <input type="range" id="advWhatIfSurge" min="0" max="20" step="1" value="0" oninput="updateAdvancedWhatIf()" />
+          </label>
+          <label>Extra Doctors
+            <input type="range" id="advWhatIfDoctors" min="0" max="6" step="1" value="0" oninput="updateAdvancedWhatIf()" />
+          </label>
+        </div>
+        <p class="muted" id="advWhatIfText" style="margin-top:8px;">Projected queue pressure: baseline.</p>
+      </article>
+
+      <article class="intel-card">
+        <h4>Explainability + Confidence</h4>
+        <div class="intel-line"><span>Primary Reason</span><strong id="advReason">-</strong></div>
+        <div class="intel-line"><span>Risk if Ignored</span><strong id="advRisk">-</strong></div>
+        <div class="intel-line"><span>Confidence</span><strong id="advConfidence">-</strong></div>
+        <div class="intel-mini-chart" id="advConfidenceChart"></div>
+      </article>
+
+      <article class="intel-card">
+        <h4>Incident Heat + Alert Ranking</h4>
+        <div class="intel-strip" id="advIncidentStrip"></div>
+        <p class="muted" id="advIncidentText" style="margin:8px 0 6px;">No active incident spikes.</p>
+        <ol id="advAlertRanking" style="margin:0;padding-left:18px;display:grid;gap:6px;"></ol>
+      </article>
+
+      <article class="intel-card">
+        <h4>Network + Risk Radar</h4>
+        <div class="intel-network" id="advNetworkList"></div>
+        <div class="intel-risk-wrap" style="margin-top:8px;">
+          <svg id="clinicalRiskRadar" viewBox="0 0 220 180" aria-label="Clinical risk radar"></svg>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="card" style="grid-column: span 7;">
+    <h3>📅 Future Schedule (Next 48h)</h3>
+    <div class="muted">Click an item to run a smart resource check.</div>
+    <div id="futureList" class="facility-list" style="margin-top:10px;"></div>
+  </section>
+
+  <section class="card" style="grid-column: span 5;">
+    <h3>⚡ Live Session Tracker</h3>
+    <div class="muted">Shows the current session in progress with a pulsing indicator.</div>
+    <div id="liveCard" style="margin-top:10px;"></div>
+  </section>
+
+  <section class="card" style="grid-column: span 12;">
+    <h3>✅ Past Events (Last 24h)</h3>
+    <div id="pastList" class="audit-timeline" style="max-height: 320px; overflow-y:auto;"></div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ===== Clinical Ops demo data model (client-side) =====
+  const CLINICAL_STORAGE_KEY = 'hospital_clinical_ops_v1';
+  const BONUS_REWARD_PER_SUCCESS = 12.5;
+
+  const __clinical = {
+    future: [],
+    past: [],
+    live: null,
+    queue: [],
+    lastReminderSpokenAt: 0,
+    timer: null,
+    minuteTimeout: null,
+    minuteInterval: null,
+  };
+
+  const __advIntel = {
+    state: {},
+    confidenceHistory: [],
+    incidentHistory: [],
+  };
+
+  function setClinicalText(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = String(value);
+  }
+
+  function setClinicalMeter(id, percent, level) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const bounded = Math.max(0, Math.min(100, Number(percent) || 0));
+    el.style.width = `${bounded.toFixed(1)}%`;
+    el.classList.remove('warn', 'critical');
+    if (level === 'critical') el.classList.add('critical');
+    else if (level === 'warn') el.classList.add('warn');
+  }
+
+  function updateAdvancedWhatIf() {
+    const state = __advIntel.state || {};
+    const surge = Number(document.getElementById('advWhatIfSurge')?.value ?? 0);
+    const extraDoctors = Number(document.getElementById('advWhatIfDoctors')?.value ?? 0);
+    const waiting = Number(state.waiting ?? 0);
+    const doctors = Number(state.available_doctors ?? 0) + extraDoctors;
+    const projectedQueue = Math.max(0, waiting + surge - Math.max(0, doctors * 2));
+    const limit = Math.max(8, Number(state.queue_soft_limit ?? 12));
+    const pressure = Math.min(100, Math.round((projectedQueue / limit) * 100));
+    const status = pressure > 85 ? 'critical' : pressure > 60 ? 'watch' : 'stable';
+    setClinicalText('advWhatIfText', `Projected queue pressure: ${pressure}% (${status}) with +${surge} arrivals and +${extraDoctors} doctors.`);
+  }
+
+  function renderClinicalRadar(metrics) {
+    const svg = document.getElementById('clinicalRiskRadar');
+    if (!svg) return;
+    const labels = ['Queue', 'Staff', 'Beds', 'Network', 'Crisis'];
+    const cx = 110;
+    const cy = 88;
+    const radius = 62;
+    const rings = [20, 40, 60, 80, 100];
+
+    const ringSvg = rings.map((r) => `<polygon points="${labels.map((_, i) => {
+      const angle = (-90 + (i * 360) / labels.length) * (Math.PI / 180);
+      const rr = (radius * r) / 100;
+      return `${(cx + Math.cos(angle) * rr).toFixed(1)},${(cy + Math.sin(angle) * rr).toFixed(1)}`;
+    }).join(' ')}" fill="none" stroke="rgba(148,163,184,0.32)" stroke-width="1" />`).join('');
+
+    const axisSvg = labels.map((label, i) => {
+      const angle = (-90 + (i * 360) / labels.length) * (Math.PI / 180);
+      const x = cx + Math.cos(angle) * radius;
+      const y = cy + Math.sin(angle) * radius;
+      const lx = cx + Math.cos(angle) * (radius + 16);
+      const ly = cy + Math.sin(angle) * (radius + 16);
+      return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(148,163,184,0.4)" stroke-width="1" /><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#475569" font-size="9" text-anchor="middle">${label}</text>`;
+    }).join('');
+
+    const poly = labels.map((_, i) => {
+      const angle = (-90 + (i * 360) / labels.length) * (Math.PI / 180);
+      const rr = (radius * (metrics[i] || 0)) / 100;
+      return `${(cx + Math.cos(angle) * rr).toFixed(1)},${(cy + Math.sin(angle) * rr).toFixed(1)}`;
+    }).join(' ');
+
+    svg.innerHTML = `${ringSvg}${axisSvg}<polygon points="${poly}" fill="rgba(14,165,233,0.26)" stroke="#0284c7" stroke-width="2" />`;
+  }
+
+  function updateAdvancedIntelligence(state, frames) {
+    __advIntel.state = state || {};
+    const waiting = Number(state?.waiting ?? 0);
+    const doctors = Number(state?.available_doctors ?? 0);
+    const beds = Number(state?.available_beds ?? 0);
+    const totalBeds = Math.max(1, Number(state?.total_beds ?? 1));
+    const redWaiting = Number(state?.red_waiting ?? 0);
+    const cityBeds = Number(state?.city_available_beds ?? 0);
+    const crisis = !!state?.crisis_active;
+
+    const load10 = Math.min(100, (waiting / Math.max(8, doctors * 1.5 + beds * 0.4)) * 100);
+    const load30 = Math.min(100, ((waiting + redWaiting * 2) / Math.max(8, doctors * 2.8 + beds * 0.9)) * 100);
+    const l10Level = load10 > 88 ? 'critical' : load10 > 65 ? 'warn' : 'good';
+    const l30Level = load30 > 88 ? 'critical' : load30 > 65 ? 'warn' : 'good';
+    setClinicalText('advLoad10', `${Math.round(load10)}%`);
+    setClinicalText('advLoad30', `${Math.round(load30)}%`);
+    setClinicalMeter('advLoad10Meter', load10, l10Level);
+    setClinicalMeter('advLoad30Meter', load30, l30Level);
+
+    const reason = doctors <= 0
+      ? 'No doctors currently available'
+      : beds <= 0
+        ? 'No beds available for intake'
+        : waiting > 10
+          ? 'Queue is above safe threshold'
+          : 'Flow remains stable';
+    const riskText = crisis ? 'Escalation risk is high' : load30 > 80 ? 'SLA breach likely if no action' : 'Operational downside is limited';
+    const confidence = Math.max(8, Math.min(99, Number(state?.ai_confidence ?? state?.ai_suggestion_confidence ?? (100 - (load10 + load30) * 0.4))));
+    setClinicalText('advReason', reason);
+    setClinicalText('advRisk', riskText);
+    setClinicalText('advConfidence', `${confidence.toFixed(0)}%`);
+
+    __advIntel.confidenceHistory.push(confidence);
+    if (__advIntel.confidenceHistory.length > 20) __advIntel.confidenceHistory.shift();
+    const chart = document.getElementById('advConfidenceChart');
+    if (chart) {
+      const vals = __advIntel.confidenceHistory;
+      const w = 220, h = 70, p = 6;
+      const pts = vals.map((v, i) => {
+        const x = p + (i / Math.max(1, vals.length - 1)) * (w - p * 2);
+        const y = h - p - (v / 100) * (h - p * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      chart.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><rect x="0" y="0" width="${w}" height="${h}" fill="rgba(241,245,249,0.8)" rx="10" /><polyline points="${pts}" fill="none" stroke="#0ea5e9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
+    }
+
+    const incidentLevel = crisis ? 3 : (redWaiting > 1 || load30 > 80 ? 2 : (load10 > 55 ? 1 : 0));
+    __advIntel.incidentHistory.push(incidentLevel);
+    if (__advIntel.incidentHistory.length > 24) __advIntel.incidentHistory.shift();
+    const strip = document.getElementById('advIncidentStrip');
+    if (strip) {
+      const padded = Array.from({ length: 24 }, (_, idx) => __advIntel.incidentHistory[idx] ?? 0);
+      strip.innerHTML = padded.map((lvl) => `<span class="intel-dot ${lvl > 0 ? `l${lvl}` : ''}"></span>`).join('');
+    }
+    setClinicalText('advIncidentText', incidentLevel >= 2 ? 'Incident intensity elevated in recent cycle.' : incidentLevel === 1 ? 'Minor spikes observed.' : 'No active incident spikes.');
+
+    const network = document.getElementById('advNetworkList');
+    if (network) {
+      const nodes = [
+        { name: 'Central Hub', beds, eta: '4m' },
+        { name: 'North Wing', beds: Math.max(0, cityBeds - 4), eta: '11m' },
+        { name: 'Metro Care', beds: Math.max(0, cityBeds), eta: '17m' }
+      ];
+      network.innerHTML = nodes.map((n) => `<div class="intel-network-item"><div><strong>${n.name}</strong><div class="muted">ETA ${n.eta}</div></div><div>${n.beds} beds</div></div>`).join('');
+    }
+
+    const rankings = document.getElementById('advAlertRanking');
+    if (rankings) {
+      const fromFrames = Array.isArray(frames) ? frames.slice(-6).reverse() : [];
+      const alerts = fromFrames
+        .filter((f) => String(f?.event || '').includes('CRISIS') || String(f?.event || '').includes('TRIGGERED') || String(f?.event || '').includes('ESCALATE'))
+        .slice(0, 4)
+        .map((f, i) => `<li><strong>${90 - i * 10}</strong> - ${String(f?.event || 'ALERT')} (${String(f?.source || 'system')})</li>`);
+      rankings.innerHTML = alerts.length ? alerts.join('') : '<li>No high-priority alerts in recent window.</li>';
+    }
+
+    const metrics = [
+      Math.min(100, (waiting / Math.max(8, Number(state?.queue_soft_limit ?? 12))) * 100),
+      Math.min(100, (Math.max(0, 4 - doctors) / 4) * 100),
+      Math.min(100, ((Math.max(0, totalBeds - beds)) / totalBeds) * 100),
+      Math.min(100, (Math.max(0, 10 - cityBeds) / 10) * 100),
+      crisis ? 95 : 20
+    ];
+    renderClinicalRadar(metrics);
+
+    const summary = document.getElementById('advIntelSummary');
+    if (summary) {
+      const criticalCount = [l10Level, l30Level].filter((x) => x === 'critical').length + (crisis ? 1 : 0);
+      summary.textContent = criticalCount > 1 ? 'Surge' : criticalCount === 1 ? 'Watch' : 'Balanced';
+    }
+
+    updateAdvancedWhatIf();
+  }
+
+  function nowTs() { return Date.now(); }
+  function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+  function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function newId(prefix) { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+  function fmtHHMM(ts) {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function loadClinical() {
+    try {
+      const raw = localStorage.getItem(CLINICAL_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function saveClinical(model) {
+    try { localStorage.setItem(CLINICAL_STORAGE_KEY, JSON.stringify(model)); } catch (_) {}
+  }
+
+  function seedClinicalIfMissing() {
+    const existing = loadClinical();
+    if (existing) {
+      __clinical.future = Array.isArray(existing.future) ? existing.future : [];
+      __clinical.past = Array.isArray(existing.past) ? existing.past : [];
+      __clinical.live = existing.live || null;
+      __clinical.queue = Array.isArray(existing.queue) ? existing.queue : [];
+      // Demo UX: always keep some items in Future so the schedule never looks blank.
+      ensureFutureHasItems();
+      persistClinical();
+      return;
+    }
+
+    const base = nowTs();
+    __clinical.future = [
+      { id: 'sched-1', title: 'Thalassemia Screening (Batch A)', when: base + 20 * 60 * 1000, kind: 'LAB' },
+      { id: 'sched-2', title: 'Physiotherapy Session', when: base + 3 * 60 * 60 * 1000, kind: 'THERAPY' },
+      { id: 'sched-3', title: 'Weekly Dialysis', when: base + 26 * 60 * 60 * 1000, kind: 'DIALYSIS' },
+    ];
+    __clinical.past = [
+      { id: 'past-1', title: 'Radiology Scan - Wing B', ended: base - 2 * 60 * 60 * 1000, status: 'SUCCESS' },
+      { id: 'past-2', title: 'Physio Session - Room 1', ended: base - 5 * 60 * 60 * 1000, status: 'SUCCESS' },
+    ];
+    __clinical.live = {
+      id: 'live-1',
+      title: 'Chemotherapy Room 2',
+      started: base - 8 * 60 * 1000,
+      durationMs: 18 * 60 * 1000,
+    };
+    __clinical.queue = [];
+    saveClinical({ future: __clinical.future, past: __clinical.past, live: __clinical.live, queue: __clinical.queue });
+  }
+
+  function ensureFutureHasItems(minCount = 3) {
+    // If user consumed everything via NEXT, repopulate with fresh demo items.
+    // Keep only items within the next 48h.
+    const now = nowTs();
+    const maxWhen = now + 48 * 60 * 60 * 1000;
+    __clinical.future = (__clinical.future || []).filter(x => Number(x.when) >= now - 5 * 60 * 1000 && Number(x.when) <= maxWhen);
+
+    const templates = [
+      { title: 'Thalassemia Screening (Batch A)', kind: 'LAB' },
+      { title: 'Physiotherapy Session', kind: 'THERAPY' },
+      { title: 'Weekly Dialysis', kind: 'DIALYSIS' },
+      { title: 'OT Prep & Sterilization', kind: 'OT' },
+      { title: 'CT Scan Queue - Wing C', kind: 'RADIOLOGY' },
+    ];
+
+    let guard = 0;
+    while ((__clinical.future?.length || 0) < minCount && guard < 10) {
+      guard++;
+      const idx = (__clinical.future.length + randInt(0, 2)) % templates.length;
+      const t = templates[idx];
+      const minutesFromNow = (__clinical.future.length === 0) ? 15 : (45 + __clinical.future.length * 70);
+      const when = now + minutesFromNow * 60 * 1000;
+
+      __clinical.future.push({
+        id: newId('sched'),
+        title: t.title,
+        when,
+        kind: t.kind,
+      });
+    }
+  }
+
+  function updateCompleteBtn() {
+    const btn = document.getElementById('completeBtn');
+    if (!btn) return;
+    const disabled = !__clinical.live;
+    btn.disabled = disabled;
+    btn.style.opacity = disabled ? '0.55' : '1';
+    btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
+  }
+
+  function minuteKey(ts) {
+    const d = new Date(Number(ts));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day} ${hh}:${mm}`;
+  }
+
+  function persistClinical() {
+    saveClinical({
+      future: __clinical.future,
+      past: __clinical.past,
+      live: __clinical.live,
+      queue: __clinical.queue,
+    });
+  }
+
+  function rerenderAll() {
+    renderFuture();
+    renderLive();
+    renderPast();
+    updateCompleteBtn();
+  }
+
+  function removeFutureById(id) {
+    const idx = __clinical.future.findIndex(x => String(x.id) === String(id));
+    if (idx < 0) return null;
+    const removed = __clinical.future[idx];
+    __clinical.future.splice(idx, 1);
+    return removed;
+  }
+
+  function normalizeLiveFromItem(item, startedTs) {
+    const durMin = randInt(12, 24);
+    return {
+      id: `live-${Date.now()}`,
+      title: item.title,
+      kind: item.kind,
+      started: startedTs,
+      durationMs: durMin * 60 * 1000,
+      sourceWhen: item.when,
+    };
+  }
+
+  function queueItem(item, meta) {
+    __clinical.queue.push({
+      ...item,
+      queuedAt: nowTs(),
+      queuedReason: meta?.reason || 'LIVE_BUSY',
+    });
+  }
+
+  function speakLiveTransition(item, meta) {
+    const kind = item.kind ? ` ${item.kind}` : '';
+    const prefix = meta?.manual ? 'Manual override:' : 'Scheduled event:';
+    window.HospitalVoice && window.HospitalVoice.speak(
+      `${prefix} ${item.title}${kind} is now live.`,
+      { cooldownMs: 6500 }
+    );
+  }
+
+  function pushItemToLive(item, meta) {
+    __clinical.live = normalizeLiveFromItem(item, nowTs());
+    persistClinical();
+    speakLiveTransition(item, meta);
+    showGlassToast(`⚡ Now LIVE: ${item.title}`);
+    rerenderAll();
+  }
+
+  function startNextFromQueueIfIdle(meta) {
+    if (__clinical.live) return;
+    if (!__clinical.queue.length) return;
+    __clinical.queue.sort((a, b) => Number(a.when) - Number(b.when));
+    const next = __clinical.queue.shift();
+    pushItemToLive(next, { ...(meta || {}), fromQueue: true });
+  }
+
+  function promoteDueFutureEvents() {
+    // Due definition: same *local* minute as now.
+    const now = nowTs();
+    const nowK = minuteKey(now);
+    const due = __clinical.future
+      .filter(item => minuteKey(item.when) === nowK)
+      .slice()
+      .sort((a, b) => Number(a.when) - Number(b.when));
+
+    if (!due.length) {
+      startNextFromQueueIfIdle({ manual: false, reason: 'AUTO_QUEUE_DRAIN' });
+      return;
+    }
+
+    for (const item of due) {
+      // Remove from future exactly once.
+      const removed = removeFutureById(item.id);
+      if (!removed) continue;
+
+      if (__clinical.live) {
+        queueItem(removed, { reason: 'AUTO_DUE_LIVE_BUSY' });
+      } else {
+        pushItemToLive(removed, { manual: false, reason: 'AUTO_DUE' });
+      }
+    }
+
+    persistClinical();
+    rerenderAll();
+  }
+
+  function startMinuteScheduler() {
+    try {
+      if (__clinical.minuteTimeout) clearTimeout(__clinical.minuteTimeout);
+      if (__clinical.minuteInterval) clearInterval(__clinical.minuteInterval);
+    } catch (_) {}
+
+    const scheduleInterval = () => {
+      // Run immediately at minute boundary, then every minute.
+      promoteDueFutureEvents();
+      __clinical.minuteInterval = setInterval(promoteDueFutureEvents, 60_000);
+    };
+
+    const now = new Date();
+    const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    __clinical.minuteTimeout = setTimeout(scheduleInterval, clamp(msToNextMinute, 250, 60_000));
+  }
+
+  function showGlassToast(text) {
+    try {
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        top: 18px;
+        left: 50%;
+        transform: translate(-50%, -8px);
+        z-index: 9999;
+        max-width: 680px;
+        width: calc(100% - 40px);
+        color: rgba(30, 41, 59, 0.95);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(100, 116, 139, 0.30);
+        padding: 12px 14px;
+        border-radius: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transition: opacity .22s ease, transform .22s ease;
+        font-weight: 800;
+        letter-spacing: .01em;
+      `;
+      toast.textContent = text;
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translate(-50%, 0)';
+      });
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -8px)';
+        setTimeout(() => toast.remove(), 240);
+      }, 1800);
+    } catch (_) {}
+  }
+
+  function renderFuture() {
+    const el = document.getElementById('futureList');
+    if (!el) return;
+    const pillClassByKind = {
+      LAB: 'lab',
+      THERAPY: 'therapy',
+      DIALYSIS: 'dialysis',
+      OT: 'ot',
+      RADIOLOGY: 'radiology'
+    };
+    el.innerHTML = __clinical.future
+      .slice()
+      .sort((a, b) => Number(a.when) - Number(b.when))
+      .map(item => {
+        const label = `${item.title}`;
+        const time = fmtHHMM(item.when);
+        const kind = String(item.kind || 'LAB').toUpperCase();
+        const pillCls = pillClassByKind[kind] || 'lab';
+        return `
+          <div class="facility-row future-row" role="button" tabindex="0" onclick="resourceCheck('${item.id}')">
+            <div class="facility-left future-main">
+              <span class="facility-name">📅 ${label}</span>
+              <span class="dept-pill ${pillCls}">${kind}</span>
+            </div>
+            <div class="facility-meta">
+              <span class="muted" style="font-size:12px; font-weight:800;">${time}</span>
+              <button class="next-ghost" onclick="event.stopPropagation(); pushFutureToLive('${item.id}', true)">▶ Start Next</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+  }
+
+  function renderPast() {
+    const el = document.getElementById('pastList');
+    if (!el) return;
+
+    const cutoff = nowTs() - 24 * 60 * 60 * 1000;
+    const past = __clinical.past.filter(p => Number(p.ended) >= cutoff);
+    if (!past.length) {
+      el.innerHTML = '<p class="muted" style="margin:0;">No past events in the last 24h.</p>';
+      return;
+    }
+
+    el.innerHTML = past
+      .slice()
+      .sort((a, b) => Number(b.ended) - Number(a.ended))
+      .map(p => {
+        const t = fmtHHMM(p.ended);
+        const status = String(p.status || 'SUCCESS').toUpperCase();
+        const statusDot = status.includes('TRIGGERED') || status.includes('FAILED') ? 'triggered' : (status.includes('WARN') ? 'warning' : 'success');
+        return `
+          <div class="audit-item">
+            <span class="audit-dot ${statusDot}"></span>
+            <div class="audit-time">${t}</div>
+            <div>
+              <div class="audit-title">${p.title}</div>
+              <div class="audit-meta">Status: ${status} • Recorded in Clinical Audit Log</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+  }
+
+  function renderLive() {
+    const el = document.getElementById('liveCard');
+    if (!el) return;
+
+    if (!__clinical.live) {
+      const q = (__clinical.queue || []).slice().sort((a, b) => Number(a.when) - Number(b.when));
+      const queueHtml = q.length ? `
+        <div style="margin-top:10px;">
+          <div class="muted" style="font-weight:900;">Queued (${q.length})</div>
+          <div class="muted" style="margin-top:6px;">Will auto-start after current live completes.</div>
+          <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+            ${q.slice(0, 3).map(x => `
+              <div class="facility-row" style="padding:10px 12px;">
+                <div class="facility-left"><span class="facility-name">⏳ ${x.title}</span></div>
+                <div class="facility-meta"><span class="muted" style="font-size:12px; font-weight:800;">${fmtHHMM(x.when)}</span></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+      el.innerHTML = `
+        <div class="live-shell">
+          <div class="muted">No live session right now.</div>
+          ${queueHtml}
+          <button class="btn good live-success-btn" id="completeBtn" onclick="completeActiveSession()">Mark Active Session SUCCESS</button>
+        </div>
+      `;
+      updateCompleteBtn();
+      return;
+    }
+
+    const started = Number(__clinical.live.started);
+    const dur = Number(__clinical.live.durationMs || 1);
+    const pct = clamp(((nowTs() - started) / dur) * 100, 0, 100);
+    const title = __clinical.live.title;
+    const isLive = pct < 100;
+
+    el.innerHTML = `
+      <div class="live-shell ${isLive ? 'is-live' : ''}">
+        <div class="facility-row" style="align-items:flex-start; padding:0; background:transparent; border:0;">
+          <div class="facility-left" style="min-width: 220px;">
+            <span class="facility-name">⚡ ${title}</span>
+          </div>
+          <div class="facility-status">
+            <span class="dot ${isLive ? 'bad' : 'ok'}"></span>
+            <span>${isLive ? 'LIVE' : 'DONE'}</span>
+          </div>
+          <div class="facility-meta" style="flex-direction:column; align-items:flex-end;">
+            <div class="mini-progress" style="width: 180px;"><div style="width:${pct.toFixed(0)}%"></div></div>
+            <div class="mini-time">${pct.toFixed(0)}% Complete</div>
+          </div>
+        </div>
+        <button class="btn good live-success-btn" id="completeBtn" onclick="completeActiveSession()">Mark Active Session SUCCESS</button>
+      </div>
+      ${(__clinical.queue && __clinical.queue.length) ? `
+        <div class="muted" style="margin-top:10px; font-weight:900;">Queued: ${__clinical.queue.length}</div>
+      ` : ''}
+    `;
+    updateCompleteBtn();
+  }
+
+  function renderPatientQueueFromState(state) {
+    const queueEl = document.getElementById('patientQueue');
+    const summaryEl = document.getElementById('queueSummary');
+    if (!queueEl) return;
+
+    const triage = Array.isArray(state?.waiting_triage) ? state.waiting_triage : [];
+    const waitingCount = Number(state?.waiting ?? triage.length ?? 0);
+    const simStep = Number(state?.step ?? 0);
+    if (summaryEl) {
+      summaryEl.textContent = `${waitingCount} waiting • step ${simStep}`;
+      summaryEl.title = 'Sorted by longest wait first, then urgency';
+    }
+
+    if (!triage.length) {
+      queueEl.innerHTML = '<p class="muted">No patients currently waiting.</p>';
+      return;
+    }
+
+    const items = triage.slice(0, 8).map((p, idx) => {
+      const priority = String(p?.priority || 'GREEN').toUpperCase();
+      const severity = String(p?.severity || 'NORMAL').toUpperCase();
+      const waitSteps = Number(p?.wait_time ?? 0);
+      const waitMinutes = Math.max(0, waitSteps * 5);
+      const isNewArrival = waitSteps <= 0;
+      const waitDisplay = isNewArrival ? 'NEW' : `${waitMinutes}m`;
+      const waitLabel = isNewArrival ? 'just arrived' : `${waitSteps} steps`;
+      const waitClass = isNewArrival ? 'queue-wait-time new' : 'queue-wait-time';
+      const cls = priority === 'RED' ? 'priority-red' : (severity === 'EMERGENCY' ? 'priority-yellow' : 'priority-green');
+      const avatarCls = priority === 'RED' ? 'red' : (severity === 'EMERGENCY' ? 'yellow' : 'green');
+      const avatar = priority === 'RED' ? '🚨' : (severity === 'EMERGENCY' ? '⚠️' : '🟢');
+      return `
+        <div class="queue-item ${cls}">
+          <div class="queue-avatar ${avatarCls}">${avatar}</div>
+          <div class="queue-info">
+            <div class="queue-name">Patient #${Number(p?.patient_id ?? 0)} <span class="queue-rank">#${idx + 1}</span></div>
+            <div class="queue-details">${severity} • ${priority} priority • waited ${waitSteps} steps</div>
+          </div>
+          <div class="queue-wait">
+            <div class="${waitClass}" title="${waitSteps} simulation steps">${waitDisplay}</div>
+            <div class="queue-wait-label">${waitLabel}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    queueEl.innerHTML = items;
+  }
+
+  function renderDoctorScheduleFromState(state) {
+    const scheduleEl = document.getElementById('doctorSchedule');
+    const summaryEl = document.getElementById('doctorSummary');
+    if (!scheduleEl) return;
+
+    const totalDoctors = Math.max(0, Number(state?.total_doctors ?? 0));
+    const availableDoctors = Math.max(0, Number(state?.available_doctors ?? 0));
+    if (summaryEl) summaryEl.textContent = `${availableDoctors} on duty`;
+
+    if (totalDoctors <= 0) {
+      scheduleEl.innerHTML = '<p class="muted">No doctor roster available.</p>';
+      return;
+    }
+
+    const specialties = ['General', 'ER', 'ICU', 'Trauma', 'Medicine', 'Surgery'];
+    const rows = [];
+    for (let i = 0; i < totalDoctors; i++) {
+      const status = i < availableDoctors ? 'on-duty' : 'off-duty';
+      const badge = status === 'on-duty' ? 'ON DUTY' : 'OFF DUTY';
+      const icon = status === 'on-duty' ? '🩺' : '💤';
+      const specialty = specialties[i % specialties.length];
+      rows.push(`
+        <div class="doctor-item ${status}">
+          <div class="doctor-avatar">${icon}</div>
+          <div class="doctor-info">
+            <div class="doctor-name">Dr. ${String.fromCharCode(65 + (i % 26))}${i + 1}</div>
+            <div class="doctor-specialty">${specialty}</div>
+          </div>
+          <div class="doctor-status ${status}">${badge}</div>
+        </div>
+      `);
+    }
+
+    scheduleEl.innerHTML = rows.join('');
+  }
+
+  function renderEmergencyTimelineFromData(state, frames) {
+    const timelineEl = document.getElementById('emergencyTimeline');
+    const summaryEl = document.getElementById('timelineSummary');
+    if (!timelineEl) return;
+
+    const timelineFrames = Array.isArray(frames) ? frames.slice(-8).reverse() : [];
+    if (summaryEl) summaryEl.textContent = timelineFrames.length ? `${timelineFrames.length} recent events` : 'Live';
+
+    const items = [];
+    for (const f of timelineFrames) {
+      const event = String(f?.event || 'STATE_UPDATE');
+      const ts = f?.ts ? new Date(f.ts) : new Date();
+      const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      let level = 'info';
+      if (event.includes('TRIGGERED') || event.includes('CRISIS') || String(f?.state?.crisis_active) === 'true') level = event.includes('TRIGGERED') ? 'triggered' : 'critical';
+      else if (event.includes('DRONE') || event.includes('ESCALATE')) level = 'warning';
+      else if (event.includes('STEP')) level = 'success';
+      const descBits = [];
+      if (f?.action_name) descBits.push(`Action: ${f.action_name}`);
+      if (typeof f?.reward === 'number') descBits.push(`Reward: ${Number(f.reward).toFixed(2)}`);
+      if (Array.isArray(f?.events) && f.events.length) descBits.push(`Signals: ${f.events.join(', ')}`);
+      items.push(`
+        <div class="timeline-item">
+          <div class="timeline-dot ${level}"></div>
+          <div class="timeline-content">
+            <div class="timeline-time">${time}</div>
+            <div class="timeline-title">${event}</div>
+            <div class="timeline-desc">${descBits.join(' • ') || 'System state synchronized.'}</div>
+          </div>
+        </div>
+      `);
+    }
+
+    if (!items.length) {
+      const waiting = Number(state?.waiting ?? 0);
+      const doctors = Number(state?.available_doctors ?? 0);
+      const beds = Number(state?.available_beds ?? 0);
+      const desc = `Waiting ${waiting} • Doctors ${doctors} • Beds ${beds}`;
+      timelineEl.innerHTML = `
+        <div class="timeline-item">
+          <div class="timeline-dot info"></div>
+          <div class="timeline-content">
+            <div class="timeline-time">Now</div>
+            <div class="timeline-title">STATE_UPDATE</div>
+            <div class="timeline-desc">${desc}</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    timelineEl.innerHTML = items.join('');
+  }
+
+  async function syncClinicalPanels() {
+    try {
+      const [stateRes, timelineRes] = await Promise.all([
+        fetch('/api/get_state?auto_init=1').then(r => r.json()),
+        fetch('/api/timeline?limit=20&offset=0').then(r => r.json()).catch(() => ({ success: false, frames: [] })),
+      ]);
+
+      if (!stateRes?.success || !stateRes?.state) {
+        throw new Error(stateRes?.error || 'Failed to load state');
+      }
+
+      const state = stateRes.state;
+      const frames = Array.isArray(timelineRes?.frames) ? timelineRes.frames : [];
+
+      renderPatientQueueFromState(state);
+      renderDoctorScheduleFromState(state);
+      renderEmergencyTimelineFromData(state, frames);
+      updateAdvancedIntelligence(state, frames);
+    } catch (error) {
+      const msg = String(error?.message || error || 'Unknown error');
+      const queueEl = document.getElementById('patientQueue');
+      const scheduleEl = document.getElementById('doctorSchedule');
+      const timelineEl = document.getElementById('emergencyTimeline');
+      if (queueEl) queueEl.innerHTML = `<p class="muted">Unable to load queue. ${msg}</p>`;
+      if (scheduleEl) scheduleEl.innerHTML = `<p class="muted">Unable to load schedule. ${msg}</p>`;
+      if (timelineEl) timelineEl.innerHTML = `<p class="muted">Unable to load timeline. ${msg}</p>`;
+    }
+  }
+
+  function maybeSpeakReminder() {
+    // One demo reminder: thalassemia screening in 10 minutes.
+    const item = __clinical.future.find(x => String(x.title).toLowerCase().includes('thalassemia'));
+    if (!item) return;
+    const minutes = Math.round((Number(item.when) - nowTs()) / 60000);
+    const dueSoon = minutes === 10;
+    if (!dueSoon) return;
+
+    const now = nowTs();
+    if (now - __clinical.lastReminderSpokenAt < 60_000) return;
+    __clinical.lastReminderSpokenAt = now;
+    window.HospitalVoice && window.HospitalVoice.speak(
+      'Reminder: Thalassemia screening starting in 10 minutes.',
+      { cooldownMs: 8000 }
+    );
+  }
+
+  window.resourceCheck = function resourceCheck(id) {
+    showGlassToast('Checking Resources... [AI Logic]: Sufficient staff and room capacity confirmed for this slot.');
+  }
+
+  window.forceClinicalSync = function forceClinicalSync() {
+    seedClinicalIfMissing();
+    rerenderAll();
+    syncClinicalPanels();
+  }
+
+  window.pushFutureToLive = function pushFutureToLive(id, manual) {
+    // Manual NEXT click should immediately validate + move item to Live.
+    if (manual) {
+      resourceCheck(id);
+    }
+
+    const item = removeFutureById(id);
+    if (!item) {
+      showGlassToast('Item not found (already moved).');
+      return;
+    }
+
+    // Manual NEXT is an explicit operator command: make selected event active immediately.
+    // If something is already live, preserve it by queueing it first.
+    if (__clinical.live && manual) {
+      const prev = {
+        id: __clinical.live.id || newId('liveq'),
+        title: __clinical.live.title,
+        kind: __clinical.live.kind || 'LAB',
+        when: nowTs() + 60 * 1000,
+      };
+      queueItem(prev, { reason: 'MANUAL_OVERRIDE_PREEMPTED' });
+      __clinical.live = null;
+      pushItemToLive(item, { manual: true, reason: 'MANUAL_NEXT' });
+      return;
+    }
+
+    if (__clinical.live) {
+      queueItem(item, { reason: manual ? 'MANUAL_NEXT_LIVE_BUSY' : 'AUTO_DUE_LIVE_BUSY' });
+      persistClinical();
+      showGlassToast(`Queued: ${item.title} (Live session already running)`);
+      rerenderAll();
+      return;
+    }
+
+    pushItemToLive(item, { manual: Boolean(manual), reason: manual ? 'MANUAL_NEXT' : 'AUTO_DUE' });
+  }
+
+  window.completeActiveSession = async function completeActiveSession() {
+    if (!__clinical.live) {
+      showGlassToast('No active session to complete.');
+      return;
+    }
+    const title = __clinical.live.title;
+    __clinical.past.push({ id: `past-${Date.now()}`, title, ended: nowTs(), status: 'SUCCESS' });
+    __clinical.live = null;
+    persistClinical();
+
+    // Reward bonus so Efficiency Score changes.
+    try {
+      const res = await fetch('/api/bonus_reward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: BONUS_REWARD_PER_SUCCESS, reason: `ClinicalOps SUCCESS: ${title}` })
+      }).then(r => r.json());
+      if (res?.success) {
+        window.HospitalGamify && window.HospitalGamify.refresh && window.HospitalGamify.refresh();
+      }
+    } catch (_) {}
+
+    showGlassToast('✅ Session completed successfully. Efficiency bonus applied.');
+
+    // If a future item was queued while live was busy, auto-start it now.
+    startNextFromQueueIfIdle({ manual: false, reason: 'AUTO_AFTER_SUCCESS' });
+    rerenderAll();
+  }
+
+  seedClinicalIfMissing();
+  rerenderAll();
+  syncClinicalPanels();
+  maybeSpeakReminder();
+  __clinical.timer = setInterval(() => {
+    renderLive();
+    maybeSpeakReminder();
+  }, 1000);
+
+  __clinical.syncTimer = setInterval(() => {
+    syncClinicalPanels();
+  }, 5000);
+
+  // Auto-promote Future -> Live when local minute matches (checked every minute).
+  startMinuteScheduler();
+</script>
+{% endblock %}
+

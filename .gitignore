@@ -1,0 +1,50 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Data and outputs
+data/
+logs/
+results/
+checkpoints/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 🔥 IMPORTANT (HF FIX)
+*.png
+*.jpg
+*.jpeg
+*.zip
+
+# 🚨 MUST ADD THIS
+static/
+submission_package.zip
