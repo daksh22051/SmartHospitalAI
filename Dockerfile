@@ -52,7 +52,8 @@ LABEL maintainer="Smart Hospital Systems Team" \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/app"
+    PYTHONPATH="/app" \
+    PORT=7860
 
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
@@ -82,8 +83,8 @@ USER hospital
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import smart_hospital_orchestration; print('System healthy')" || exit 1
 
-# Expose port for optional web interface
-EXPOSE 5000
+# Expose Hugging Face Space port
+EXPOSE 7860
 
-# Default command - run OpenEnv inference entrypoint (frontend-independent)
-CMD ["python", "inference.py", "--task", "medium", "--seed", "42"]
+# Default command - run persistent web process for Hugging Face Space.
+CMD ["python", "web_interface.py"]

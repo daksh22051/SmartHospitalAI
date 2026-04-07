@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify
 import sys
 import os
 import json
+import subprocess
 import importlib.util
 import numpy as np
 from datetime import datetime
@@ -2022,7 +2023,20 @@ if __name__ == '__main__':
     # Use ASCII-only startup logs so Windows default code pages (e.g. cp1252)
     # don't crash when PYTHONIOENCODING is not explicitly set.
     print("Starting Smart Hospital Orchestration Web Interface...")
-    print("Open your browser: http://localhost:5000")
+    port = int(os.getenv('PORT', '7860'))
+    print(f"Open your browser: http://localhost:{port}")
     print("Hospital Resource Management Dashboard Ready")
+
+    # Emit one baseline inference run at startup for deployment proof logs.
+    try:
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        cmd = [sys.executable, os.path.join(repo_root, 'inference.py'), '--task', 'medium', '--seed', '42']
+        proc = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=180)
+        if proc.stdout:
+            print(proc.stdout, end='')
+        if proc.stderr:
+            print(proc.stderr, end='')
+    except Exception as e:
+        print(f"Startup inference skipped due to error: {e}")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=port, use_reloader=False)
