@@ -1,0 +1,42 @@
+{
+  "task": "medium",
+  "seed": 42,
+  "episodes": 2,
+  "generated_at_utc": "2026-04-07T17:34:14.386625+00:00",
+  "ablations": {
+    "baseline": {
+      "avg_total_reward": 1742.215365,
+      "avg_final_waiting": 5.5,
+      "avg_final_admitted": 3.5,
+      "episodes": 2,
+      "weights_override": {}
+    },
+    "no_wait_penalty": {
+      "avg_total_reward": 1742.414583,
+      "avg_final_waiting": 5.5,
+      "avg_final_admitted": 3.5,
+      "episodes": 2,
+      "weights_override": {
+        "waiting_time": 0.0
+      }
+    },
+    "no_resource_bonus": {
+      "avg_total_reward": 1570.307031,
+      "avg_final_waiting": 5.5,
+      "avg_final_admitted": 3.5,
+      "episodes": 2,
+      "weights_override": {
+        "resource_utilization": 0.0
+      }
+    },
+    "high_emergency_weight": {
+      "avg_total_reward": 1744.861365,
+      "avg_final_waiting": 5.5,
+      "avg_final_admitted": 3.5,
+      "episodes": 2,
+      "weights_override": {
+        "emergency_handling": 1.2
+      }
+    }
+  }
+}

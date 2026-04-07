@@ -1,0 +1,41 @@
+{
+  "generated_at_utc": "2026-04-07T17:34:14.878494+00:00",
+  "summary": {
+    "episodes": 3,
+    "task": "hard",
+    "avg_elapsed_seconds": 0.004146,
+    "p95_elapsed_seconds": 0.007038,
+    "avg_final_waiting": 12.333333,
+    "avg_final_critical_waiting": 9.0,
+    "avg_final_admitted": 4.666667
+  },
+  "runs": [
+    {
+      "seed": 500,
+      "steps": 32,
+      "elapsed_seconds": 0.007536,
+      "total_reward": 2584.382398,
+      "final_waiting": 7,
+      "final_admitted": 5,
+      "final_critical_waiting": 6
+    },
+    {
+      "seed": 501,
+      "steps": 11,
+      "elapsed_seconds": 0.002351,
+      "total_reward": 877.388832,
+      "final_waiting": 17,
+      "final_admitted": 5,
+      "final_critical_waiting": 13
+    },
+    {
+      "seed": 502,
+      "steps": 11,
+      "elapsed_seconds": 0.002552,
+      "total_reward": 990.967346,
+      "final_waiting": 13,
+      "final_admitted": 4,
+      "final_critical_waiting": 8
+    }
+  ]
+}
