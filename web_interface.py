@@ -1530,6 +1530,49 @@ def health_check():
         }), 500
 
 
+@app.route('/run_inference', methods=['GET'])
+def run_inference_for_logs():
+    """Run inference.py and mirror output to container logs on demand."""
+    try:
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        cmd = [
+            sys.executable,
+            os.path.join(repo_root, 'inference.py'),
+            '--task',
+            os.getenv('INFERENCE_TASK', 'medium'),
+            '--seed',
+            os.getenv('INFERENCE_SEED', '42'),
+            '--max-steps',
+            os.getenv('INFERENCE_MAX_STEPS', '5'),
+        ]
+
+        print(f"[RUN_INFERENCE] Executing: {' '.join(cmd)}", flush=True)
+        proc = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=180)
+
+        if proc.stdout:
+            print(proc.stdout, end='', flush=True)
+        if proc.stderr:
+            print(proc.stderr, end='', flush=True)
+
+        return jsonify({
+            'success': proc.returncode == 0,
+            'returncode': proc.returncode,
+            'message': 'Inference executed. Check container logs for [START]/[STEP]/[END]/INFERENCE_RESULT.',
+        }), (200 if proc.returncode == 0 else 500)
+
+    except subprocess.TimeoutExpired as e:
+        msg = f'Inference timed out after {e.timeout} seconds'
+        print(msg, flush=True)
+        if e.stdout:
+            print(e.stdout, end='', flush=True)
+        if e.stderr:
+            print(e.stderr, end='', flush=True)
+        return jsonify({'success': False, 'error': msg}), 504
+    except Exception as e:
+        print(f'Inference execution failed: {e}', flush=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/timeline')
 def get_timeline():
     """Time-Travel Replay API.
