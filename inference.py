@@ -431,9 +431,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
-# FORCE RUN for Hugging Face
-print("🔥 HF FORCE RUN", flush=True)
-run_episode(task="medium", seed=42)

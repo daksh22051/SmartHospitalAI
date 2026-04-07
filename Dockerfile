@@ -86,5 +86,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose Hugging Face Space port
 EXPOSE 7860
 
-# Default command - run persistent web process for Hugging Face Space.
-CMD ["sh", "-c", "python inference.py && uvicorn app:app --host 0.0.0.0 --port 7860"]
+# Default command - run persistent Flask web process for Hugging Face Space.
+# web_interface.py runs one startup inference and prints [START]/[STEP]/[END]/INFERENCE_RESULT logs.
+CMD ["python", "web_interface.py"]
