@@ -49,10 +49,10 @@ docker run --rm smart-hospital-orchestration
 
 ## 6. Submission Readiness
 
-- [ ] Inference output follows required tags
-- [ ] Score varies across runs/tasks (not constant)
-- [ ] Easy/Medium/Hard tasks all run
-- [ ] Grader output generated successfully
+- [x] Inference output follows required tags
+- [x] Score varies across runs/tasks (not constant)
+- [x] Easy/Medium/Hard tasks all run
+- [x] Grader output generated successfully
 
 ## 7. Constraint-Proof Artifact (2 CPU, 8GB, < 20 min)
 
@@ -84,11 +84,12 @@ Notes:
 - Docker build/run: validated locally.
 - Constraint proof: generated in `results/constraint_proof_benchmark.json`.
 - Docker-constrained proof: generated in `results/constraint_proof_docker.json`.
+- Live LLM baseline proof: generated in `results/live_llm_baseline_proof.json` with `checks.live_llm_requirement_pass = true`.
+- Hugging Face Space deployment: live Space is running at `https://huggingface.co/spaces/daksh2205/SmartHospitalAI`.
 
 ### Still Pending for Final Submission Proof
 
-- Live LLM baseline proof with a working provider key.
-- Hugging Face Space live deployment proof with build/runtime logs.
+- Capture and attach screenshots/log snippets from the live Space build/runtime page for submission evidence.
 
 ### Live LLM Baseline Proof Artifact
 
@@ -104,9 +105,7 @@ Artifact output:
 
 Pass condition in artifact checks:
 
-- `checks.probe_success == true`
-- `checks.inference_succeeded == true`
-- `checks.policy_source_is_openai == true`
+- `checks.live_llm_requirement_pass == true`
 
 ### Exact Proof Commands
 
