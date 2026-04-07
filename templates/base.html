@@ -203,6 +203,22 @@
         }
         .voice-toggle { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid rgba(100, 116, 139, 0.25); background: rgba(255, 255, 255, 0.85); color: #64748b; font-size: 18px; cursor: pointer; transition: all 0.28s cubic-bezier(0.23, 1, 0.320, 1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.8); }
         .voice-toggle:hover { background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.88)); color: #1e293b; border-color: rgba(100, 116, 139, 0.4); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.9); }
+        .proof-toggle {
+          min-width: 128px;
+          width: auto;
+          padding: 0 12px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          border-color: rgba(16, 185, 129, 0.28);
+          color: #065f46;
+          background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(209, 250, 229, 0.9));
+        }
+        .proof-toggle.running {
+          color: #92400e;
+          border-color: rgba(245, 158, 11, 0.32);
+          background: linear-gradient(135deg, rgba(255, 251, 235, 0.95), rgba(254, 243, 199, 0.9));
+        }
         @media (max-width: 1200px) { .topbar { grid-template-columns: auto 1fr; } .topbar-center { display: none; } }
         @media (max-width: 768px) {
             .topbar { padding: 10px 14px; flex-wrap: wrap; }
@@ -690,6 +706,7 @@
             </div>
             <div class="topbar-right">
                 <button class="voice-toggle" id="voiceToggle" title="Toggle voice alerts" aria-label="Toggle voice alerts">🔇</button>
+              <button class="voice-toggle proof-toggle" id="runInferenceBtn" title="Generate proof logs" aria-label="Generate proof logs">Run Proof Logs</button>
                 <nav class="nav-pill" aria-label="Primary navigation">
                     <a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a>
                     <a href="/controls" class="{% if request.path == '/controls' %}active{% endif %}">Controls</a>
@@ -740,6 +757,64 @@
         function apply() { document.body.classList.toggle('topbar-compact', (window.scrollY || 0) > threshold); ticking = false; }
         function onScroll() { if (ticking) return; ticking = true; window.requestAnimationFrame(apply); }
         window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', onScroll, { passive: true }); apply();
+      })();
+    </script>
+    <script>
+      (function initRunInferenceButton() {
+        const btn = document.getElementById('runInferenceBtn');
+        if (!btn) return;
+
+        function showToast(message, ok) {
+          try {
+            const toast = document.createElement('div');
+            toast.style.cssText = [
+              'position:fixed',
+              'top:18px',
+              'right:18px',
+              'z-index:9999',
+              'padding:10px 14px',
+              'border-radius:10px',
+              'font-size:12px',
+              'font-weight:700',
+              'box-shadow:0 8px 20px rgba(0,0,0,0.16)',
+              ok ? 'background:#dcfce7' : 'background:#fee2e2',
+              ok ? 'color:#065f46' : 'color:#991b1b',
+              ok ? 'border:1px solid #86efac' : 'border:1px solid #fca5a5'
+            ].join(';');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+              try { toast.remove(); } catch (_) {}
+            }, 2200);
+          } catch (_) {}
+        }
+
+        btn.addEventListener('click', async () => {
+          if (btn.disabled) return;
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.classList.add('running');
+          btn.textContent = 'Running...';
+
+          try {
+            const res = await fetch('/run_inference', { method: 'GET', cache: 'no-store' });
+            let data = null;
+            try { data = await res.json(); } catch (_) {}
+
+            if (res.ok && data && data.success) {
+              showToast('Proof logs generated. Check Container logs.', true);
+            } else {
+              const msg = (data && (data.error || data.message)) ? String(data.error || data.message) : 'Inference trigger failed';
+              showToast(msg, false);
+            }
+          } catch (e) {
+            showToast('Network error while triggering inference', false);
+          } finally {
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.textContent = originalText || 'Run Proof Logs';
+          }
+        });
       })();
     </script>
     <script>
