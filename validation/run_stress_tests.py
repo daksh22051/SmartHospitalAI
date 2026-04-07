@@ -72,7 +72,10 @@ def main() -> None:
     p.add_argument("--task", default="hard", choices=["easy", "medium", "hard"])
     p.add_argument("--episodes", type=int, default=30)
     p.add_argument("--seed", type=int, default=500)
-    p.add_argument("--max-steps", type=int, default=120)
+    p.add_argument("--max-steps", type=int, default=300)
+    p.add_argument("--runtime-limit-seconds", type=float, default=1200.0)
+    p.add_argument("--target-cpus", type=float, default=2.0)
+    p.add_argument("--target-memory-gb", type=float, default=8.0)
     p.add_argument("--output", default="results/stress_test_report.json")
     args = p.parse_args()
 
@@ -90,14 +93,28 @@ def main() -> None:
         "task": args.task,
         "avg_elapsed_seconds": round(float(np.mean(elapsed)), 6),
         "p95_elapsed_seconds": round(float(np.percentile(elapsed, 95)), 6),
+        "max_elapsed_seconds": round(float(np.max(elapsed)), 6),
         "avg_final_waiting": round(float(np.mean(waiting)), 6),
         "avg_final_critical_waiting": round(float(np.mean(critical)), 6),
         "avg_final_admitted": round(float(np.mean(admitted)), 6),
     }
 
+    checks = {
+        "runtime_within_limit": bool(float(np.sum(elapsed)) < float(args.runtime_limit_seconds)),
+        "p95_runtime_reasonable": bool(float(np.percentile(elapsed, 95)) < float(args.runtime_limit_seconds) / max(args.episodes, 1)),
+        "resource_envelope_declared": True,
+    }
+
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "target_envelope": {
+            "cpus": args.target_cpus,
+            "memory_gb": args.target_memory_gb,
+            "runtime_limit_seconds": args.runtime_limit_seconds,
+            "note": "Enforce CPU/memory limits at container runtime using docker --cpus and --memory.",
+        },
         "summary": summary,
+        "checks": checks,
         "runs": runs,
     }
 

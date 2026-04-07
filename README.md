@@ -462,6 +462,22 @@ Output includes:
 
 - `MULTI_AGENT_RESULT={...}`
 
+Train/tune weighted multi-agent checkpoints:
+
+```bash
+python training/train_multi_agent_weights.py \
+  --task medium --seed 42 --episodes 4 --max-steps 80 --trials 30 \
+  --output checkpoints/multi_agent_weights.json
+```
+
+Run baseline with trained checkpoint:
+
+```bash
+python run_multi_agent_baseline.py \
+  --task medium --seed 42 --max-steps 75 \
+  --checkpoint checkpoints/multi_agent_weights.json
+```
+
 ### Benchmark Dashboard Generation
 
 Generate a visual HTML comparison for random/heuristic/ppo benchmark sections from grader output:
@@ -472,6 +488,10 @@ python evaluation/generate_benchmark_dashboard.py \
   --output results/benchmark_dashboard.html
 ```
 
+Auto-published route in Space UI:
+
+- `/benchmark_dashboard`
+
 ### Reward Ablation Report
 
 Run reward-component ablation experiments and save report JSON:
@@ -479,7 +499,8 @@ Run reward-component ablation experiments and save report JSON:
 ```bash
 python validation/generate_reward_ablation_report.py \
   --task medium --seed 42 --episodes 5 \
-  --output results/reward_ablation_report.json
+  --output results/reward_ablation_report.json \
+  --plot-output results/reward_ablation_plot.png
 ```
 
 ### Stress Test Runner
@@ -488,7 +509,8 @@ Run high-load stress scenarios and collect runtime/performance statistics:
 
 ```bash
 python validation/run_stress_tests.py \
-  --task hard --episodes 30 --seed 500 --max-steps 120 \
+  --task hard --episodes 30 --seed 500 --max-steps 300 \
+  --runtime-limit-seconds 1200 --target-cpus 2 --target-memory-gb 8 \
   --output results/stress_test_report.json
 ```
 

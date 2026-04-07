@@ -9,9 +9,9 @@ from environment.hospital_env import HospitalEnv
 from agent.multi_agent_extension import MultiAgentCoordinator
 
 
-def run_episode(task: str, seed: int, max_steps: int) -> dict:
+def run_episode(task: str, seed: int, max_steps: int, checkpoint: str = "") -> dict:
     env = HospitalEnv(task=task)
-    coord = MultiAgentCoordinator()
+    coord = MultiAgentCoordinator.from_checkpoint(checkpoint) if checkpoint else MultiAgentCoordinator()
 
     env.reset(seed=seed)
     total_reward = 0.0
@@ -43,7 +43,7 @@ def run_episode(task: str, seed: int, max_steps: int) -> dict:
         "final_waiting": int(final.get("waiting", 0)),
         "final_admitted": int(final.get("admitted", 0)),
         "final_critical_waiting": int(final.get("critical_waiting", 0)),
-        "policy_source": "multi_agent",
+        "policy_source": "multi_agent_weighted" if checkpoint else "multi_agent",
     }
     print("MULTI_AGENT_RESULT=" + json.dumps(result, separators=(",", ":")))
     return result
@@ -54,8 +54,9 @@ def main() -> None:
     p.add_argument("--task", default="medium", choices=["easy", "medium", "hard"])
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max-steps", type=int, default=75)
+    p.add_argument("--checkpoint", type=str, default="")
     args = p.parse_args()
-    run_episode(args.task, args.seed, args.max_steps)
+    run_episode(args.task, args.seed, args.max_steps, checkpoint=args.checkpoint)
 
 
 if __name__ == "__main__":

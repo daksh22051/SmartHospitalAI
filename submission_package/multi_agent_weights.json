@@ -1,0 +1,95 @@
+{
+  "policy": "multi_agent_weighted",
+  "task": "medium",
+  "seed": 42,
+  "generated_at_utc": "2026-04-07T17:41:07.288031+00:00",
+  "weights": {
+    "triage": 1.6655955827864939,
+    "capacity": 1.700490027387735,
+    "transfer": 0.7793590857457642
+  },
+  "metrics": {
+    "objective": 1391.4327492673808,
+    "avg_total_reward": 1468.9327492673808,
+    "avg_final_waiting": 6.5,
+    "avg_final_admitted": 2.5,
+    "episodes": 2
+  },
+  "search": {
+    "trials": 5,
+    "episodes": 2,
+    "max_steps": 40
+  },
+  "top_5": [
+    {
+      "weights": {
+        "triage": 1.6655955827864939,
+        "capacity": 1.700490027387735,
+        "transfer": 0.7793590857457642
+      },
+      "metrics": {
+        "objective": 1391.4327492673808,
+        "avg_total_reward": 1468.9327492673808,
+        "avg_final_waiting": 6.5,
+        "avg_final_admitted": 2.5,
+        "episodes": 2
+      }
+    },
+    {
+      "weights": {
+        "triage": 1.5014111681129303,
+        "capacity": 1.7518662585791618,
+        "transfer": 1.2207798783582635
+      },
+      "metrics": {
+        "objective": 1391.4327492673808,
+        "avg_total_reward": 1468.9327492673808,
+        "avg_final_waiting": 6.5,
+        "avg_final_admitted": 2.5,
+        "episodes": 2
+      }
+    },
+    {
+      "weights": {
+        "triage": 1.6835384679783485,
+        "capacity": 1.2144298156528732,
+        "transfer": 1.8020370878759353
+      },
+      "metrics": {
+        "objective": 212.93327396935194,
+        "avg_total_reward": 297.43327396935194,
+        "avg_final_waiting": 7.5,
+        "avg_final_admitted": 3.5,
+        "episodes": 2
+      }
+    },
+    {
+      "weights": {
+        "triage": 1.5763152406831094,
+        "capacity": 0.7318482870427093,
+        "transfer": 1.965871292291458
+      },
+      "metrics": {
+        "objective": 212.93327396935194,
+        "avg_total_reward": 297.43327396935194,
+        "avg_final_waiting": 7.5,
+        "avg_final_admitted": 3.5,
+        "episodes": 2
+      }
+    },
+    {
+      "weights": {
+        "triage": 1.230540313053794,
+        "capacity": 1.1191172339256137,
+        "transfer": 1.8974709843880424
+      },
+      "metrics": {
+        "objective": 212.93327396935194,
+        "avg_total_reward": 297.43327396935194,
+        "avg_final_waiting": 7.5,
+        "avg_final_admitted": 3.5,
+        "episodes": 2
+      }
+    }
+  ]
+}

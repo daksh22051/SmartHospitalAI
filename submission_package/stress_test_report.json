@@ -1,19 +1,31 @@
 {
-  "generated_at_utc": "2026-04-07T17:34:14.878494+00:00",
+  "generated_at_utc": "2026-04-07T17:40:47.275968+00:00",
+  "target_envelope": {
+    "cpus": 2.0,
+    "memory_gb": 8.0,
+    "runtime_limit_seconds": 1200.0,
+    "note": "Enforce CPU/memory limits at container runtime using docker --cpus and --memory."
+  },
   "summary": {
     "episodes": 3,
     "task": "hard",
-    "avg_elapsed_seconds": 0.004146,
-    "p95_elapsed_seconds": 0.007038,
+    "avg_elapsed_seconds": 0.003817,
+    "p95_elapsed_seconds": 0.006269,
+    "max_elapsed_seconds": 0.006668,
     "avg_final_waiting": 12.333333,
     "avg_final_critical_waiting": 9.0,
     "avg_final_admitted": 4.666667
+  },
+  "checks": {
+    "runtime_within_limit": true,
+    "p95_runtime_reasonable": true,
+    "resource_envelope_declared": true
   },
   "runs": [
     {
       "seed": 500,
       "steps": 32,
-      "elapsed_seconds": 0.007536,
+      "elapsed_seconds": 0.006668,
       "total_reward": 2584.382398,
       "final_waiting": 7,
       "final_admitted": 5,
@@ -22,7 +34,7 @@
     {
       "seed": 501,
       "steps": 11,
-      "elapsed_seconds": 0.002351,
+      "elapsed_seconds": 0.002674,
       "total_reward": 877.388832,
       "final_waiting": 17,
       "final_admitted": 5,
@@ -31,7 +43,7 @@
     {
       "seed": 502,
       "steps": 11,
-      "elapsed_seconds": 0.002552,
+      "elapsed_seconds": 0.002109,
       "total_reward": 990.967346,
       "final_waiting": 13,
       "final_admitted": 4,

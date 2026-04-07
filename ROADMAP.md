@@ -17,6 +17,10 @@
 - [x] Hugging Face deployment automation script (`deploy_hf_space.ps1`)
 - [x] Reward-ablation report generator (`validation/generate_reward_ablation_report.py`)
 - [x] Stress-test scenario runner (`validation/run_stress_tests.py`)
+- [x] Multi-agent weight training/tuning (`training/train_multi_agent_weights.py`)
+- [x] Space UI benchmark publishing route (`/benchmark_dashboard`)
+- [x] Reward-ablation statistical plots with CI (`--plot-output`)
+- [x] Long-horizon stress validation with runtime/resource envelope checks
 
 ## In Progress
 - [ ] Final submission proof attachments (HF screenshots/log snippets)

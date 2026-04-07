@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 try:
@@ -26,6 +27,12 @@ ABLATIONS: Dict[str, Dict[str, float]] = {
     "no_resource_bonus": {"resource_utilization": 0.0},
     "high_emergency_weight": {"emergency_handling": 1.2},
 }
+
+
+def _ci95(values: np.ndarray) -> float:
+    if len(values) <= 1:
+        return 0.0
+    return float(1.96 * np.std(values, ddof=1) / np.sqrt(len(values)))
 
 
 def run_policy(task: str, seed: int, episodes: int, weights: Dict[str, float]) -> Dict[str, Any]:
@@ -68,13 +75,54 @@ def run_policy(task: str, seed: int, episodes: int, weights: Dict[str, float]) -
         waits.append(float(final.get("waiting", 0)))
         admits.append(float(final.get("admitted", 0)))
 
+    totals_arr = np.array(totals, dtype=np.float64)
+    waits_arr = np.array(waits, dtype=np.float64)
+    admits_arr = np.array(admits, dtype=np.float64)
+
     return {
-        "avg_total_reward": round(float(np.mean(totals)), 6),
-        "avg_final_waiting": round(float(np.mean(waits)), 6),
-        "avg_final_admitted": round(float(np.mean(admits)), 6),
+        "avg_total_reward": round(float(np.mean(totals_arr)), 6),
+        "std_total_reward": round(float(np.std(totals_arr, ddof=0)), 6),
+        "ci95_total_reward": round(_ci95(totals_arr), 6),
+        "avg_final_waiting": round(float(np.mean(waits_arr)), 6),
+        "std_final_waiting": round(float(np.std(waits_arr, ddof=0)), 6),
+        "avg_final_admitted": round(float(np.mean(admits_arr)), 6),
+        "std_final_admitted": round(float(np.std(admits_arr, ddof=0)), 6),
         "episodes": episodes,
         "weights_override": weights,
+        "series": {
+            "total_reward": [round(float(x), 6) for x in totals],
+            "final_waiting": [round(float(x), 6) for x in waits],
+            "final_admitted": [round(float(x), 6) for x in admits],
+        },
     }
+
+
+def write_plots(report: Dict[str, Any], plot_output: Path) -> None:
+    ablations = report.get("ablations", {})
+    names = list(ablations.keys())
+    if not names:
+        return
+
+    rewards = [float(ablations[n].get("avg_total_reward", 0.0)) for n in names]
+    cis = [float(ablations[n].get("ci95_total_reward", 0.0)) for n in names]
+    waits = [float(ablations[n].get("avg_final_waiting", 0.0)) for n in names]
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+
+    axes[0].bar(names, rewards, yerr=cis, capsize=5, color="#0ea5e9", alpha=0.9)
+    axes[0].set_title("Reward Ablation: Avg Total Reward (CI95)")
+    axes[0].set_ylabel("Avg Total Reward")
+    axes[0].tick_params(axis="x", rotation=20)
+
+    axes[1].bar(names, waits, color="#f97316", alpha=0.9)
+    axes[1].set_title("Reward Ablation: Avg Final Waiting")
+    axes[1].set_ylabel("Avg Final Waiting")
+    axes[1].tick_params(axis="x", rotation=20)
+
+    fig.tight_layout()
+    plot_output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(plot_output, dpi=140)
+    plt.close(fig)
 
 
 def main() -> None:
@@ -83,6 +131,7 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--episodes", type=int, default=5)
     p.add_argument("--output", default="results/reward_ablation_report.json")
+    p.add_argument("--plot-output", default="results/reward_ablation_plot.png")
     args = p.parse_args()
 
     report = {
@@ -104,7 +153,9 @@ def main() -> None:
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    write_plots(report, Path(args.plot_output))
     print(f"REWARD_ABLATION_REPORT={out}")
+    print(f"REWARD_ABLATION_PLOT={args.plot_output}")
 
 
 if __name__ == "__main__":

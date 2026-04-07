@@ -3,7 +3,7 @@ Web Interface for Smart Hospital Resource Orchestration
 Interactive dashboard for running and monitoring hospital simulation
 """
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import sys
 import os
 import json
@@ -909,6 +909,23 @@ def controls_page():
 def analytics_page():
     """Analytics and charts page"""
     return render_template('analytics.html')
+
+
+@app.route('/benchmark_dashboard')
+def benchmark_dashboard_page():
+    """Serve generated benchmark dashboard HTML inside Space UI."""
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        dashboard_path = os.path.join(base_dir, 'submission_package', 'benchmark_dashboard.html')
+        if not os.path.exists(dashboard_path):
+            return Response('Benchmark dashboard not generated yet.', status=404, mimetype='text/plain')
+
+        with open(dashboard_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        return Response(html, mimetype='text/html')
+    except Exception as e:
+        logger.error(f"Benchmark dashboard serve error: {e}")
+        return Response(f"Unable to load benchmark dashboard: {e}", status=500, mimetype='text/plain')
 
 
 @app.route('/ai_lab')
