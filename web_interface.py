@@ -960,7 +960,13 @@ def performance_page():
 
 @app.route('/benchmark_dashboard')
 def benchmark_dashboard_page():
-    """Serve generated benchmark dashboard HTML inside Space UI."""
+    """Benchmark page inside the main app shell."""
+    return render_template('benchmark_dashboard_page.html')
+
+
+@app.route('/benchmark_dashboard/raw')
+def benchmark_dashboard_raw():
+    """Serve generated benchmark dashboard raw HTML."""
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         dashboard_path = os.path.join(base_dir, 'submission_package', 'benchmark_dashboard.html')
