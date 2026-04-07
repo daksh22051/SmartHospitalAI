@@ -2043,16 +2043,25 @@ if __name__ == '__main__':
     print(f"Open your browser: http://localhost:{port}")
     print("Hospital Resource Management Dashboard Ready")
 
-    # Emit one baseline inference run at startup for deployment proof logs.
+    # Emit one short baseline inference run at startup for deployment proof logs.
+    # Keep this fast and stream directly so Hugging Face runtime logs always show
+    # [START], [STEP], [END], and INFERENCE_RESULT lines.
     try:
         repo_root = os.path.dirname(os.path.abspath(__file__))
-        cmd = [sys.executable, os.path.join(repo_root, 'inference.py'), '--task', 'medium', '--seed', '42']
-        proc = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=180)
-        if proc.stdout:
-            print(proc.stdout, end='')
-        if proc.stderr:
-            print(proc.stderr, end='')
+        cmd = [
+            sys.executable,
+            os.path.join(repo_root, 'inference.py'),
+            '--task',
+            'medium',
+            '--seed',
+            '42',
+            '--max-steps',
+            '5',
+        ]
+        proc = subprocess.run(cmd, cwd=repo_root, timeout=120)
+        if proc.returncode != 0:
+            print(f"Startup inference exited with code {proc.returncode}", flush=True)
     except Exception as e:
-        print(f"Startup inference skipped due to error: {e}")
+        print(f"Startup inference skipped due to error: {e}", flush=True)
     
     app.run(debug=False, host='0.0.0.0', port=port, use_reloader=False)
