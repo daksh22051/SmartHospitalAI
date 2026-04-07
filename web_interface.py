@@ -893,6 +893,47 @@ env_manager = EnvironmentManager()
 # Episode history for web display
 episode_history = []
 
+
+def _performance_rank(total_reward: float) -> Dict[str, Any]:
+    if total_reward > 500:
+        return {'label': 'Expert', 'badge': '🥇', 'class': 'gold'}
+    if total_reward >= 100:
+        return {'label': 'Efficient', 'badge': '🥈', 'class': 'silver'}
+    return {'label': 'Beginner', 'badge': '🎖️', 'class': 'bronze'}
+
+
+def _calculate_performance_summary() -> Dict[str, Any]:
+    success, state = env_manager.get_current_state()
+    history = list(episode_history)
+    total_reward = float(sum(float(h.get('reward', 0)) for h in history))
+    steps = len(history)
+    avg_reward = total_reward / max(steps, 1)
+    normalized = float(0.5 * (np.tanh(avg_reward / 40.0) + 1.0))
+
+    readable = state if success and isinstance(state, dict) else {}
+    current_task = env_manager.current_task or readable.get('task') or 'medium'
+
+    return {
+        'success': True,
+        'task': current_task,
+        'episode_count': env_manager.episode_count,
+        'steps': steps,
+        'total_reward': round(total_reward, 3),
+        'average_reward': round(avg_reward, 3),
+        'performance_score': round(normalized * 100.0, 2),
+        'rank': _performance_rank(total_reward),
+        'current_state': {
+            'waiting': int(readable.get('waiting', 0)),
+            'admitted': int(readable.get('admitted', 0)),
+            'critical_waiting': int(readable.get('critical_waiting', 0)),
+            'available_doctors': int(readable.get('available_doctors', 0)),
+            'available_beds': int(readable.get('available_beds', 0)),
+            'city_available_beds': int(readable.get('city_available_beds', 0)),
+        },
+        'last_updated': datetime.now().isoformat(),
+        'message': 'Performance calculated from live episode history',
+    }
+
 @app.route('/')
 def index():
     """Overview dashboard page"""
@@ -909,6 +950,12 @@ def controls_page():
 def analytics_page():
     """Analytics and charts page"""
     return render_template('analytics.html')
+
+
+@app.route('/performance')
+def performance_page():
+    """Live system performance page"""
+    return render_template('performance.html')
 
 
 @app.route('/benchmark_dashboard')
@@ -1545,6 +1592,16 @@ def health_check():
             'error': str(e),
             'timestamp': datetime.now().isoformat()
         }), 500
+
+
+@app.route('/api/performance')
+def performance_api():
+    """Calculate and return the current system performance summary."""
+    try:
+        return jsonify(_calculate_performance_summary())
+    except Exception as e:
+        logger.error(f"Performance calculation failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/run_inference', methods=['GET'])
