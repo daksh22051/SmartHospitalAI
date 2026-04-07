@@ -91,6 +91,35 @@ Notes:
 
 - Capture and attach screenshots/log snippets from the live Space build/runtime page for submission evidence.
 
+### Verification Automation
+
+Run this from project root to verify required proof artifacts and pass checks:
+
+```bash
+python validation/verify_submission_artifacts.py --report-path results/submission_artifact_verification.json
+```
+
+Expected outcome:
+
+- Exit code `0`
+- Console line: `VERIFICATION_RESULT=PASS`
+- Report file generated at `results/submission_artifact_verification.json`
+
+### Evidence Captions (paste-ready)
+
+- `01_space_running.png`: Hugging Face Space status page showing app is Running.
+- `02_build_logs_success.png`: Build log proving image build and startup succeeded.
+- `03_container_inference_logs.png`: Container runtime logs showing `[START]`, `[STEP]`, `[END]`, and `INFERENCE_RESULT=`.
+
+### What To Submit
+
+- `results/constraint_proof_benchmark.json`
+- `results/constraint_proof_docker.json`
+- `results/live_llm_baseline_proof.json`
+- `results/submission_artifact_verification.json`
+- `HF_DEPLOYMENT_CHECKLIST.md`
+- Space URL and screenshots listed above
+
 ### Live LLM Baseline Proof Artifact
 
 Generate proof artifact:

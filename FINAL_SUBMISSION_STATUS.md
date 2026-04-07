@@ -1,6 +1,6 @@
 # Final Submission Status
 
-Date: 2026-04-07
+Date: 2026-04-08
 Space URL: https://huggingface.co/spaces/daksh2205/SmartHospitalAI
 
 ## Overall
@@ -27,7 +27,27 @@ Project is submission-ready from a code and artifact perspective.
 ## Final Actions Before Upload
 
 1. Add screenshots from Hugging Face Space build/runtime pages to your submission package.
-2. Rotate all API keys that were exposed during debugging and deployment.
+2. Rotate/revoke all API keys that were exposed during debugging and deployment.
+3. Run artifact verification script and attach generated report:
+   - `python validation/verify_submission_artifacts.py --report-path results/submission_artifact_verification.json`
+
+## Submission Proof Summary
+
+- Inference contract proof: available (`[START]`, `[STEP]`, `[END]`, `INFERENCE_RESULT=`).
+- Benchmark proof: `results/constraint_proof_benchmark.json` includes required pass checks.
+- Docker proof: `results/constraint_proof_docker.json` includes required pass checks.
+- Live LLM proof: `results/live_llm_baseline_proof.json` includes required pass checks.
+- Benchmarks UI: integrated in app shell under `/benchmark_dashboard`.
+- Performance tab: available under `/performance`.
+
+## Final Checklist (Owner)
+
+- [ ] Attach build screenshot (`01_space_running.png`)
+- [ ] Attach build logs screenshot (`02_build_logs_success.png`)
+- [ ] Attach container logs screenshot with required tags (`03_container_inference_logs.png`)
+- [ ] Rotate/revoke old provider keys
+- [ ] Update Space Secrets with newly rotated keys
+- [ ] Attach `results/submission_artifact_verification.json`
 
 ## Recommended Artifact Bundle
 

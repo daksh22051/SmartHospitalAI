@@ -16,7 +16,8 @@ Use this template while collecting final proof evidence.
 
 ## 3. Container Log Proof Screenshot
 
-- In app UI, click `Run Proof Logs`
+- Trigger proof logs by opening this URL once:
+  - `https://huggingface.co/spaces/daksh2205/SmartHospitalAI/run_inference`
 - Open Space -> Logs -> Container
 - Capture lines containing:
   - `[START]`
@@ -39,3 +40,9 @@ Attach these files with screenshots:
 ## 5. Submission Note (paste-ready)
 
 The SmartHospitalAI Space is deployed and running. Runtime logs include the required inference contract tags (`[START]`, `[STEP]`, `[END]`, `INFERENCE_RESULT=`). Constraint proofs and live baseline proof artifacts are attached.
+
+## 6. Screenshot Captions (exact text)
+
+- `01_space_running.png`: "Space runtime status is Running on Hugging Face Spaces."
+- `02_build_logs_success.png`: "Docker build and startup logs show successful deployment."
+- `03_container_inference_logs.png`: "Container logs include [START], [STEP], [END], and INFERENCE_RESULT as required by the baseline inference contract."
