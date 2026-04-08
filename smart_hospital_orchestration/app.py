@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 
@@ -32,7 +33,15 @@ static_dir = BASE_DIR / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+# Use a custom Jinja2 Environment with caching disabled to avoid hash errors
+# observed on the HF runtime ("TypeError: unhashable type: 'dict'") when
+# Jinja2 tries to create a cache key that includes a dict.
+_jinja_env = Environment(
+    loader=FileSystemLoader(str(BASE_DIR / "templates")),
+    autoescape=True,
+    cache_size=0,  # disable template caching
+)
+templates = Jinja2Templates(environment=_jinja_env)
 
 
 @app.get("/controls", response_class=HTMLResponse)
