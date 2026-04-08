@@ -57,7 +57,7 @@ async def root():
 
 class ResetRequest(BaseModel):
     seed: Optional[int] = None
-    task: Optional[str] = "medium"
+    options: Optional[Dict[str, Any]] = None
 
 
 class StepRequest(BaseModel):
@@ -176,18 +176,24 @@ def health() -> Dict[str, str]:
 
 
 @app.post("/reset")
-def reset(request: Optional[ResetRequest] = Body(default=None)) -> JSONResponse:
+async def reset(request: Optional[ResetRequest] = Body(default=None)) -> JSONResponse:
     try:
-        if request is None:
-            request = ResetRequest()
-        task_name = request.task.lower().strip() if request.task else "medium"
-        print(f"[DEBUG] /reset called with task={task_name}, seed={request.seed}", flush=True)
-        
-        state = episode_state.reset(task=task_name, seed=request.seed)
-        
+        seed = request.seed if request and request.seed is not None else None
+        task_name = "medium"
+
+        if request and request.options:
+            task_name = str(request.options.get("task", task_name)).lower().strip()
+            if request.options.get("seed") is not None:
+                seed = int(request.options.get("seed"))
+
+        print(f"[DEBUG] /reset called with task={task_name}, seed={seed}, options={request.options if request else None}", flush=True)
+
+        observation = episode_state.reset(task=task_name, seed=seed)
+        info = {"task": task_name, "seed": seed}
+
         return JSONResponse(
             status_code=200,
-            content={"ok": True, "state": _serialize_payload(state), "info": {"task": task_name, "seed": request.seed}},
+            content={"observation": _serialize_payload(observation), "info": _serialize_payload(info)},
         )
     except HTTPException:
         raise
