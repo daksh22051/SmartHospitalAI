@@ -67,8 +67,21 @@ class HospitalEnvironmentValidator:
             print(formatted_msg)
         
         if self.log_file:
-            with open(self.log_file, 'a') as f:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
                 f.write(formatted_msg + "\n")
+
+    def _unpack_step_output(self, step_output: Tuple[Any, ...]) -> Tuple[Dict[str, Any], float, bool, bool, Dict[str, Any]]:
+        """Support both Gymnasium-style 5-tuple and OpenEnv-style 4-tuple step outputs."""
+        if len(step_output) == 5:
+            next_state, reward, terminated, truncated, next_info = step_output
+            return next_state, reward, bool(terminated), bool(truncated), next_info
+        if len(step_output) == 4:
+            next_state, reward, done, next_info = step_output
+            info = next_info if isinstance(next_info, dict) else {}
+            terminated = bool(info.get("terminated", done))
+            truncated = bool(info.get("truncated", False))
+            return next_state, reward, terminated, truncated, info
+        raise ValueError(f"Unexpected step output length: {len(step_output)}")
     
     def validate_environment_imports(self) -> bool:
         """Test that all required modules can be imported."""
@@ -187,7 +200,7 @@ class HospitalEnvironmentValidator:
                     
                     # Execute step
                     try:
-                        next_state, reward, terminated, truncated, next_info = env.step(action)
+                        next_state, reward, terminated, truncated, next_info = self._unpack_step_output(env.step(action))
                         
                         # Validate step output
                         assert isinstance(next_state, dict), f"{task} step {episode_steps} state not dict"
@@ -236,7 +249,7 @@ class HospitalEnvironmentValidator:
                     # Test different actions
                     action = step % 5  # Cycle through all actions
                     
-                    next_state, reward, terminated, truncated, next_info = env.step(action)
+                    next_state, reward, terminated, truncated, next_info = self._unpack_step_output(env.step(action))
                     episode_rewards.append(reward)
                     
                     if terminated or truncated:
@@ -289,7 +302,7 @@ class HospitalEnvironmentValidator:
                 
                 for step in range(10):
                     action = 1  # Use allocate action
-                    next_state, reward, terminated, truncated, next_info = env.step(action)
+                    next_state, reward, terminated, truncated, next_info = self._unpack_step_output(env.step(action))
                     total_reward += reward
                     steps += 1
                     
@@ -361,6 +374,7 @@ class HospitalEnvironmentValidator:
     
     def _test_no_resources(self) -> bool:
         """Test behavior when no resources are available."""
+        from smart_hospital_orchestration.environment import HospitalEnv
         env = HospitalEnv("medium")
         state, info = env.reset(seed=42)
         
@@ -372,7 +386,7 @@ class HospitalEnvironmentValidator:
         
         # Try allocation action
         try:
-            next_state, reward, terminated, truncated, next_info = env.step(1)  # ALLOCATE
+            self._unpack_step_output(env.step(1))  # ALLOCATE
             # Should handle gracefully (negative reward or no change)
             return True
         except Exception:
@@ -380,12 +394,13 @@ class HospitalEnvironmentValidator:
     
     def _test_full_capacity(self) -> bool:
         """Test behavior when system is at full capacity."""
+        from smart_hospital_orchestration.environment import HospitalEnv
         env = HospitalEnv("medium")
         state, info = env.reset(seed=42)
         
         # Try defer action when system is overloaded
         try:
-            next_state, reward, terminated, truncated, next_info = env.step(3)  # DEFER
+            self._unpack_step_output(env.step(3))  # DEFER
             # Should handle based on actual system load
             return True
         except Exception:
@@ -393,12 +408,13 @@ class HospitalEnvironmentValidator:
     
     def _test_multiple_critical(self) -> bool:
         """Test behavior with multiple critical patients."""
+        from smart_hospital_orchestration.environment import HospitalEnv
         env = HospitalEnv("hard")
         state, info = env.reset(seed=42)
         
         # Try escalation action
         try:
-            next_state, reward, terminated, truncated, next_info = env.step(2)  # ESCALATE
+            self._unpack_step_output(env.step(2))  # ESCALATE
             # Should handle multiple critical patients appropriately
             return True
         except Exception:
@@ -406,12 +422,13 @@ class HospitalEnvironmentValidator:
     
     def _test_invalid_actions(self) -> bool:
         """Test behavior with invalid actions."""
+        from smart_hospital_orchestration.environment import HospitalEnv
         env = HospitalEnv("medium")
         state, info = env.reset(seed=42)
         
         try:
             # Test action out of range
-            next_state, reward, terminated, truncated, next_info = env.step(10)
+            self._unpack_step_output(env.step(10))
             return False  # Should raise error
         except (ValueError, AssertionError):
             return True  # Expected behavior
@@ -420,6 +437,7 @@ class HospitalEnvironmentValidator:
     
     def _test_multiple_resets(self) -> bool:
         """Test multiple consecutive resets."""
+        from smart_hospital_orchestration.environment import HospitalEnv
         env = HospitalEnv("medium")
         
         try:

@@ -1,0 +1,91 @@
+[11:22:16] INFO: ============================================================
+[11:22:16] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[11:22:16] INFO: ============================================================
+[11:22:16] INFO: 
+--- Environment Imports ---
+[11:22:16] INFO: Testing environment imports...
+[11:22:16] INFO: ✓ HospitalEnv imported successfully
+[11:22:16] INFO: ✓ HospitalBaselineAgent imported successfully
+[11:22:17] INFO: ✓ Task system imported successfully
+[11:22:17] INFO: ✓ Environment Imports PASSED
+[11:22:17] INFO: 
+--- Environment Creation ---
+[11:22:17] INFO: Testing environment creation...
+[11:22:17] INFO: ✓ easy environment created successfully
+[11:22:17] INFO: ✓ easy environment attributes validated
+[11:22:17] INFO: ✓ medium environment created successfully
+[11:22:17] INFO: ✓ medium environment attributes validated
+[11:22:17] INFO: ✓ hard environment created successfully
+[11:22:17] INFO: ✓ hard environment attributes validated
+[11:22:17] INFO: ✓ Environment Creation PASSED
+[11:22:17] INFO: 
+--- Environment Reset ---
+[11:22:17] INFO: Testing environment reset...
+[11:22:17] INFO: ✓ easy environment reset validated
+[11:22:17] INFO: ✓ medium environment reset validated
+[11:22:17] INFO: ✓ hard environment reset validated
+[11:22:17] INFO: ✓ Environment Reset PASSED
+[11:22:17] INFO: 
+--- Step Execution ---
+[11:22:17] INFO: Testing step execution...
+[11:22:17] INFO: ✓ easy step execution validated (11 steps)
+[11:22:17] INFO: ✓ medium step execution validated (11 steps)
+[11:22:17] INFO: ✓ hard step execution validated (11 steps)
+[11:22:17] INFO: ✓ Step Execution PASSED
+[11:22:17] INFO: 
+--- Reward Dynamics ---
+[11:22:17] INFO: Testing reward dynamics...
+[11:22:17] INFO: ✓ easy reward variance: 416.7762
+[11:22:17] INFO: ✓ medium reward variance: 954.8630
+[11:22:17] INFO: ✓ hard reward variance: 1335.2435
+[11:22:17] INFO: ✓ Reward Dynamics PASSED
+[11:22:17] INFO: 
+--- Task Differentiation ---
+[11:22:17] INFO: Testing task differentiation...
+[11:22:17] INFO: ✓ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[11:22:17] INFO: ✓ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[11:22:17] INFO: ✓ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[11:22:17] INFO: ✓ Task differentiation validated
+[11:22:17] INFO: ✓ Task Differentiation PASSED
+[11:22:17] INFO: 
+--- Edge Cases ---
+[11:22:17] INFO: Testing edge cases...
+[11:22:17] INFO:   Testing No available resources...
+[11:22:17] INFO:   ✓ No available resources passed
+[11:22:17] INFO:   Testing Full capacity...
+[11:22:17] INFO:   ✓ Full capacity passed
+[11:22:17] INFO:   Testing Multiple critical patients...
+[11:22:17] INFO:   ✓ Multiple critical patients passed
+[11:22:17] INFO:   Testing Invalid actions...
+[11:22:17] INFO:   ✓ Invalid actions passed
+[11:22:17] INFO:   Testing Multiple resets...
+[11:22:17] INFO:   ✓ Multiple resets passed
+[11:22:17] INFO: ✓ Edge Cases PASSED
+[11:22:17] INFO: 
+--- Baseline Agent Integration ---
+[11:22:17] INFO: Testing baseline agent integration...
+[11:22:17] INFO: ✓ easy baseline agent integration validated
+[11:22:17] INFO: ✓ medium baseline agent integration validated
+[11:22:17] INFO: ✓ hard baseline agent integration validated
+[11:22:17] INFO: ✓ Baseline Agent Integration PASSED
+[11:22:17] INFO: 
+--- System Stability ---
+[11:22:17] INFO: Testing system stability...
+[11:22:17] INFO: ✓ Stability test: 3/3 episodes successful (100.0%)
+[11:22:17] INFO: ✓ Reward standard deviation: 71.50
+[11:22:17] INFO: ✓ System Stability PASSED
+[11:22:17] INFO: 
+============================================================
+[11:22:17] INFO: VALIDATION SUMMARY
+[11:22:17] INFO: ============================================================
+[11:22:17] INFO: Tests Passed: 9/9
+[11:22:17] INFO: Success Rate: 100.0%
+[11:22:17] INFO: Total Episodes Run: 3
+[11:22:17] INFO: Successful Episodes: 9
+[11:22:17] INFO: Crashed Episodes: 0
+[11:22:17] INFO: State Transitions: 33
+[11:22:17] INFO: Edge Cases Tested: 5
+[11:22:17] INFO: Reward Variance: 902.294262
+[11:22:17] INFO: Bugs Detected: 0
+[11:22:17] INFO: Validation Time: 0.28 seconds
+[11:22:17] INFO: ============================================================

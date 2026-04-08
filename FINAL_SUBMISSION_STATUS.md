@@ -24,6 +24,10 @@ Project is submission-ready from a code and artifact perspective.
 4. Hugging Face deployment:
    - Space status observed as running.
 
+5. OpenEnv validation proof:
+   - File: `submission_package/openenv_validate_success.txt`
+   - Key checks: `Tests Passed: 9/9`, `Success Rate: 100.0%`, `Bugs Detected: 0`
+
 ## Final Actions Before Upload
 
 1. Add screenshots from Hugging Face Space build/runtime pages to your submission package.
@@ -37,6 +41,7 @@ Project is submission-ready from a code and artifact perspective.
 - Benchmark proof: `results/constraint_proof_benchmark.json` includes required pass checks.
 - Docker proof: `results/constraint_proof_docker.json` includes required pass checks.
 - Live LLM proof: `results/live_llm_baseline_proof.json` includes required pass checks.
+- OpenEnv validation proof: `submission_package/openenv_validate_success.txt` shows successful full validation run.
 - Benchmarks UI: integrated in app shell under `/benchmark_dashboard`.
 - Performance tab: available under `/performance`.
 
@@ -45,6 +50,7 @@ Project is submission-ready from a code and artifact perspective.
 - [ ] Attach build screenshot (`01_space_running.png`)
 - [ ] Attach build logs screenshot (`02_build_logs_success.png`)
 - [ ] Attach container logs screenshot with required tags (`03_container_inference_logs.png`)
+- [ ] Attach validator screenshot (`04_openenv_validate_success.png`)
 - [ ] Rotate/revoke old provider keys
 - [ ] Update Space Secrets with newly rotated keys
 - [ ] Attach `results/submission_artifact_verification.json`
@@ -54,5 +60,6 @@ Project is submission-ready from a code and artifact perspective.
 - `results/constraint_proof_benchmark.json`
 - `results/constraint_proof_docker.json`
 - `results/live_llm_baseline_proof.json`
+- `submission_package/openenv_validate_success.txt`
 - `HF_DEPLOYMENT_CHECKLIST.md`
 - Hugging Face Space URL and screenshots

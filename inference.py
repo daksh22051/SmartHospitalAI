@@ -176,6 +176,9 @@ def _build_provider_candidates() -> list[tuple[str, str, str, str]]:
     """Return provider candidates as (name, base_url, model_name, api_key)."""
     api_base = os.getenv("API_BASE_URL", "").strip()
     model_name = os.getenv("MODEL_NAME", "").strip()
+    hf_token = os.getenv("HF_TOKEN", "").strip()
+    hf_base = os.getenv("HF_API_BASE_URL", "https://router.huggingface.co/v1").strip()
+    hf_model = os.getenv("HF_MODEL", "").strip() or model_name
     openai_key = os.getenv("OPENAI_API_KEY", "").strip()
     grok_key = os.getenv("GROK_API_KEY", "").strip()
     grok_base = os.getenv("GROK_API_BASE_URL", "https://api.x.ai/v1").strip()
@@ -187,17 +190,21 @@ def _build_provider_candidates() -> list[tuple[str, str, str, str]]:
     candidates: list[tuple[str, str, str, str]] = []
     if api_base and model_name:
         endpoint = api_base.lower()
-        if "api.openai.com" in endpoint:
+        if "huggingface.co" in endpoint or "hf.space" in endpoint:
+            primary_key = hf_token
+        elif "api.openai.com" in endpoint:
             primary_key = openai_key
         elif "api.x.ai" in endpoint or "x.ai" in endpoint or "grok" in endpoint:
             primary_key = grok_key
         elif "api.groq.com" in endpoint or "groq" in endpoint:
             primary_key = groq_key
         else:
-            primary_key = openai_key or grok_key or groq_key
+            primary_key = hf_token or openai_key or grok_key or groq_key
         if primary_key:
             candidates.append(("primary", api_base, model_name, primary_key))
 
+    if hf_token and hf_model:
+        candidates.append(("huggingface", hf_base, hf_model, hf_token))
     if grok_key:
         candidates.append(("grok", grok_base, grok_model or model_name, grok_key))
     if groq_key:

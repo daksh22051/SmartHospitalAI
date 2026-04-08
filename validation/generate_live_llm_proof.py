@@ -110,8 +110,12 @@ def main() -> None:
 
     api_base = os.getenv("API_BASE_URL", "").strip()
     model_name = os.getenv("MODEL_NAME", "").strip()
-    # Match runtime precedence: OpenAI key first, then Groq key.
-    api_key = os.getenv("OPENAI_API_KEY", "").strip() or os.getenv("GROQ_API_KEY", "").strip()
+    # Match runtime precedence: HF token first, then provider-specific keys.
+    api_key = (
+        os.getenv("HF_TOKEN", "").strip()
+        or os.getenv("OPENAI_API_KEY", "").strip()
+        or os.getenv("GROQ_API_KEY", "").strip()
+    )
 
     probe = _provider_probe(api_base, model_name, api_key) if (api_base and model_name and api_key) else {
         "ok": False,
