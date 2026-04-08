@@ -65,11 +65,14 @@ checkpoints/
 Thumbs.db
 
 # 🚨 Important (HF fix)
-*.png
-*.jpg
-*.jpeg
 *.zip
 
-# Ignore static assets (prevents HF binary error)
-static/
+# Static assets policy:
+# - Allow committing the static folder so FastAPI's `url_for('static', ...)` works on HF
+# - Ignore bulky raster images by default, but keep SVGs and JS/CSS
+static/**/*.png
+static/**/*.jpg
+static/**/*.jpeg
+!static/brand/logo_best.svg
+
 submission_package.zip
