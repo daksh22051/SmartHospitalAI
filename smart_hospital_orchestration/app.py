@@ -7,13 +7,43 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from smart_hospital_orchestration.environment.hospital_env import HospitalEnv
 
 app = FastAPI(title="Smart Hospital OpenEnv API")
+
+BASE_DIR = Path(__file__).resolve().parent
+
+# Mount static assets for UI (CSS/JS/images)
+static_dir = BASE_DIR / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+# Templates for lightweight UI pages under FastAPI (mirrors Flask templates)
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+# Root redirect so Space main URL shows dashboard instead of 404
+@app.get("/", response_class=HTMLResponse)
+def root(_: Request) -> RedirectResponse:
+    return RedirectResponse(url="/controls", status_code=307)
+
+# Minimal UI routes to render existing templates directly if FastAPI is serving
+@app.get("/controls", response_class=HTMLResponse)
+def controls_page_fastapi(request: Request):
+    return templates.TemplateResponse("controls.html", {"request": request})
+
+@app.get("/analytics", response_class=HTMLResponse)
+def analytics_page_fastapi(request: Request):
+    return templates.TemplateResponse("analytics.html", {"request": request})
+
+@app.get("/performance", response_class=HTMLResponse)
+def performance_page_fastapi(request: Request):
+    return templates.TemplateResponse("performance.html", {"request": request})
 
 
 class ResetRequest(BaseModel):
