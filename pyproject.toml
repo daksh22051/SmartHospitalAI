@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smart-hospital-orchestration"
+version = "0.1.0"
+description = "AI Smart Hospital Resource Orchestration Environment"
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy",
+    "pyyaml",
+    "gymnasium",
+    "pandas",
+    "torch",
+    "pydantic",
+    "flask",
+    "requests",
+    "openai",
+    "openenv>=0.2.0"
+]
+
+[project.scripts]
+start = "server.app:main"
