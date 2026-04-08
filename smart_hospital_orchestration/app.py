@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -176,8 +176,10 @@ def health() -> Dict[str, str]:
 
 
 @app.post("/reset")
-def reset(request: ResetRequest) -> JSONResponse:
+def reset(request: Optional[ResetRequest] = Body(default=None)) -> JSONResponse:
     try:
+        if request is None:
+            request = ResetRequest()
         task_name = request.task.lower().strip() if request.task else "medium"
         print(f"[DEBUG] /reset called with task={task_name}, seed={request.seed}", flush=True)
         
