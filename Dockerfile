@@ -19,5 +19,5 @@ RUN "$VIRTUAL_ENV/bin/pip" install -e ./smart_hospital_orchestration
 
 EXPOSE 7860
 
-# Start the FastAPI app directly (root module path)
-CMD ["sh", "-lc", "$VIRTUAL_ENV/bin/uvicorn smart_hospital_orchestration.app:app --host 0.0.0.0 --port 7860"]
+# Start the Flask web interface that serves the full HTML dashboard and APIs
+CMD ["sh", "-lc", "$VIRTUAL_ENV/bin/python smart_hospital_orchestration/web_interface.py"]
