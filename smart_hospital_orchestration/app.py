@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -26,6 +26,18 @@ class StepRequest(BaseModel):
 
 
 ENV: Optional[HospitalEnv] = None
+
+
+def _serialize_payload(value: Any) -> Any:
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, dict):
+        return {key: _serialize_payload(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_serialize_payload(item) for item in value]
+    return value
 
 
 def _get_env() -> HospitalEnv:
@@ -47,7 +59,7 @@ def reset(request: ResetRequest) -> JSONResponse:
     state, info = ENV.reset(seed=request.seed)
     return JSONResponse(
         status_code=200,
-        content=jsonable_encoder({"ok": True, "state": state, "info": info}),
+        content={"ok": True, "state": _serialize_payload(state), "info": _serialize_payload(info)},
     )
 
 
@@ -57,15 +69,13 @@ def step(request: StepRequest) -> JSONResponse:
     state, reward, done, info = env.step(int(request.action))
     return JSONResponse(
         status_code=200,
-        content=jsonable_encoder(
-            {
-                "ok": True,
-                "state": state,
-                "reward": reward,
-                "done": done,
-                "info": info,
-            }
-        ),
+        content={
+            "ok": True,
+            "state": _serialize_payload(state),
+            "reward": float(reward),
+            "done": bool(done),
+            "info": _serialize_payload(info),
+        },
     )
 
 
@@ -74,7 +84,7 @@ def state() -> JSONResponse:
     env = _get_env()
     return JSONResponse(
         status_code=200,
-        content=jsonable_encoder({"ok": True, "state": env.state()}),
+        content={"ok": True, "state": _serialize_payload(env.state())},
     )
 
 
