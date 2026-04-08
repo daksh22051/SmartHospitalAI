@@ -1,23 +1,25 @@
+# Smart Hospital Resource Orchestration - Docker Configuration
+# Hugging Face Spaces optimized deployment
+
 FROM python:3.10-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    VIRTUAL_ENV=/opt/venv \
-    PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH=/app \
     PORT=7860
-
-RUN python -m venv "$VIRTUAL_ENV"
 
 WORKDIR /app
 
-COPY smart_hospital_orchestration/requirements.txt /app/requirements.txt
-RUN "$VIRTUAL_ENV/bin/python" -m pip install --upgrade pip && "$VIRTUAL_ENV/bin/pip" install -r requirements.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY inference.py /app/inference.py
-COPY smart_hospital_orchestration /app/smart_hospital_orchestration
-RUN "$VIRTUAL_ENV/bin/pip" install -e ./smart_hospital_orchestration
+COPY . /app/
+
+RUN pip install --no-cache-dir -e .
 
 EXPOSE 7860
 
-# Start FastAPI (OpenEnv endpoints at root) via uvicorn
-CMD ["sh", "-lc", "$VIRTUAL_ENV/bin/uvicorn smart_hospital_orchestration.app:app --host 0.0.0.0 --port 7860"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:7860/api/health', timeout=5)" || exit 1
+
+CMD ["python", "web_interface.py"]
