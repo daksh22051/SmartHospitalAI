@@ -41,22 +41,26 @@ _jinja_env = Environment(
     autoescape=True,
     cache_size=0,  # disable template caching
 )
-templates = Jinja2Templates(environment=_jinja_env)
+# Note: We render templates directly with Jinja2 below to avoid version
+# mismatch issues in Starlette's Jinja2Templates on HF runtime.
 
 
 @app.get("/controls", response_class=HTMLResponse)
 def controls_page_fastapi(request: Request):
-    return templates.TemplateResponse("controls.html", {"request": request})
+    template = _jinja_env.get_template("controls.html")
+    return HTMLResponse(template.render(request=request))
 
 
 @app.get("/analytics", response_class=HTMLResponse)
 def analytics_page_fastapi(request: Request):
-    return templates.TemplateResponse("analytics.html", {"request": request})
+    template = _jinja_env.get_template("analytics.html")
+    return HTMLResponse(template.render(request=request))
 
 
 @app.get("/performance", response_class=HTMLResponse)
 def performance_page_fastapi(request: Request):
-    return templates.TemplateResponse("performance.html", {"request": request})
+    template = _jinja_env.get_template("performance.html")
+    return HTMLResponse(template.render(request=request))
 
 
 @app.get("/", include_in_schema=False)
