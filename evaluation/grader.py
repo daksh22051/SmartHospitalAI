@@ -34,6 +34,11 @@ def _clamp(value: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, value))
 
 
+def _normalize_percent_score(value_0_to_100: float) -> float:
+    """Normalize a 0-100 score into a strict 0.0-1.0 score."""
+    return _clamp(float(value_0_to_100) / 100.0, 0.0, 1.0)
+
+
 @dataclass
 class EpisodeSummary:
     seed: int
@@ -179,6 +184,7 @@ def _summarize_policy_runs(
 
     reward_per_step = float(np.mean(reward_per_step_arr))
     final_score = _clamp(((reward_per_step + 20.0) / 40.0) * 100.0, 0.0, 100.0)
+    final_score_0_to_1 = _normalize_percent_score(final_score)
 
     return {
         "policy": policy,
@@ -190,6 +196,7 @@ def _summarize_policy_runs(
             "avg_final_critical_waiting": round(float(np.mean(critical_arr)), 6),
             "completion_rate": round(float(np.mean(completion_arr)), 6),
             "final_score": round(final_score, 3),
+            "final_score_0_to_1": round(final_score_0_to_1, 6),
         },
         "episode_summaries": [asdict(e) for e in runs],
     }
@@ -432,6 +439,22 @@ def grade_environment(
         "final_score": round(final_score, 3),
     }
 
+    # OpenEnv-facing normalized score outputs (strict 0.0-1.0 contract).
+    scoring.update(
+        {
+            "reward_score_0_to_1": round(_normalize_percent_score(reward_score), 6),
+            "throughput_score_0_to_1": round(_normalize_percent_score(throughput_score), 6),
+            "safety_score_0_to_1": round(_normalize_percent_score(safety_score), 6),
+            "stability_score_0_to_1": round(_normalize_percent_score(stability_score), 6),
+            "environment_design_score_0_to_1": round(_normalize_percent_score(environment_design_score), 6),
+            "reward_logic_quality_score_0_to_1": round(_normalize_percent_score(reward_logic_quality_score), 6),
+            "problem_creativity_score_0_to_1": round(_normalize_percent_score(problem_creativity_score), 6),
+            "code_quality_proxy_score_0_to_1": round(_normalize_percent_score(code_quality_proxy_score), 6),
+            "ai_learning_capability_score_0_to_1": round(_normalize_percent_score(ai_learning_capability_score), 6),
+            "final_score_0_to_1": round(_normalize_percent_score(final_score), 6),
+        }
+    )
+
     llm_scoring = _compute_llm_scoring(
         enabled=enable_llm_score,
         prompt_payload={
@@ -449,9 +472,13 @@ def grade_environment(
         # Blend deterministic + optional LLM judgement conservatively.
         final_score = (0.85 * final_score) + (0.15 * float(llm_score))
         scoring["final_score"] = round(final_score, 3)
+        scoring["final_score_0_to_1"] = round(_normalize_percent_score(final_score), 6)
         scoring["llm_blend_applied"] = 1.0
     else:
         scoring["llm_blend_applied"] = 0.0
+
+    pass_threshold_0_to_1 = _normalize_percent_score(threshold)
+    scoring["pass_threshold_0_to_1"] = round(pass_threshold_0_to_1, 6)
 
     benchmark_policies: List[str] = ["random", "heuristic"]
     if policy == "ppo" and model_path:

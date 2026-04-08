@@ -227,6 +227,16 @@ Baseline agent performance across difficulty levels:
 - **Medium**: ~0-50 total reward (moderate challenges)
 - **Hard**: ~-50 to 0 total reward (crisis management)
 
+## 📏 Grader Score Format
+
+The programmatic grader now exposes both legacy and normalized scoring formats:
+
+- `scoring.final_score`: legacy percentage-like score in the 0-100 range
+- `scoring.final_score_0_to_1`: normalized OpenEnv-compatible score in the 0.0-1.0 range
+- `scoring.pass_threshold_0_to_1`: normalized pass threshold for direct 0.0-1.0 comparison
+
+This keeps existing dashboards backward-compatible while satisfying strict normalized score requirements.
+
 ## 🤝 Contributing
 
 1. Fork the repository
