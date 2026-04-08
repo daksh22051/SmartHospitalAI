@@ -27,11 +27,6 @@ if static_dir.exists():
 # Templates for lightweight UI pages under FastAPI (mirrors Flask templates)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-# Root redirect so Space main URL shows dashboard instead of 404
-@app.get("/", response_class=HTMLResponse)
-def root(_: Request) -> RedirectResponse:
-    return RedirectResponse(url="/controls", status_code=307)
-
 # Minimal UI routes to render existing templates directly if FastAPI is serving
 @app.get("/controls", response_class=HTMLResponse)
 def controls_page_fastapi(request: Request):
@@ -44,6 +39,15 @@ def analytics_page_fastapi(request: Request):
 @app.get("/performance", response_class=HTMLResponse)
 def performance_page_fastapi(request: Request):
     return templates.TemplateResponse("performance.html", {"request": request})
+
+# Keep root redirect at the end after all routes are defined to avoid accidental override
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def root_redirect(_: Request) -> RedirectResponse:
+    return RedirectResponse(url="/controls", status_code=307)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
 
 
 class ResetRequest(BaseModel):
