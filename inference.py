@@ -22,6 +22,11 @@ from urllib import request as urlrequest
 import numpy as np
 
 try:
+    from openai import OpenAI
+except Exception:
+    OpenAI = None
+
+try:
     from smart_hospital_orchestration.environment import HospitalEnv
     from smart_hospital_orchestration.models import ActionModel, ObservationModel, RewardModel
 except ModuleNotFoundError:
@@ -230,6 +235,61 @@ def _http_error_payload(error: urlerror.HTTPError) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _action_model_from_payload(payload: Dict[str, Any]) -> Optional[ActionModel]:
+    try:
+        action = int(payload.get("action", 0))
+    except Exception:
+        action = 0
+    action = max(0, min(4, action))
+    return ActionModel(
+        action=action,
+        rationale=str(payload.get("rationale", "llm-selected")),
+    )
+
+
+def _llm_action_via_openai_sdk(
+    candidates: list[tuple[str, str, str, str]],
+    base_req_body: Dict[str, Any],
+) -> Optional[ActionModel]:
+    """Use official OpenAI Python client against OpenAI-compatible providers."""
+    if OpenAI is None:
+        return None
+
+    for _, api_base, model_name, api_key in candidates:
+        try:
+            client = OpenAI(api_key=api_key, base_url=api_base.rstrip("/"))
+        except Exception as e:
+            print(f"API ERROR: {e}")
+            continue
+
+        req_body = {"model": model_name, **base_req_body}
+        for attempt in range(3):
+            try:
+                resp = client.chat.completions.create(**req_body)
+                content = (resp.choices[0].message.content if resp and resp.choices else "{}") or "{}"
+                payload = content if isinstance(content, dict) else _extract_json_object(str(content))
+                if not payload:
+                    break
+                return _action_model_from_payload(payload)
+            except Exception as e:
+                err_text = str(e).lower()
+                print(f"API ERROR: {e}")
+                if (
+                    "groq" in api_base.lower()
+                    and "response_format" in req_body
+                    and ("response_format" in err_text or "unsupported" in err_text or "invalid" in err_text)
+                ):
+                    req_body.pop("response_format", None)
+                    continue
+                transient = any(code in err_text for code in ("429", "500", "502", "503", "504"))
+                if transient and attempt < 2:
+                    time.sleep(0.7 * (attempt + 1))
+                    continue
+                break
+
+    return None
+
+
 def _llm_action(obs: ObservationModel) -> Optional[ActionModel]:
     prompt = {
         "task": obs.task,
@@ -260,6 +320,10 @@ def _llm_action(obs: ObservationModel) -> Optional[ActionModel]:
     if not candidates:
         return None
 
+    sdk_pick = _llm_action_via_openai_sdk(candidates=candidates, base_req_body=base_req_body)
+    if sdk_pick is not None:
+        return sdk_pick
+
     for _, api_base, model_name, api_key in candidates:
         endpoint = api_base.rstrip("/") + "/chat/completions"
         headers = {
@@ -284,14 +348,7 @@ def _llm_action(obs: ObservationModel) -> Optional[ActionModel]:
                 payload = content if isinstance(content, dict) else _extract_json_object(str(content))
                 if not payload:
                     break
-
-                action = int(payload.get("action", 0))
-                if action < 0 or action > 4:
-                    action = max(0, min(4, action))
-                return ActionModel(
-                    action=action,
-                    rationale=str(payload.get("rationale", "llm-selected")),
-                )
+                return _action_model_from_payload(payload)
             except urlerror.HTTPError as e:
                 payload = _http_error_payload(e)
                 error_field = (payload or {}).get("error", {})

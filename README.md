@@ -98,6 +98,9 @@ pip install -e .
 # Optional: set API_BASE_URL to Groq-compatible OpenAI endpoint and provide GROQ_API_KEY
 # API_BASE_URL=https://api.groq.com/openai/v1
 
+# Baseline inference uses the official OpenAI Python client first
+# (compatible with OpenAI-style providers), then falls back to HTTP mode.
+
 # Run required OpenEnv inference entrypoint
 python inference.py --task medium --seed 42
 
