@@ -1,0 +1,260 @@
+{
+  "task": "medium",
+  "episodes": 5,
+  "policy": "heuristic",
+  "seed_start": 42,
+  "timestamp_utc": "2026-04-08T08:48:31.512824+00:00",
+  "aggregate": {
+    "avg_reward_per_step": 33.995655,
+    "avg_final_waiting": 8.4,
+    "avg_final_admitted": 0.6,
+    "avg_final_critical_waiting": 6.6,
+    "completion_rate": 1.0
+  },
+  "scoring": {
+    "reward_score": 100.0,
+    "throughput_score": 6.667,
+    "safety_score": 26.667,
+    "stability_score": 100.0,
+    "environment_design_score": 67.0,
+    "reward_logic_quality_score": 100.0,
+    "problem_creativity_score": 85.0,
+    "code_quality_proxy_score": 72.0,
+    "ai_learning_capability_score": 62.667,
+    "final_score": 77.1,
+    "reward_score_0_to_1": 1.0,
+    "throughput_score_0_to_1": 0.066667,
+    "safety_score_0_to_1": 0.266667,
+    "stability_score_0_to_1": 1.0,
+    "environment_design_score_0_to_1": 0.67,
+    "reward_logic_quality_score_0_to_1": 1.0,
+    "problem_creativity_score_0_to_1": 0.85,
+    "code_quality_proxy_score_0_to_1": 0.72,
+    "ai_learning_capability_score_0_to_1": 0.626667,
+    "final_score_0_to_1": 0.771,
+    "llm_blend_applied": 0.0,
+    "pass_threshold_0_to_1": 0.6
+  },
+  "rubric": {
+    "profile": "hackathon_v1",
+    "weights": {
+      "environment_design": 0.24,
+      "reward_logic_quality": 0.24,
+      "problem_creativity": 0.14,
+      "code_quality_proxy": 0.14,
+      "ai_learning_capability": 0.24
+    },
+    "task_defaults": {
+      "pass_threshold": 60.0,
+      "creativity_base": 85.0
+    }
+  },
+  "llm_scoring": {
+    "enabled": false,
+    "provider": null,
+    "used": false,
+    "score": null,
+    "note": "LLM scoring disabled"
+  },
+  "benchmark_comparison": {
+    "random": {
+      "policy": "random",
+      "episodes": 5,
+      "summary": {
+        "avg_reward_per_step": -3.717356,
+        "avg_final_waiting": 10.0,
+        "avg_final_admitted": 1.4,
+        "avg_final_critical_waiting": 8.4,
+        "completion_rate": 1.0,
+        "final_score": 40.707,
+        "final_score_0_to_1": 0.407066
+      },
+      "episode_summaries": [
+        {
+          "seed": 42,
+          "steps": 11,
+          "total_reward": 61.429963,
+          "reward_per_step": 5.584542,
+          "final_waiting": 9,
+          "final_admitted": 2,
+          "final_critical_waiting": 7,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 43,
+          "steps": 11,
+          "total_reward": 26.641428,
+          "reward_per_step": 2.421948,
+          "final_waiting": 10,
+          "final_admitted": 2,
+          "final_critical_waiting": 8,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 44,
+          "steps": 11,
+          "total_reward": 285.499658,
+          "reward_per_step": 25.954514,
+          "final_waiting": 8,
+          "final_admitted": 1,
+          "final_critical_waiting": 8,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 45,
+          "steps": 11,
+          "total_reward": -36.125572,
+          "reward_per_step": -3.284143,
+          "final_waiting": 11,
+          "final_admitted": 2,
+          "final_critical_waiting": 9,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 46,
+          "steps": 11,
+          "total_reward": -541.900053,
+          "reward_per_step": -49.263641,
+          "final_waiting": 12,
+          "final_admitted": 0,
+          "final_critical_waiting": 10,
+          "terminated": true,
+          "truncated": false
+        }
+      ]
+    },
+    "heuristic": {
+      "policy": "heuristic",
+      "episodes": 5,
+      "summary": {
+        "avg_reward_per_step": 33.995655,
+        "avg_final_waiting": 8.4,
+        "avg_final_admitted": 0.6,
+        "avg_final_critical_waiting": 6.6,
+        "completion_rate": 1.0,
+        "final_score": 100.0,
+        "final_score_0_to_1": 1.0
+      },
+      "episode_summaries": [
+        {
+          "seed": 42,
+          "steps": 11,
+          "total_reward": 479.969125,
+          "reward_per_step": 43.633557,
+          "final_waiting": 7,
+          "final_admitted": 1,
+          "final_critical_waiting": 5,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 43,
+          "steps": 11,
+          "total_reward": 486.345965,
+          "reward_per_step": 44.21327,
+          "final_waiting": 8,
+          "final_admitted": 1,
+          "final_critical_waiting": 6,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 44,
+          "steps": 11,
+          "total_reward": 183.053691,
+          "reward_per_step": 16.641245,
+          "final_waiting": 9,
+          "final_admitted": 0,
+          "final_critical_waiting": 8,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 45,
+          "steps": 11,
+          "total_reward": 395.069667,
+          "reward_per_step": 35.915424,
+          "final_waiting": 9,
+          "final_admitted": 0,
+          "final_critical_waiting": 7,
+          "terminated": true,
+          "truncated": false
+        },
+        {
+          "seed": 46,
+          "steps": 11,
+          "total_reward": 325.322572,
+          "reward_per_step": 29.574779,
+          "final_waiting": 9,
+          "final_admitted": 1,
+          "final_critical_waiting": 7,
+          "terminated": true,
+          "truncated": false
+        }
+      ]
+    }
+  },
+  "pass_threshold": 60.0,
+  "passed": true,
+  "episode_summaries": [
+    {
+      "seed": 42,
+      "steps": 11,
+      "total_reward": 479.969125,
+      "reward_per_step": 43.633557,
+      "final_waiting": 7,
+      "final_admitted": 1,
+      "final_critical_waiting": 5,
+      "terminated": true,
+      "truncated": false
+    },
+    {
+      "seed": 43,
+      "steps": 11,
+      "total_reward": 486.345965,
+      "reward_per_step": 44.21327,
+      "final_waiting": 8,
+      "final_admitted": 1,
+      "final_critical_waiting": 6,
+      "terminated": true,
+      "truncated": false
+    },
+    {
+      "seed": 44,
+      "steps": 11,
+      "total_reward": 183.053691,
+      "reward_per_step": 16.641245,
+      "final_waiting": 9,
+      "final_admitted": 0,
+      "final_critical_waiting": 8,
+      "terminated": true,
+      "truncated": false
+    },
+    {
+      "seed": 45,
+      "steps": 11,
+      "total_reward": 395.069667,
+      "reward_per_step": 35.915424,
+      "final_waiting": 9,
+      "final_admitted": 0,
+      "final_critical_waiting": 7,
+      "terminated": true,
+      "truncated": false
+    },
+    {
+      "seed": 46,
+      "steps": 11,
+      "total_reward": 325.322572,
+      "reward_per_step": 29.574779,
+      "final_waiting": 9,
+      "final_admitted": 1,
+      "final_critical_waiting": 7,
+      "terminated": true,
+      "truncated": false
+    }
+  ]
+}

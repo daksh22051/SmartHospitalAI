@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-04-08T13:11:49.647049+00:00",
+  "overall_pass": true,
+  "items": [
+    {
+      "name": "constraint_proof_benchmark",
+      "path": "results\\constraint_proof_benchmark.json",
+      "file_present": true,
+      "file_message": "ok",
+      "required_checks": [
+        "runtime_within_limit",
+        "all_runs_succeeded"
+      ],
+      "checks_pass": true,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "name": "constraint_proof_docker",
+      "path": "results\\constraint_proof_docker.json",
+      "file_present": true,
+      "file_message": "ok",
+      "required_checks": [
+        "build_succeeded",
+        "run_succeeded",
+        "runtime_within_limit"
+      ],
+      "checks_pass": true,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "name": "live_llm_baseline_proof",
+      "path": "results\\live_llm_baseline_proof.json",
+      "file_present": true,
+      "file_message": "ok",
+      "required_checks": [
+        "inference_succeeded",
+        "policy_source_is_openai",
+        "live_llm_requirement_pass"
+      ],
+      "checks_pass": true,
+      "errors": [],
+      "pass": true
+    }
+  ]
+}
