@@ -1,0 +1,88 @@
+# OpenEnv metadata for Smart Hospital Resource Orchestration
+
+name: SmartHospitalAI
+version: 1.1.0
+description: >-
+  RL environment for hospital triage and resource orchestration with
+  OpenEnv methods reset(), step(action), and state().
+
+author: Hospital AI Team
+license: MIT
+tags:
+  - healthcare
+  - reinforcement-learning
+  - resource-allocation
+  - triage
+  - openenv
+
+entrypoint:
+  file: inference.py
+  run: python inference.py --task medium --seed 42
+
+api:
+  class: smart_hospital_orchestration.environment.HospitalEnv
+  required_methods:
+    - reset(seed: Optional[int] = None) -> (state, info)
+    - step(action: int) -> (state, reward, done, info)
+    - state() -> dict
+
+action_space:
+  type: discrete
+  size: 5
+  actions:
+    0: WAIT
+    1: ALLOCATE_RESOURCE
+    2: ESCALATE_PRIORITY
+    3: DEFER
+    4: REASSIGN
+
+observation_space:
+  type: dict
+  keys:
+    - patients
+    - doctors
+    - beds
+    - time
+    - flat
+    - readable
+
+tasks:
+  easy:
+    max_steps: 50
+    initial_patients: "~5"
+    doctors: 3
+    beds: 5
+    dynamic_events: false
+    objective: Learn baseline resource allocation behavior.
+  medium:
+    max_steps: 75
+    initial_patients: "~8-10"
+    doctors: 4
+    beds: 6
+    dynamic_events: limited
+    objective: Balance quality and throughput under constrained resources.
+  hard:
+    max_steps: 100
+    initial_patients: "~10+"
+    doctors: 5
+    beds: 7
+    dynamic_events: full
+    objective: Manage crisis-like pressure and frequent disruptions.
+
+reward:
+  design: balanced_multi_objective
+  summary: >-
+    Positive rewards prioritize critical/emergency treatment and efficient
+    allocation; penalties target unsafe delays and conflicts.
+
+reproducibility:
+  seed_controlled: true
+  deterministic_inference: true
+  notes:
+    - "Run inference.py with a fixed --seed for reproducible full episodes."
+
+required_files:
+  - openenv.yaml
+  - inference.py
+  - Dockerfile
+  - README.md

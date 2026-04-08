@@ -1,0 +1,1 @@
+from smart_hospital_orchestration.app import app
