@@ -1,0 +1,114 @@
+{
+  "task": "medium",
+  "seed": 42,
+  "episodes": 2,
+  "generated_at_utc": "2026-04-07T17:40:44.933512+00:00",
+  "ablations": {
+    "baseline": {
+      "avg_total_reward": 1742.215365,
+      "std_total_reward": 1154.244505,
+      "ci95_total_reward": 2262.319229,
+      "avg_final_waiting": 5.5,
+      "std_final_waiting": 0.5,
+      "avg_final_admitted": 3.5,
+      "std_final_admitted": 0.5,
+      "episodes": 2,
+      "weights_override": {},
+      "series": {
+        "total_reward": [
+          2896.459869,
+          587.97086
+        ],
+        "final_waiting": [
+          5.0,
+          6.0
+        ],
+        "final_admitted": [
+          4.0,
+          3.0
+        ]
+      }
+    },
+    "no_wait_penalty": {
+      "avg_total_reward": 1742.414583,
+      "std_total_reward": 1154.387583,
+      "ci95_total_reward": 2262.599663,
+      "avg_final_waiting": 5.5,
+      "std_final_waiting": 0.5,
+      "avg_final_admitted": 3.5,
+      "std_final_admitted": 0.5,
+      "episodes": 2,
+      "weights_override": {
+        "waiting_time": 0.0
+      },
+      "series": {
+        "total_reward": [
+          2896.802167,
+          588.027
+        ],
+        "final_waiting": [
+          5.0,
+          6.0
+        ],
+        "final_admitted": [
+          4.0,
+          3.0
+        ]
+      }
+    },
+    "no_resource_bonus": {
+      "avg_total_reward": 1570.307031,
+      "std_total_reward": 1042.011171,
+      "ci95_total_reward": 2042.341896,
+      "avg_final_waiting": 5.5,
+      "std_final_waiting": 0.5,
+      "avg_final_admitted": 3.5,
+      "std_final_admitted": 0.5,
+      "episodes": 2,
+      "weights_override": {
+        "resource_utilization": 0.0
+      },
+      "series": {
+        "total_reward": [
+          2612.318203,
+          528.29586
+        ],
+        "final_waiting": [
+          5.0,
+          6.0
+        ],
+        "final_admitted": [
+          4.0,
+          3.0
+        ]
+      }
+    },
+    "high_emergency_weight": {
+      "avg_total_reward": 1744.861365,
+      "std_total_reward": 1156.344505,
+      "ci95_total_reward": 2266.435229,
+      "avg_final_waiting": 5.5,
+      "std_final_waiting": 0.5,
+      "avg_final_admitted": 3.5,
+      "std_final_admitted": 0.5,
+      "episodes": 2,
+      "weights_override": {
+        "emergency_handling": 1.2
+      },
+      "series": {
+        "total_reward": [
+          2901.205869,
+          588.51686
+        ],
+        "final_waiting": [
+          5.0,
+          6.0
+        ],
+        "final_admitted": [
+          4.0,
+          3.0
+        ]
+      }
+    }
+  }
+}

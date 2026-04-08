@@ -1,0 +1,1034 @@
+{% extends "base.html" %}
+
+{% block title %}AI Lab | Smart Hospital{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-shell">
+  <section class="card hero-card">
+    <div>
+      <h2>AI Lab</h2>
+      <p class="muted">Tune AI behavior, compare benchmarks, and monitor agent status in real time.</p>
+    </div>
+    <div class="sync-pill live" id="aiLabSync">SYNC • LIVE</div>
+  </section>
+
+  <div class="dual-grid">
+    <section class="card chart-card">
+      <div class="card-header-row">
+        <h3>AI Tuning Sliders</h3>
+        <span class="muted">Emergency vs Efficiency trade-off</span>
+      </div>
+
+      <div class="preset-row" aria-label="Tuning presets">
+        <button class="preset-chip" type="button" onclick="setPreset('balanced')">Balanced</button>
+        <button class="preset-chip" type="button" onclick="setPreset('aggressive')">Aggressive Triage</button>
+        <button class="preset-chip" type="button" onclick="setPreset('efficiency')">Efficiency First</button>
+        <button class="preset-chip" type="button" onclick="setPreset('crisis')">Crisis Mode</button>
+      </div>
+
+      <div class="slider-block">
+        <div class="slider-head">
+          <div>
+            <div class="slider-title">Emergency Priority Weight</div>
+            <div class="muted">Higher = more aggressive escalation / RED-first bias</div>
+          </div>
+          <div class="slider-value" id="emergencyWeightVal">1.00</div>
+        </div>
+        <input id="emergencyWeight" type="range" min="0.5" max="3.0" step="0.1" value="1.0" />
+      </div>
+
+      <div class="slider-block" style="margin-top:14px;">
+        <div class="slider-head">
+          <div>
+            <div class="slider-title">Resource Usage Efficiency</div>
+            <div class="muted">Higher = avoid waste / prioritize feasible allocations</div>
+          </div>
+          <div class="slider-value" id="efficiencyWeightVal">1.00</div>
+        </div>
+        <input id="efficiencyWeight" type="range" min="0.5" max="3.0" step="0.1" value="1.0" />
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <button class="btn lab-btn-primary" id="applyTuningBtn" onclick="applyTuning()">Apply Tuning</button>
+        <button class="btn lab-btn-ghost" onclick="resetTuning()">Reset</button>
+        <div class="muted" id="tuningNote" style="align-self:center;">Changes are local until Apply. Apply pushes tuning to backend policy.</div>
+      </div>
+
+      <div class="tuning-summary" id="tuningSummary">
+        <div class="tuning-summary-item">
+          <span class="tuning-summary-label">Active Profile</span>
+          <strong id="tuningProfileName">Balanced</strong>
+        </div>
+        <div class="tuning-summary-item">
+          <span class="tuning-summary-label">Emergency Bias</span>
+          <strong id="tuningEmergencyPreview">1.00</strong>
+        </div>
+        <div class="tuning-summary-item">
+          <span class="tuning-summary-label">Efficiency Bias</span>
+          <strong id="tuningEfficiencyPreview">1.00</strong>
+        </div>
+      </div>
+
+      <div class="server-sync-panel" id="serverSyncPanel">
+        <div class="server-sync-item">
+          <span class="tuning-summary-label">Server Profile</span>
+          <strong id="serverProfile">Balanced</strong>
+        </div>
+        <div class="server-sync-item">
+          <span class="tuning-summary-label">Last Applied</span>
+          <strong id="serverUpdated">Never</strong>
+        </div>
+        <div class="server-sync-item">
+          <span class="tuning-summary-label">Sync Status</span>
+          <strong id="serverSyncStatus">LOCAL ONLY</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="card chart-card">
+      <div class="card-header-row">
+        <h3>Efficiency Benchmarks</h3>
+        <span class="muted">Human Control vs AI Optimization</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="benchmarkChart"></canvas>
+      </div>
+      <div class="muted" id="benchmarkNote" style="margin-top:8px;">Benchmark score combines reward trend + invalid-action penalties.</div>
+      <div class="benchmark-delta" id="benchmarkDelta">Delta vs Human: --</div>
+    </section>
+  </div>
+
+  <div class="dual-grid lab-secondary-grid">
+    <section class="card chart-card">
+      <div class="card-header-row">
+        <h3>Tuned Policy Preview</h3>
+        <span class="muted">Before vs After decision lens</span>
+      </div>
+      <div class="preview-action" id="previewAction">-</div>
+      <p class="muted" id="previewReason">Apply tuning to compute preview impact.</p>
+      <div class="impact-meter-wrap">
+        <div class="impact-meter-head"><span>Critical Pressure</span><strong id="pressureValue">0</strong></div>
+        <div class="impact-meter"><span id="pressureMeter"></span></div>
+      </div>
+      <div class="impact-meter-wrap">
+        <div class="impact-meter-head"><span>Resource Capacity</span><strong id="capacityValue">0</strong></div>
+        <div class="impact-meter"><span id="capacityMeter"></span></div>
+      </div>
+      <div class="preview-delta" id="previewDelta">No baseline comparison yet.</div>
+      <div class="muted" id="previewStateMeta" style="margin-top:6px;">State snapshot: -</div>
+    </section>
+
+    <section class="card chart-card">
+      <div class="card-header-row">
+        <h3>Apply History</h3>
+        <span class="muted">Recent tuning commits</span>
+      </div>
+      <div class="apply-history" id="applyHistoryList">
+        <div class="history-item muted">No tuning applied yet.</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-header-row">
+      <h3>Agent Status</h3>
+      <span class="muted">Operational telemetry</span>
+    </div>
+
+    <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+      <div class="kpi">
+        <div class="kpi-label">Total Training Episodes</div>
+        <div class="kpi-value" id="labEpisodes">0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Decision Confidence Score</div>
+        <div class="kpi-value" id="labConfidence">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">AI Suggestion</div>
+        <div class="kpi-value" id="labSuggestion">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Active Server Profile</div>
+        <div class="kpi-value" id="labActiveProfile">Balanced</div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let benchChart = null;
+let labTuning = { emergencyWeight: 1.0, efficiencyWeight: 1.0 };
+let serverTuning = { emergency_weight: 1.0, efficiency_weight: 1.0, profile: 'Balanced', updated_at: null };
+let applyHistory = [];
+
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+function formatClock(iso) {
+  if (!iso) return 'Never';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'Never';
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function updateSyncBadge(mode, label) {
+  const pill = document.getElementById('aiLabSync');
+  if (!pill) return;
+  pill.textContent = label;
+  pill.classList.remove('live', 'error', 'pending');
+  if (mode === 'error') pill.classList.add('error');
+  else if (mode === 'pending') pill.classList.add('pending');
+  else pill.classList.add('live');
+}
+
+function syncServerPanel() {
+  const profile = document.getElementById('serverProfile');
+  const updated = document.getElementById('serverUpdated');
+  const syncStatus = document.getElementById('serverSyncStatus');
+  const activeProfile = document.getElementById('labActiveProfile');
+  const synced = Number(serverTuning.emergency_weight).toFixed(2) === Number(labTuning.emergencyWeight).toFixed(2)
+    && Number(serverTuning.efficiency_weight).toFixed(2) === Number(labTuning.efficiencyWeight).toFixed(2);
+  if (profile) profile.textContent = serverTuning.profile || 'Balanced';
+  if (updated) updated.textContent = formatClock(serverTuning.updated_at);
+  if (syncStatus) syncStatus.textContent = synced ? 'SYNCED' : 'LOCAL CHANGES';
+  if (activeProfile) activeProfile.textContent = serverTuning.profile || 'Balanced';
+}
+
+function renderApplyHistory() {
+  const list = document.getElementById('applyHistoryList');
+  if (!list) return;
+  if (!applyHistory.length) {
+    list.innerHTML = '<div class="history-item muted">No tuning applied yet.</div>';
+    return;
+  }
+  list.innerHTML = applyHistory.slice(0, 6).map(item => `
+    <div class="history-item">
+      <div class="history-head">
+        <strong>${item.profile}</strong>
+        <span>${formatClock(item.at)}</span>
+      </div>
+      <div class="history-copy">Emergency ${Number(item.emergency).toFixed(2)} • Efficiency ${Number(item.efficiency).toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+function profileNameFromTuning(tuning) {
+  const emergency = Number(tuning?.emergencyWeight ?? tuning?.emergency_weight ?? 1.0);
+  const efficiency = Number(tuning?.efficiencyWeight ?? tuning?.efficiency_weight ?? 1.0);
+  if (emergency >= 1.6 && efficiency <= 1.1) return 'Aggressive Triage';
+  if (efficiency >= 1.6 && emergency <= 1.1) return 'Efficiency First';
+  if (emergency >= 1.3 && efficiency >= 1.3) return 'High Response';
+  if (emergency <= 0.9 && efficiency <= 0.9) return 'Conservative';
+  return 'Balanced';
+}
+
+function setPreset(name) {
+  const presets = {
+    balanced: { emergencyWeight: 1.0, efficiencyWeight: 1.0 },
+    aggressive: { emergencyWeight: 2.0, efficiencyWeight: 0.9 },
+    efficiency: { emergencyWeight: 0.8, efficiencyWeight: 2.1 },
+    crisis: { emergencyWeight: 2.4, efficiencyWeight: 1.2 }
+  };
+  const p = presets[name] || presets.balanced;
+  const emergency = document.getElementById('emergencyWeight');
+  const efficiency = document.getElementById('efficiencyWeight');
+  if (emergency) emergency.value = String(p.emergencyWeight);
+  if (efficiency) efficiency.value = String(p.efficiencyWeight);
+  labTuning = { ...p };
+  updateSliderLabels();
+  syncTuningSummary();
+  syncServerPanel();
+  const note = document.getElementById('tuningNote');
+  if (note) note.textContent = `${profileNameFromTuning(p)} preset selected. Click Apply Tuning to push to server.`;
+  refreshLab();
+}
+
+function getTuning() {
+  return {
+    emergencyWeight: Number(labTuning?.emergencyWeight ?? 1.0),
+    efficiencyWeight: Number(labTuning?.efficiencyWeight ?? 1.0)
+  };
+}
+
+function syncTuningSummary() {
+  const tuning = getTuning();
+  const profileEl = document.getElementById('tuningProfileName');
+  const emergencyEl = document.getElementById('tuningEmergencyPreview');
+  const efficiencyEl = document.getElementById('tuningEfficiencyPreview');
+  if (profileEl) profileEl.textContent = profileNameFromTuning(tuning);
+  if (emergencyEl) emergencyEl.textContent = tuning.emergencyWeight.toFixed(2);
+  if (efficiencyEl) efficiencyEl.textContent = tuning.efficiencyWeight.toFixed(2);
+}
+
+function loadTuningFromLocal() {
+  const ew = Number(localStorage.getItem('aiLab_emergencyWeight') || '1.0');
+  const rw = Number(localStorage.getItem('aiLab_efficiencyWeight') || '1.0');
+  labTuning = { emergencyWeight: clamp(ew, 0.5, 3.0), efficiencyWeight: clamp(rw, 0.5, 3.0) };
+  const emergency = document.getElementById('emergencyWeight');
+  const efficiency = document.getElementById('efficiencyWeight');
+  if (emergency) emergency.value = String(labTuning.emergencyWeight);
+  if (efficiency) efficiency.value = String(labTuning.efficiencyWeight);
+  updateSliderLabels();
+  syncTuningSummary();
+  syncServerPanel();
+}
+
+async function fetchServerTuning() {
+  const res = await fetch('/api/ai_lab/tuning');
+  const data = await res.json();
+  if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to fetch server tuning');
+  const tuning = data.tuning || {};
+  serverTuning = {
+    emergency_weight: Number(tuning.emergency_weight ?? 1.0),
+    efficiency_weight: Number(tuning.efficiency_weight ?? 1.0),
+    profile: tuning.profile || profileNameFromTuning(tuning),
+    updated_at: tuning.updated_at || null
+  };
+  syncServerPanel();
+  return serverTuning;
+}
+
+async function fetchPolicyPreview(tuning) {
+  const res = await fetch('/api/ai_lab/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      emergency_weight: Number(tuning.emergencyWeight ?? tuning.emergency_weight ?? 1.0),
+      efficiency_weight: Number(tuning.efficiencyWeight ?? tuning.efficiency_weight ?? 1.0)
+    })
+  });
+  const data = await res.json();
+  if (!res.ok || !data?.success) throw new Error(data?.error || 'Policy preview failed');
+  return data;
+}
+
+function updateSliderLabels() {
+  const emergency = document.getElementById('emergencyWeight');
+  const efficiency = document.getElementById('efficiencyWeight');
+  const ewRaw = Number(emergency?.value || 1.0);
+  const rwRaw = Number(efficiency?.value || 1.0);
+  const ew = ewRaw.toFixed(2);
+  const rw = rwRaw.toFixed(2);
+  const ewEl = document.getElementById('emergencyWeightVal');
+  const rwEl = document.getElementById('efficiencyWeightVal');
+  if (ewEl) ewEl.textContent = ew;
+  if (rwEl) rwEl.textContent = rw;
+
+  function paintRange(el, val) {
+    if (!el) return;
+    const min = Number(el.min || 0.5);
+    const max = Number(el.max || 3.0);
+    const pct = clamp(((val - min) / (max - min)) * 100, 0, 100);
+    el.style.setProperty('--range-fill', `${pct}%`);
+  }
+
+  paintRange(emergency, ewRaw);
+  paintRange(efficiency, rwRaw);
+}
+
+async function applyTuning() {
+  const ew = Number(document.getElementById('emergencyWeight')?.value || 1.0);
+  const rw = Number(document.getElementById('efficiencyWeight')?.value || 1.0);
+  labTuning = { emergencyWeight: clamp(ew, 0.5, 3.0), efficiencyWeight: clamp(rw, 0.5, 3.0) };
+  const note = document.getElementById('tuningNote');
+  const applyBtn = document.getElementById('applyTuningBtn');
+  try {
+    if (applyBtn) applyBtn.disabled = true;
+    updateSyncBadge('pending', 'SYNC • APPLYING');
+    const res = await fetch('/api/ai_lab/tuning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emergency_weight: labTuning.emergencyWeight, efficiency_weight: labTuning.efficiencyWeight })
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to apply tuning');
+
+    localStorage.setItem('aiLab_emergencyWeight', String(labTuning.emergencyWeight));
+    localStorage.setItem('aiLab_efficiencyWeight', String(labTuning.efficiencyWeight));
+    serverTuning = data.tuning || serverTuning;
+    applyHistory.unshift({
+      at: serverTuning.updated_at || new Date().toISOString(),
+      profile: serverTuning.profile || profileNameFromTuning(labTuning),
+      emergency: serverTuning.emergency_weight,
+      efficiency: serverTuning.efficiency_weight
+    });
+    renderApplyHistory();
+    syncTuningSummary();
+    syncServerPanel();
+    await refreshLab();
+    if (note) note.textContent = `Applied to backend policy at ${formatClock(serverTuning.updated_at)}.`; 
+    updateSyncBadge('live', 'SYNC • LIVE');
+  } catch (err) {
+    console.error(err);
+    if (note) note.textContent = `Apply failed: ${err?.message || err}`;
+    updateSyncBadge('error', 'SYNC • ERROR');
+  } finally {
+    if (applyBtn) applyBtn.disabled = false;
+  }
+}
+
+function resetTuning() {
+  localStorage.removeItem('aiLab_emergencyWeight');
+  localStorage.removeItem('aiLab_efficiencyWeight');
+  loadTuningFromLocal();
+  refreshLab();
+  const note = document.getElementById('tuningNote');
+  if (note) note.textContent = 'Reset locally. Click Apply Tuning to push defaults to backend.';
+}
+
+async function fetchLabSnapshot() {
+  const [historyRes, statusRes] = await Promise.all([
+    fetch('/api/episode_history').then(r => r.json()),
+    fetch('/api/status').then(r => r.json())
+  ]);
+  return { history: historyRes, status: statusRes };
+}
+
+function computeConfidence(state, history) {
+  // Demo confidence heuristic: fewer invalid actions + more available resources => higher confidence.
+  const total = Array.isArray(history) ? history.length : 0;
+  const invalid = (Array.isArray(history) ? history : []).reduce((acc, row) => acc + (row?.info?.invalid_allocation ? 1 : 0), 0);
+  const invalidRate = total ? (invalid / total) : 0;
+  const doctors = Number(state?.available_doctors ?? 0);
+  const beds = Number(state?.available_beds ?? 0);
+  const resourceScore = clamp((doctors + beds) / 8, 0, 1);
+  const confidence = clamp((1 - invalidRate) * 0.7 + resourceScore * 0.3, 0, 1);
+  return Math.round(confidence * 100);
+}
+
+function renderBenchmarks(state, history) {
+  const canvas = document.getElementById('benchmarkChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  if (benchChart) benchChart.destroy();
+
+  const totalReward = (Array.isArray(history) ? history : []).reduce((acc, row) => acc + Number(row?.reward || 0), 0);
+  const invalid = (Array.isArray(history) ? history : []).reduce((acc, row) => acc + (row?.info?.invalid_allocation ? 1 : 0), 0);
+  const tuning = getTuning();
+
+  // Human baseline is a fixed reference; AI score derived from current episode history.
+  const humanScore = 60;
+  const tuningBoost = (tuning.emergencyWeight - 1.0) * 9 + (tuning.efficiencyWeight - 1.0) * 7;
+  const aiScore = clamp(60 + (totalReward / 5) - invalid * 8 + tuningBoost, 0, 100);
+  const aiGradient = ctx.createLinearGradient(0, 0, 0, 320);
+  aiGradient.addColorStop(0, 'rgba(34, 211, 238, 0.98)');
+  aiGradient.addColorStop(0.45, 'rgba(14, 165, 233, 0.92)');
+  aiGradient.addColorStop(1, 'rgba(29, 78, 216, 0.96)');
+
+  benchChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Human Control', 'AI Optimization'],
+      datasets: [{
+        label: 'Benchmark Score',
+        data: [humanScore, aiScore],
+        backgroundColor: ['rgba(148, 163, 184, 0.46)', aiGradient],
+        borderColor: ['rgba(100, 116, 139, 0.55)', 'rgba(29, 78, 216, 0.96)'],
+        borderWidth: 1.2,
+        borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 },
+        borderSkipped: false,
+        barThickness: 60,
+        maxBarThickness: 66
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { color: '#64748b', font: { weight: 700 }, stepSize: 20 },
+          grid: { color: 'rgba(148, 163, 184, 0.24)', drawBorder: false }
+        },
+        x: {
+          ticks: { color: '#475569', font: { weight: 700 } },
+          grid: { color: 'rgba(148, 163, 184, 0.14)', drawBorder: false }
+        }
+      }
+    }
+  });
+
+  const benchNote = document.getElementById('benchmarkNote');
+  if (benchNote) {
+    benchNote.textContent = `Benchmark score combines reward trend + invalid-action penalties + tuned bias (${profileNameFromTuning(tuning)}).`;
+  }
+
+  const delta = document.getElementById('benchmarkDelta');
+  if (delta) {
+    const diff = aiScore - humanScore;
+    const sign = diff >= 0 ? '+' : '';
+    delta.textContent = `Delta vs Human: ${sign}${diff.toFixed(1)} points`;
+    delta.classList.toggle('good', diff >= 0);
+    delta.classList.toggle('bad', diff < 0);
+  }
+}
+
+function renderPolicyPreview(currentPreviewRes, baselinePreviewRes) {
+  const current = currentPreviewRes?.preview || {};
+  const baseline = baselinePreviewRes?.preview || {};
+  const snapshot = currentPreviewRes?.state_snapshot || {};
+
+  const actionEl = document.getElementById('previewAction');
+  const reasonEl = document.getElementById('previewReason');
+  const pressureValEl = document.getElementById('pressureValue');
+  const capacityValEl = document.getElementById('capacityValue');
+  const pressureMeter = document.getElementById('pressureMeter');
+  const capacityMeter = document.getElementById('capacityMeter');
+  const deltaEl = document.getElementById('previewDelta');
+  const metaEl = document.getElementById('previewStateMeta');
+
+  if (actionEl) actionEl.textContent = current.action || '-';
+  if (reasonEl) reasonEl.textContent = current.reason || 'No policy preview reason available.';
+
+  const pressure = Number(current.critical_pressure || 0);
+  const capacity = Number(current.resource_capacity || 0);
+  if (pressureValEl) pressureValEl.textContent = pressure.toFixed(2);
+  if (capacityValEl) capacityValEl.textContent = capacity.toFixed(2);
+  if (pressureMeter) pressureMeter.style.width = `${clamp((pressure / 15) * 100, 4, 100)}%`;
+  if (capacityMeter) capacityMeter.style.width = `${clamp((capacity / 25) * 100, 4, 100)}%`;
+
+  if (deltaEl) {
+    const oldAction = baseline.action || '-';
+    const newAction = current.action || '-';
+    deltaEl.textContent = oldAction === newAction
+      ? `No action shift vs baseline (${oldAction}).`
+      : `Action changed: ${oldAction} → ${newAction}`;
+  }
+
+  if (metaEl) {
+    metaEl.textContent = `State snapshot: Waiting ${snapshot.waiting ?? 0}, RED ${snapshot.red_waiting ?? 0}, Doctors ${snapshot.available_doctors ?? 0}, Beds ${snapshot.available_beds ?? 0}, City Beds ${snapshot.city_available_beds ?? 0}`;
+  }
+}
+
+async function refreshLab() {
+  try {
+    const [snap, tuningState, currentPreview, baselinePreview] = await Promise.all([
+      fetchLabSnapshot(),
+      fetchServerTuning(),
+      fetchPolicyPreview(getTuning()),
+      fetchPolicyPreview({ emergencyWeight: 1.0, efficiencyWeight: 1.0 })
+    ]);
+    const state = snap?.status?.state || {};
+    const history = snap?.history?.history || [];
+
+    document.getElementById('labEpisodes').textContent = String(snap?.status?.episode_count ?? 0);
+    const conf = computeConfidence(state, history);
+    const confidenceEl = document.getElementById('labConfidence');
+    if (confidenceEl) {
+      confidenceEl.textContent = `${conf}%`;
+      confidenceEl.classList.remove('conf-high', 'conf-mid', 'conf-low');
+      if (conf > 80) confidenceEl.classList.add('conf-high');
+      else if (conf >= 50) confidenceEl.classList.add('conf-mid');
+      else confidenceEl.classList.add('conf-low');
+    }
+
+    const suggestion = state?.ai_suggestion_action ? `${state.ai_suggestion_action}` : '-';
+    const suggestionEl = document.getElementById('labSuggestion');
+    if (suggestionEl) {
+      const normalized = String(suggestion).toUpperCase();
+      suggestionEl.textContent = suggestion;
+      suggestionEl.classList.remove('suggestion-alloc', 'suggestion-warn', 'suggestion-neutral');
+      if (normalized.includes('ALLOCATE')) suggestionEl.classList.add('suggestion-alloc');
+      else if (normalized === 'REQUEST HELP' || normalized === 'ESCALATE') suggestionEl.classList.add('suggestion-warn');
+      else suggestionEl.classList.add('suggestion-neutral');
+    }
+
+    renderBenchmarks(state, history);
+    renderPolicyPreview(currentPreview, baselinePreview);
+    serverTuning = tuningState || serverTuning;
+    syncServerPanel();
+    updateSyncBadge('live', 'SYNC • LIVE');
+    syncTuningSummary();
+  } catch (e) {
+    updateSyncBadge('error', 'SYNC • ERROR');
+    console.error(e);
+  }
+}
+
+document.getElementById('emergencyWeight')?.addEventListener('input', updateSliderLabels);
+document.getElementById('efficiencyWeight')?.addEventListener('input', updateSliderLabels);
+
+loadTuningFromLocal();
+fetchServerTuning().then((tuning) => {
+  // On first load, follow server truth so the UI reflects real policy state.
+  if (!localStorage.getItem('aiLab_emergencyWeight') && !localStorage.getItem('aiLab_efficiencyWeight')) {
+    labTuning = {
+      emergencyWeight: Number(tuning?.emergency_weight ?? 1.0),
+      efficiencyWeight: Number(tuning?.efficiency_weight ?? 1.0)
+    };
+    const emergency = document.getElementById('emergencyWeight');
+    const efficiency = document.getElementById('efficiencyWeight');
+    if (emergency) emergency.value = String(labTuning.emergencyWeight);
+    if (efficiency) efficiency.value = String(labTuning.efficiencyWeight);
+    updateSliderLabels();
+    syncTuningSummary();
+  }
+  syncServerPanel();
+}).catch(() => {});
+renderApplyHistory();
+refreshLab();
+setInterval(refreshLab, 2500);
+</script>
+
+<style>
+.analytics-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.hero-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: radial-gradient(circle at top right, rgba(255, 107, 61, 0.10), rgba(255, 255, 255, 0.96));
+}
+
+.hero-card h2 {
+  margin: 0 0 6px;
+  color: #1e293b;
+}
+
+.sync-pill {
+  border: 1px solid rgba(100, 116, 139, 0.5);
+  color: #64748b;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.sync-pill.live {
+  border-color: rgba(16, 185, 129, 0.7);
+  color: #059669;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.15);
+}
+
+.sync-pill.pending {
+  border-color: rgba(245, 158, 11, 0.7);
+  color: #b45309;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.18);
+}
+
+.sync-pill.error {
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #b91c1c;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.18);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kpi {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.85));
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.kpi-label {
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+#labConfidence.conf-high { color: #059669; }
+#labConfidence.conf-mid { color: #b45309; }
+#labConfidence.conf-low { color: #dc2626; }
+
+#labSuggestion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+#labSuggestion.suggestion-alloc {
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+}
+
+#labSuggestion.suggestion-warn {
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+}
+
+#labSuggestion.suggestion-neutral {
+  color: #334155;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+}
+
+.chart-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  max-height: 55vh;
+}
+
+#benchmarkChart {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.card-header-row h3 {
+  margin: 0;
+}
+
+.dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.slider-block {
+  border: 1px solid rgba(88, 126, 196, 0.24);
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(241, 245, 249, 0.84));
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 12px;
+}
+
+.preset-chip {
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.95), rgba(224, 242, 254, 0.92));
+  color: #075985;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.preset-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 16px rgba(14, 165, 233, 0.2);
+}
+
+.tuning-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tuning-summary-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.9));
+}
+
+.tuning-summary-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.tuning-summary-item strong {
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.server-sync-panel {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.server-sync-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(240, 249, 255, 0.9));
+}
+
+.benchmark-delta {
+  margin-top: 8px;
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.benchmark-delta.good {
+  color: #065f46;
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(209, 250, 229, 0.76);
+}
+
+.benchmark-delta.bad {
+  color: #991b1b;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(254, 226, 226, 0.76);
+}
+
+.lab-secondary-grid {
+  align-items: stretch;
+}
+
+.preview-action {
+  font-size: 34px;
+  line-height: 1.02;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #059669, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.impact-meter-wrap {
+  margin-top: 10px;
+}
+
+.impact-meter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.impact-meter {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+}
+
+.impact-meter span {
+  display: block;
+  height: 100%;
+  width: 4%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #14b8a6, #2563eb);
+  transition: width 0.3s ease;
+}
+
+.preview-delta {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.apply-history {
+  display: grid;
+  gap: 8px;
+}
+
+.history-item {
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,245,249,0.86));
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-head strong {
+  color: #1e293b;
+  font-size: 13px;
+}
+
+.history-head span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-copy {
+  margin-top: 4px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.slider-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.slider-title {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.slider-value {
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  padding: 6px 12px;
+  min-width: 64px;
+  text-align: center;
+  color: #1d4ed8;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 var(--range-fill, 50%), #dbeafe var(--range-fill, 50%), #dbeafe 100%);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  background: #1d4ed8;
+  box-shadow: 0 5px 14px rgba(37, 99, 235, 0.32), 0 0 0 1px rgba(30, 64, 175, 0.2);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  background: #1d4ed8;
+  box-shadow: 0 5px 14px rgba(37, 99, 235, 0.32), 0 0 0 1px rgba(30, 64, 175, 0.2);
+  cursor: pointer;
+}
+
+.lab-btn-primary {
+  min-height: 38px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  border: 1px solid #3730a3;
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.lab-btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.36);
+}
+
+.lab-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 12px rgba(79, 70, 229, 0.26);
+}
+
+.lab-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.lab-btn-ghost {
+  min-height: 38px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.9));
+  color: #334155;
+  border: 1px solid rgba(148, 163, 184, 0.48);
+  border-radius: 10px;
+  font-weight: 600;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.lab-btn-ghost:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #ffffff, #e2e8f0);
+  color: #0f172a;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+}
+
+.lab-btn-ghost:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+}
+
+@media (max-width: 960px) {
+  .dual-grid { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-wrap { height: 260px; max-height: 50vh; }
+  .tuning-summary { grid-template-columns: 1fr; }
+  .server-sync-panel { grid-template-columns: 1fr; }
+  .preview-action { font-size: 28px; }
+}
+</style>
+{% endblock %}
+

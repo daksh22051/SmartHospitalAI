@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Hospital Resource Orchestration - Modern Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #60a5fa;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3), transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 219, 98, 0.2), transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--card-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--warning));
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--dark);
+            border: 2px solid var(--card-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--light);
+            transform: translateY(-2px);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .icon-primary { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; }
+        .icon-success { background: linear-gradient(135deg, #10b981, #34d399); color: white; }
+        .icon-warning { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; }
+        .icon-danger { background: linear-gradient(135deg, #ef4444, #f87171); color: white; }
+        .icon-info { background: linear-gradient(135deg, #06b6d4, #22d3ee); color: white; }
+
+        .metric {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .change-positive {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+        }
+
+        .change-negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .status-critical {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .weather-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .weather-data {
+            padding: 1rem;
+        }
+
+        .weather-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .weather-temp {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .weather-condition {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .weather-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+
+        .weather-detail i {
+            color: var(--primary);
+        }
+
+        .weather-detail-label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .weather-detail-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .hospital-impact {
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(239, 68, 68, 0.1));
+            border-radius: 12px;
+            border-left: 4px solid var(--warning);
+        }
+
+        .hospital-impact.heat {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger);
+        }
+
+        .hospital-impact.rain {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--primary);
+        }
+
+        .hospital-impact.pollution {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+
+        .impact-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .impact-message {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>Smart Hospital Orchestration</h1>
+                    <p>Real-time Hospital Resource Management & Patient Flow Optimization</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="refreshData()">
+                        <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="runSimulation()">
+                        <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                        Run Simulation
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Key Metrics Dashboard -->
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-primary">
+                            <i data-lucide="users"></i>
+                        </div>
+                        Total Patients
+                    </div>
+                </div>
+                <div class="metric">247</div>
+                <div class="metric-label">Current Census</div>
+                <div class="metric-change change-positive">
+                    <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                    +12% from yesterday
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 78%;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-success">
+                            <i data-lucide="bed"></i>
+                        </div>
+                        Bed Occupancy
+                    </div>
+                </div>
+                <div class="metric">89%</div>
+                <div class="metric-label">Capacity Utilization</div>
+                <div class="metric-change change-negative">
+                    <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                    +5% from last hour
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 89%; background: linear-gradient(90deg, #10b981, #f59e0b);"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-warning">
+                            <i data-lucide="clock"></i>
+                        </div>
+                        Waiting Time
+                    </div>
+                </div>
+                <div class="metric">23min</div>
+                <div class="metric-label">Average Wait</div>
+                <div class="metric-change change-positive">
+                    <i data-lucide="trending-down" style="width: 14px; height: 14px;"></i>
+                    -8min improvement
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 45%; background: linear-gradient(90deg, #10b981, #22d3ee);"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-danger">
+                            <i data-lucide="alert-triangle"></i>
+                        </div>
+                        Critical Cases
+                    </div>
+                </div>
+                <div class="metric">12</div>
+                <div class="metric-label">Need Immediate Attention</div>
+                <div class="status-indicators">
+                    <div class="status-badge status-critical">
+                        <div class="pulse"></div>
+                        3 Critical
+                    </div>
+                    <div class="status-badge status-warning">
+                        <div class="pulse"></div>
+                        9 Urgent
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-info">
+                            <i data-lucide="activity"></i>
+                        </div>
+                        Staff Efficiency
+                    </div>
+                </div>
+                <div class="metric">94%</div>
+                <div class="metric-label">Optimization Score</div>
+                <div class="metric-change change-positive">
+                    <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                    +3% this week
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 94%;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-primary">
+                            <i data-lucide="zap"></i>
+                        </div>
+                        AI Performance
+                    </div>
+                </div>
+                <div class="metric">2,656</div>
+                <div class="metric-label">Total Reward Score</div>
+                <div class="metric-change change-positive">
+                    <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                    +425 improvement
+                </div>
+                <div class="status-indicators">
+                    <div class="status-badge status-active">
+                        <div class="pulse"></div>
+                        AI Active
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Widget -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon icon-info">
+                        <i data-lucide="cloud"></i>
+                    </div>
+                    Weather & Environment
+                </div>
+            </div>
+            <div id="weather-content">
+                <div class="weather-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Syncing live weather...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-primary">
+                            <i data-lucide="bar-chart-2"></i>
+                        </div>
+                        Patient Flow Trends
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="patientFlowChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-success">
+                            <i data-lucide="pie-chart"></i>
+                        </div>
+                        Resource Allocation
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="resourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Weather API Integration
+        const API_KEY = 'YOUR_API_KEY'; // Replace with actual OpenWeatherMap API key
+        const DEFAULT_CITY = 'Ahmedabad';
+        
+        let weatherData = {
+            temp: null,
+            condition: null,
+            humidity: null,
+            windSpeed: null,
+            aqi: null,
+            location: DEFAULT_CITY
+        };
+
+        async function fetchWeatherData() {
+            try {
+                console.log('Fetching weather from backend API...');
+                
+                // Call backend API endpoint (server handles all external API calls)
+                const response = await fetch('/api/weather');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('Weather data received:', data);
+                    
+                    // Update weather data from backend response
+                    weatherData.temp = data.temp;
+                    weatherData.condition = data.condition;
+                    weatherData.humidity = data.humidity;
+                    weatherData.windSpeed = data.wind_kph;
+                    weatherData.aqi = data.aqi;
+                    weatherData.location = data.city || DEFAULT_CITY;
+                    
+                    // Store hospital impact message for later use
+                    if (data.hospital_impact) {
+                        window.hospitalImpactMessage = data.hospital_impact;
+                    }
+                    
+                    console.log(`Weather updated: ${weatherData.temp}°C, ${weatherData.condition}, Humidity: ${weatherData.humidity}%, AQI: ${weatherData.aqi}`);
+                    updateWeatherDisplay();
+                } else {
+                    throw new Error(data.error || 'Backend API returned error');
+                }
+                
+            } catch (error) {
+                console.error('Error fetching weather from backend:', error);
+                
+                // Last resort: use reasonable defaults for Ahmedabad
+                console.log('Using fallback weather data for Ahmedabad');
+                weatherData.temp = 35;
+                weatherData.condition = 'Clear';
+                weatherData.humidity = 45;
+                weatherData.windSpeed = 15;
+                weatherData.aqi = 120;
+                updateWeatherDisplay();
+            }
+        }
+
+        function updateWeatherDisplay() {
+            const weatherContent = document.getElementById('weather-content');
+            
+            const impactClass = getImpactClass();
+            const impactMessage = getImpactMessage();
+            const weatherIcon = getWeatherIcon();
+            
+            weatherContent.innerHTML = `
+                <div class="weather-data">
+                    <div class="weather-main">
+                        <div>
+                            <div class="weather-temp">${weatherData.temp}°C</div>
+                            <div class="weather-condition">${weatherData.condition} ${weatherIcon}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.9rem; color: #64748b;">${weatherData.location}</div>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">Live</div>
+                        </div>
+                    </div>
+                    
+                    <div class="weather-details">
+                        <div class="weather-detail">
+                            <i data-lucide="droplets" style="width: 16px; height: 16px;"></i>
+                            <div>
+                                <div class="weather-detail-label">Humidity</div>
+                                <div class="weather-detail-value">${weatherData.humidity}%</div>
+                            </div>
+                        </div>
+                        <div class="weather-detail">
+                            <i data-lucide="wind" style="width: 16px; height: 16px;"></i>
+                            <div>
+                                <div class="weather-detail-label">Wind Speed</div>
+                                <div class="weather-detail-value">${weatherData.windSpeed} km/h</div>
+                            </div>
+                        </div>
+                        <div class="weather-detail">
+                            <i data-lucide="gauge" style="width: 16px; height: 16px;"></i>
+                            <div>
+                                <div class="weather-detail-label">AQI</div>
+                                <div class="weather-detail-value">${weatherData.aqi}</div>
+                            </div>
+                        </div>
+                        <div class="weather-detail">
+                            <i data-lucide="thermometer" style="width: 16px; height: 16px;"></i>
+                            <div>
+                                <div class="weather-detail-label">Feels Like</div>
+                                <div class="weather-detail-value">${weatherData.temp + 2}°C</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="hospital-impact ${impactClass}">
+                        <div class="impact-title">
+                            <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+                            Hospital Impact
+                        </div>
+                        <div class="impact-message">${impactMessage}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Re-initialize Lucide icons for weather widget
+            lucide.createIcons();
+        }
+
+        function getImpactClass() {
+            if (weatherData.temp > 35) return 'heat';
+            if (weatherData.condition === 'Rain') return 'rain';
+            if (weatherData.aqi > 200) return 'pollution';
+            return '';
+        }
+
+        function getImpactMessage() {
+            if (weatherData.temp > 35) {
+                return 'Heat-related illnesses may increase. Ensure hydration stations are available.';
+            }
+            if (weatherData.condition === 'Rain') {
+                return 'Potential increase in vector-borne diseases (Dengue/Malaria) and trauma cases from slippery roads.';
+            }
+            if (weatherData.aqi > 200) {
+                return 'High pollution detected. Prepare for increased asthma and respiratory distress admissions.';
+            }
+            return 'Normal weather conditions. Standard hospital operations in effect.';
+        }
+
+        function getWeatherIcon() {
+            const icons = {
+                'Clear': '☀️',
+                'Clouds': '☁️',
+                'Rain': '🌧️',
+                'Drizzle': '🌦️',
+                'Thunderstorm': '⛈️',
+                'Snow': '❄️',
+                'Mist': '🌫️'
+            };
+            return icons[weatherData.condition] || '🌡️';
+        }
+
+        // Initialize weather on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Dashboard loading...');
+            
+            // Start weather fetch (non-blocking)
+            fetchWeatherData();
+            setInterval(fetchWeatherData, 300000);
+            
+            // AUTO-INITIALIZE: Check if system is ready, init if needed
+            console.log('📋 Checking system initialization status...');
+            try {
+                // Try to fetch state - if it fails, system isn't initialized
+                const statusResponse = await fetch('/api/status');
+                const statusData = await statusResponse.json();
+                
+                console.log('System status:', statusData);
+                
+                if (!statusData.is_initialized || !statusData.environment) {
+                    console.log('⚠ System not initialized. Auto-initializing...');
+                    await initializeSystem('medium');
+                } else {
+                    console.log('✓ System already initialized. Fetching state...');
+                    await fetchDashboardState();
+                }
+            } catch (error) {
+                console.error('Status check failed, attempting initialization:', error);
+                await initializeSystem('medium');
+            }
+            
+            hideLoadingState();
+        });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Chart configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            family: 'Inter',
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Inter'
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Inter'
+                        }
+                    }
+                }
+            }
+        };
+
+        // Patient Flow Chart
+        const patientFlowCtx = document.getElementById('patientFlowChart').getContext('2d');
+        new Chart(patientFlowCtx, {
+            type: 'line',
+            data: {
+                labels: ['6AM', '9AM', '12PM', '3PM', '6PM', '9PM'],
+                datasets: [{
+                    label: 'Admissions',
+                    data: [12, 45, 67, 89, 56, 34],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Discharges',
+                    data: [8, 23, 45, 67, 78, 45],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Resource Allocation Chart
+        const resourceCtx = document.getElementById('resourceChart').getContext('2d');
+        new Chart(resourceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Emergency', 'ICU', 'General Ward', 'Surgery', 'Outpatient'],
+                datasets: [{
+                    data: [25, 15, 35, 20, 5],
+                    backgroundColor: [
+                        '#ef4444',
+                        '#f59e0b',
+                        '#3b82f6',
+                        '#10b981',
+                        '#06b6d4'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Interactive functions
+        function refreshData() {
+            const btn = event.target.closest('.btn');
+            const icon = btn.querySelector('[data-lucide="refresh-cw"]');
+            icon.style.animation = 'spin 1s linear infinite';
+            
+            setTimeout(() => {
+                icon.style.animation = '';
+                // Update metrics with animation
+                updateMetrics();
+            }, 1000);
+        }
+
+        function runSimulation() {
+            const btn = event.target.closest('.btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<div class="loading-spinner"></div> Running...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                lucide.createIcons();
+                updateMetrics();
+            }, 3000);
+        }
+
+        function updateMetrics() {
+            // Animate metric changes
+            document.querySelectorAll('.metric').forEach(metric => {
+                const current = parseInt(metric.textContent);
+                const change = Math.floor(Math.random() * 10) - 5;
+                const newValue = Math.max(0, current + change);
+                
+                animateValue(metric, current, newValue, 1000);
+            });
+        }
+
+        function animateValue(element, start, end, duration) {
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    element.textContent = end;
+                    // ============= STATE MANAGEMENT =============
+                    let dashboardState = {
+                        initialized: false,
+                        loading: false,
+                        lastUpdate: null,
+                        currentTask: 'medium'
+                    };
+
+                    // ============= INITIALIZATION FLOW =============
+                    /**
+                     * Initialize system and fetch state
+                     */
+                    async function initializeSystem(task = 'medium') {
+                        try {
+                            console.log('🔄 Initializing system...');
+                            dashboardState.loading = true;
+                            showLoadingState();
+
+                            const response = await fetch('/api/init', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ task: task, seed: 42 })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Init failed: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                
+                            if (data.success) {
+                                console.log('✓ System initialized:', data);
+                                dashboardState.initialized = true;
+                                dashboardState.currentTask = task;
+                    
+                                await fetchDashboardState();
+                                console.log('✓ Dashboard ready with real data');
+                            } else {
+                                throw new Error(data.error || 'Initialization failed');
+                            }
+                        } catch (error) {
+                            console.error('❌ Initialization failed:', error);
+                            showInitializationError(error.message);
+                        } finally {
+                            dashboardState.loading = false;
+                        }
+                    }
+
+                    /**
+                     * Fetch current dashboard state from backend
+                     */
+                    async function fetchDashboardState() {
+                        try {
+                            console.log('📊 Fetching dashboard state...');
+                
+                            const response = await fetch('/api/get_state', {
+                                method: 'GET',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+
+                            if (!response.ok) {
+                                if (response.status === 404) {
+                                    console.warn('⚠ System not initialized. Initializing...');
+                                    await initializeSystem();
+                                    return;
+                                }
+                                throw new Error(`Get state failed: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                
+                            if (data.success && data.state) {
+                                console.log('✓ State received:', data.state);
+                                updateDashboardWithData(data.state);
+                                dashboardState.lastUpdate = new Date().toISOString();
+                            } else {
+                                throw new Error(data.error || 'Failed to get state');
+                            }
+                        } catch (error) {
+                            console.error('❌ Failed to fetch state:', error);
+                            showDataFetchError(error.message);
+                        }
+                    }
+
+                    /**
+                     * Update dashboard metrics with real data
+                     */
+                    function updateDashboardWithData(state) {
+                        try {
+                            updateMetricCard('Total Patients', state.total_patients || 0, 'users');
+                            updateMetricCard('Waiting Patients', state.waiting || 0, 'clock');
+                            updateMetricCard('Admitted Patients', state.admitted || 0, 'bed');
+                            updateMetricCard('Available Doctors', state.available_doctors || 0, 'activity');
+                            updateMetricCard('Available Beds', state.available_beds || 0, 'zap');
+                
+                            const totalBeds = state.total_beds || 1;
+                            const bedOccupancy = totalBeds > 0 ? Math.round((state.admitted / totalBeds) * 100) : 0;
+                            const systemLoad = Math.round((state.system_load || 0) * 100);
+                
+                            updateMetricCard('Bed Occupancy', `${bedOccupancy}%`, 'bed');
+                            updateMetricCard('System Load', `${systemLoad}%`, 'zap');
+                
+                            console.log('✓ Dashboard updated with live data');
+                        } catch (error) {
+                            console.error('Error updating dashboard:', error);
+                        }
+                    }
+
+                    /**
+                     * Update individual metric cards
+                     */
+                    function updateMetricCard(label, value, icon) {
+                        const cards = document.querySelectorAll('.card');
+                        let found = false;
+            
+                        cards.forEach(card => {
+                            const titleText = card.querySelector('.card-title')?.textContent || '';
+                            if (titleText.includes(label)) {
+                                const metricEl = card.querySelector('.metric');
+                                if (metricEl && metricEl.textContent !== String(value)) {
+                                    const oldValue = parseInt(metricEl.textContent) || 0;
+                                    animateValue(metricEl, oldValue, value, 800);
+                                    found = true;
+                                }
+                            }
+                        });
+            
+                        return found;
+                    }
+
+                    function showLoadingState() {
+                        const metricsSection = document.querySelector('.dashboard');
+                        if (!metricsSection) return;
+            
+                        metricsSection.style.opacity = '0.5';
+                        metricsSection.style.pointerEvents = 'none';
+            
+                        const spinner = document.createElement('div');
+                        spinner.id = 'init-spinner';
+                        spinner.style.cssText = `
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            font-size: 2rem;
+                            z-index: 1000;
+                        `;
+                        spinner.textContent = '⏳ Initializing...';
+                        document.body.appendChild(spinner);
+                    }
+
+                    function hideLoadingState() {
+                        const metricsSection = document.querySelector('.dashboard');
+                        if (metricsSection) {
+                            metricsSection.style.opacity = '1';
+                            metricsSection.style.pointerEvents = 'auto';
+                        }
+            
+                        const spinner = document.getElementById('init-spinner');
+                        if (spinner) spinner.remove();
+                    }
+
+                    function showInitializationError(message) {
+                        console.error('Init error:', message);
+                        hideLoadingState();
+                        const toast = document.createElement('div');
+                        toast.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            right: 20px;
+                            background: #ef4444;
+                            color: white;
+                            padding: 16px;
+                            border-radius: 8px;
+                            z-index: 1001;
+                        `;
+                        toast.textContent = `❌ ${message}`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 5000);
+                    }
+
+                    function showDataFetchError(message) {
+                        console.error('Data fetch error:', message);
+                        const toast = document.createElement('div');
+                        toast.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            right: 20px;
+                            background: #f59e0b;
+                            color: white;
+                            padding: 16px;
+                            border-radius: 8px;
+                            z-index: 1001;
+                        `;
+                        toast.textContent = `⚠️ ${message}`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 5000);
+                    }
+
+                    function animateValue(element, start, end, duration) {
+                        if (typeof end === 'string') {
+                            element.textContent = end;
+                            return;
+                        }
+
+                        const range = end - start;
+                        const increment = range / (duration / 16);
+                        let current = start;
+            
+                        const timer = setInterval(() => {
+                            current += increment;
+                            if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                                element.textContent = end;
+                                clearInterval(timer);
+                            } else {
+                                element.textContent = Math.round(current);
+                            }
+                        }, 16);
+                    }
+
+                    function refreshData() {
+                        const btn = event.target.closest('.btn');
+                        const icon = btn.querySelector('[data-lucide="refresh-cw"]');
+                        icon.style.animation = 'spin 1s linear infinite';
+            
+                        fetchDashboardState().finally(() => {
+                            icon.style.animation = '';
+                        });
+                    }
+
+                    function runSimulation() {
+                        const btn = event.target.closest('.btn');
+                        const originalContent = btn.innerHTML;
+                        btn.innerHTML = '<div class="loading-spinner"></div> Running...';
+                        btn.disabled = true;
+            
+                        fetch('/api/ai_action', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            console.log('AI action result:', data);
+                            return fetchDashboardState();
+                        })
+                        .catch(error => console.error('AI action failed:', error))
+                        .finally(() => {
+                            btn.innerHTML = originalContent;
+                            btn.disabled = false;
+                            lucide.createIcons();
+                        });
+                    }
+
+                    setInterval(() => {
+                        if (dashboardState.initialized && !dashboardState.loading) {
+                            fetchDashboardState().catch(console.error);
+                        }
+                    }, 30000);

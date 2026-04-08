@@ -1,0 +1,1483 @@
+{% extends "base.html" %}
+
+{% block title %}AI Analytics Lab | Smart Hospital{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  html.analytics-loading .analytics-shell {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  html.analytics-loading .analytics-skeleton {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .analytics-skeleton {
+    display: none;
+    gap: 22px;
+    margin-bottom: -22px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  html.analytics-loading .analytics-skeleton {
+    display: grid;
+  }
+
+  .skeleton-strip,
+  .skeleton-chip,
+  .skeleton-line,
+  .skeleton-box,
+  .skeleton-chart {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(241, 245, 249, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+  }
+
+  .skeleton-strip::after,
+  .skeleton-chip::after,
+  .skeleton-line::after,
+  .skeleton-box::after,
+  .skeleton-chart::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.72), transparent);
+    animation: analyticsShimmer 1.45s infinite;
+  }
+
+  .skeleton-strip { height: 82px; }
+  .skeleton-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .skeleton-card { padding: 22px; }
+  .skeleton-label { height: 12px; width: 42%; border-radius: 999px; margin-bottom: 10px; }
+  .skeleton-value { height: 28px; width: 64%; border-radius: 999px; }
+  .skeleton-value.skeleton-value-lg { height: 36px; width: 78%; }
+  .skeleton-chart { height: 420px; }
+  .skeleton-chart-sm { height: 320px; }
+  .skeleton-chart-xl { height: 460px; }
+  .skeleton-row { display: grid; gap: 12px; }
+  .skeleton-row--two { grid-template-columns: 1fr 1fr; }
+  .skeleton-row--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .skeleton-row--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .skeleton-line { height: 16px; width: 100%; }
+  .skeleton-line.short { width: 68%; }
+  .skeleton-line.medium { width: 82%; }
+  .skeleton-chip { height: 24px; width: 78px; border-radius: 999px; }
+
+  @keyframes analyticsShimmer {
+    100% { transform: translateX(100%); }
+  }
+</style>
+<script>
+  document.documentElement.classList.add('analytics-loading');
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-skeleton" aria-hidden="true">
+    <section class="card skeleton-strip skeleton-card"></section>
+    <section class="card skeleton-card">
+        <div class="skeleton-row skeleton-row--four">
+            <div class="skeleton-box" style="padding:14px;">
+                <div class="skeleton-label skeleton-line short"></div>
+                <div class="skeleton-value"></div>
+            </div>
+            <div class="skeleton-box" style="padding:14px;">
+                <div class="skeleton-label skeleton-line short"></div>
+                <div class="skeleton-value"></div>
+            </div>
+            <div class="skeleton-box" style="padding:14px;">
+                <div class="skeleton-label skeleton-line short"></div>
+                <div class="skeleton-value"></div>
+            </div>
+            <div class="skeleton-box" style="padding:14px;">
+                <div class="skeleton-label skeleton-line short"></div>
+                <div class="skeleton-value skeleton-value-lg"></div>
+            </div>
+        </div>
+    </section>
+    <section class="card skeleton-chart"></section>
+    <section class="card skeleton-card">
+        <div class="skeleton-row skeleton-row--two">
+            <div class="skeleton-chart-sm"></div>
+            <div class="skeleton-chart-sm"></div>
+        </div>
+    </section>
+    <section class="card skeleton-chart-xl"></section>
+</div>
+
+<div class="analytics-shell premium-analytics">
+    <section class="card hero-card">
+        <div>
+            <h2>AI Research Analytics</h2>
+            <p class="muted">Live learning diagnostics for reward progression, triage outcomes, and resource efficiency.</p>
+        </div>
+        <div class="sync-pill" id="syncStatus">SYNC • STANDBY</div>
+    </section>
+
+    <section class="card command-strip">
+        <div class="command-item">
+            <div class="command-label">Hospital Health Index</div>
+            <div class="command-value" id="healthIndexValue">--</div>
+        </div>
+        <div class="command-item">
+            <div class="command-label">Decision Confidence</div>
+            <div class="command-value" id="decisionConfidence">--</div>
+        </div>
+        <div class="command-item">
+            <div class="command-label">Predicted Risk Band</div>
+            <div class="command-value" id="riskBand">--</div>
+        </div>
+        <div class="command-item command-item--wide">
+            <div class="command-label">AI Strategy Narrative</div>
+            <div class="command-value command-value--small" id="strategyNarrative">Waiting for model signal...</div>
+        </div>
+    </section>
+
+    <section class="card kpi-grid">
+        <div class="kpi">
+            <div class="kpi-label">Cumulative Reward</div>
+            <div class="kpi-value" id="kpiTotalReward">0.00</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Total Steps</div>
+            <div class="kpi-value" id="kpiSteps">0</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Avg Reward / Step</div>
+            <div class="kpi-value" id="kpiAvgReward">0.00</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Current Load</div>
+            <div class="kpi-value" id="kpiLoad">0.00</div>
+        </div>
+    </section>
+
+    <section class="card chart-card chart-card--hero">
+        <div class="card-header-row">
+            <h3>Learning Progress</h3>
+            <span class="muted">Cumulative Reward vs Steps</span>
+        </div>
+        <div class="chart-canvas-wrap chart-canvas-wrap-lg">
+            <canvas id="cumulativeRewardChart"></canvas>
+        </div>
+    </section>
+
+    <div class="dual-grid">
+        <section class="card chart-card">
+            <div class="card-header-row">
+                <h3>Priority Outcomes</h3>
+                <span class="muted">Red vs Green Patients Treated</span>
+            </div>
+            <div class="chart-canvas-wrap chart-canvas-wrap-md">
+                <canvas id="priorityBarChart"></canvas>
+            </div>
+        </section>
+
+        <section class="card chart-card">
+            <div class="card-header-row">
+                <h3>Resource Efficiency</h3>
+                <span class="muted">Occupancy & Availability</span>
+            </div>
+          <div class="resource-efficiency-summary" id="resourceEfficiencySummary">
+            <div class="resource-summary-item">
+              <div class="resource-summary-label">Bed Pressure</div>
+              <div class="resource-summary-value" id="bedPressureValue">--</div>
+            </div>
+            <div class="resource-summary-item">
+              <div class="resource-summary-label">Doctor Slack</div>
+              <div class="resource-summary-value" id="doctorSlackValue">--</div>
+            </div>
+            <div class="resource-summary-item">
+              <div class="resource-summary-label">Utilization</div>
+              <div class="resource-summary-value" id="utilizationValue">--</div>
+            </div>
+          </div>
+            <div class="gauge-grid">
+            <div class="gauge-panel">
+              <div class="gauge-panel-head">
+                <span>Bed Occupancy</span>
+                <span class="gauge-panel-note" id="bedGaugeNote">--</span>
+              </div>
+                    <canvas id="bedGaugeChart" height="170"></canvas>
+                </div>
+            <div class="gauge-panel">
+              <div class="gauge-panel-head">
+                <span>Doctor Availability</span>
+                <span class="gauge-panel-note" id="doctorGaugeNote">--</span>
+              </div>
+                    <canvas id="doctorGaugeChart" height="170"></canvas>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="card chart-card replay-card">
+        <div class="card-header-row">
+            <h3>Future Load Heatmap</h3>
+        <span class="muted" id="heatmapModeLabel">Live forecast from current load trend</span>
+        </div>
+        <div class="heatmap-wrap">
+        <div class="heatmap-summary-row">
+          <div class="heatmap-status" id="heatmapStatus">Waiting for live state...</div>
+          <div class="heatmap-meta-row" id="heatmapMetaRow">
+            <span class="heatmap-meta-pill" id="heatmapSourcePill">Source: -</span>
+            <span class="heatmap-meta-pill" id="heatmapConfidencePill">Confidence: -</span>
+            <span class="heatmap-meta-pill" id="heatmapLoadPill">Current Load: -</span>
+          </div>
+        </div>
+            <div class="heatmap-legend">
+                <span class="muted">Low</span>
+                <div class="heatmap-swatch" aria-hidden="true"></div>
+                <span class="muted">High</span>
+            </div>
+            <div class="heatmap-grid" id="loadHeatmap" aria-label="Future load heatmap"></div>
+        <div class="muted" id="peakHoursLabel" style="margin-top:8px;">Predicted spikes: -</div>
+        </div>
+    </section>
+
+    <div class="dual-grid">
+        <section class="card chart-card radar-card">
+            <div class="card-header-row">
+                <h3>Anomaly Radar</h3>
+                <span class="muted">Auto-detected operational signals</span>
+            </div>
+            <div id="anomalyRadar" class="radar-list"></div>
+        </section>
+
+        <section class="card chart-card explain-card">
+            <div class="card-header-row">
+                <h3>Explainable AI</h3>
+                <span class="muted">Reasoning behind current suggestion</span>
+            </div>
+            <div class="xai-title" id="xaiActionTitle">Suggestion: -</div>
+            <div class="xai-block">
+                <div class="xai-subtitle">Top Reasons</div>
+                <ul id="xaiReasons" class="xai-list"></ul>
+            </div>
+            <div class="xai-block">
+                <div class="xai-subtitle">Ignored Alternatives</div>
+                <ul id="xaiAlternatives" class="xai-list"></ul>
+            </div>
+        </section>
+    </div>
+
+    <section class="card chart-card replay-card">
+        <div class="card-header-row">
+            <h3>⏪ Time-Travel Replay (Analytics)</h3>
+            <span class="muted" id="tlMeta">Frames: -</span>
+        </div>
+      <div class="muted replay-note">Scrub to any recorded frame and inspect predicted load vs actual state without affecting the live run.</div>
+      <div class="row replay-controls" style="margin-top:10px;align-items:center;gap:12px;">
+            <input id="tlSlider" type="range" min="0" max="0" step="1" value="0" style="flex:1;" />
+        <div class="kpi-value tl-index-chip" style="font-size:16px;min-width:190px;" id="tlIndex">Frame -/-</div>
+        <button class="btn control-secondary tl-follow-btn" id="tlFollowBtn" onclick="toggleTimelineFollow()">Follow Live: ON</button>
+        </div>
+      <div class="row replay-panels" style="margin-top:10px;gap:12px;flex-wrap:wrap;">
+            <div class="card tl-mini-card" style="flex:1;min-width:260px;">
+                <div class="muted">Frame Event</div>
+                <div style="font-weight:800;margin-top:6px;" id="tlEvent">-</div>
+                <div class="muted" style="margin-top:6px;" id="tlEventDetail">-</div>
+            </div>
+            <div class="card tl-mini-card" style="flex:1;min-width:260px;">
+                <div class="muted">State Snapshot</div>
+                <div class="muted" style="margin-top:6px;" id="tlStateLine">-</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card step-stream-card">
+        <div class="card-header-row">
+            <h3>Recent Step Stream</h3>
+            <button class="btn control-secondary refresh-cta" onclick="forceRefresh()">Refresh Now</button>
+        </div>
+        <div class="table-wrap">
+        <table class="step-table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Action</th>
+                        <th>Reward</th>
+                        <th>Waiting</th>
+                        <th>Admitted</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="stepRows"></tbody>
+            </table>
+        </div>
+    </section>
+
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let historyData = [];
+let currentState = {};
+let lastObservedStep = -1;
+let lastStatus = null;
+let timelineFrames = [];
+
+let __tlFrames = [];
+let __tlFollowLive = true;
+
+let cumulativeChart = null;
+let priorityChart = null;
+let bedGaugeChart = null;
+let doctorGaugeChart = null;
+
+const chartTheme = {
+  text: '#334155',
+  muted: '#64748b',
+  grid: 'rgba(148, 163, 184, 0.28)'
+};
+
+Chart.defaults.color = chartTheme.text;
+Chart.defaults.borderColor = chartTheme.grid;
+Chart.defaults.font.family = "'Inter', 'Segoe UI', system-ui, sans-serif";
+
+function cumulativeSeries(rows) {
+  let running = 0;
+  return rows.map((r, index) => {
+    running += Number(r.reward || 0);
+    return { x: index + 1, y: Number(running.toFixed(3)) };
+  });
+}
+
+function pct(part, whole) {
+  if (!whole || whole <= 0) return 0;
+  return Math.max(0, Math.min(100, (part / whole) * 100));
+}
+
+function historyFromTimeline(frames = []) {
+  let running = 0;
+  return frames.map((frame, index) => {
+    const reward = Number(frame?.reward ?? 0);
+    running += reward;
+    return {
+      step: Number(frame?.state?.step ?? index + 1),
+      total_steps: Number(frame?.state?.step ?? index + 1),
+      action: frame?.action_name || frame?.event || 'FRAME',
+      action_name: frame?.action_name || frame?.event || 'FRAME',
+      reward,
+      info: frame?.info || frame?.state || {},
+      cumulative_reward: Number((frame?.cumulative_reward ?? running).toFixed(3))
+    };
+  });
+}
+
+function updateKPIs() {
+  const totalReward = historyData.reduce((acc, row) => acc + Number(row.reward || 0), 0);
+  const steps = historyData.length;
+  const avg = steps ? totalReward / steps : 0;
+
+  document.getElementById('kpiTotalReward').textContent = totalReward.toFixed(2);
+  document.getElementById('kpiSteps').textContent = String(steps);
+  document.getElementById('kpiAvgReward').textContent = avg.toFixed(2);
+  document.getElementById('kpiLoad').textContent = Number(currentState.system_load || 0).toFixed(2);
+}
+
+function renderCumulativeChart() {
+  const ctx = document.getElementById('cumulativeRewardChart').getContext('2d');
+  const points = cumulativeSeries(historyData);
+  if (cumulativeChart) cumulativeChart.destroy();
+
+  cumulativeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Cumulative Reward',
+        data: points,
+        parsing: false,
+        borderColor: '#44b4ff',
+        backgroundColor: 'rgba(68, 180, 255, 0.20)',
+        tension: 0.35,
+        borderWidth: 2.5,
+        pointRadius: 0,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: chartTheme.text } }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Steps', color: chartTheme.muted },
+          ticks: { color: chartTheme.muted },
+          grid: { color: chartTheme.grid }
+        },
+        y: {
+          title: { display: true, text: 'Cumulative Reward', color: chartTheme.muted },
+          ticks: { color: chartTheme.muted },
+          grid: { color: chartTheme.grid }
+        }
+      }
+    }
+  });
+}
+
+function renderPriorityChart() {
+  const ctx = document.getElementById('priorityBarChart').getContext('2d');
+  if (priorityChart) priorityChart.destroy();
+
+  const red = Number(currentState.red_admitted || 0);
+  const green = Number(currentState.green_admitted || 0);
+  const redGradient = ctx.createLinearGradient(0, 0, 0, 320);
+  redGradient.addColorStop(0, 'rgba(251, 113, 133, 0.88)');
+  redGradient.addColorStop(1, 'rgba(251, 113, 133, 0.56)');
+  const greenGradient = ctx.createLinearGradient(0, 0, 0, 320);
+  greenGradient.addColorStop(0, 'rgba(16, 185, 129, 0.84)');
+  greenGradient.addColorStop(1, 'rgba(16, 185, 129, 0.50)');
+
+  priorityChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['RED Treated', 'GREEN Treated'],
+      datasets: [{
+        label: 'Patients',
+        data: [red, green],
+        backgroundColor: [redGradient, greenGradient],
+        borderColor: ['rgba(225, 29, 72, 0.72)', 'rgba(5, 150, 105, 0.72)'],
+        borderWidth: 1,
+        borderSkipped: false,
+        borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 }
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: chartTheme.muted }, grid: { color: chartTheme.grid } },
+        y: { beginAtZero: true, ticks: { color: chartTheme.muted }, grid: { color: chartTheme.grid } }
+      }
+    }
+  });
+}
+
+function renderGaugeCharts() {
+  const bedCtx = document.getElementById('bedGaugeChart').getContext('2d');
+  const doctorCtx = document.getElementById('doctorGaugeChart').getContext('2d');
+
+  if (bedGaugeChart) bedGaugeChart.destroy();
+  if (doctorGaugeChart) doctorGaugeChart.destroy();
+
+  const totalBeds = Number(currentState.total_beds || 0);
+  const availableBeds = Number(currentState.available_beds || 0);
+  const usedBeds = Math.max(0, totalBeds - availableBeds);
+
+  const totalDoctors = Number(currentState.total_doctors || 0);
+  const availableDoctors = Number(currentState.available_doctors || 0);
+  const busyDoctors = Math.max(0, totalDoctors - availableDoctors);
+
+  const bedOccPct = pct(usedBeds, totalBeds);
+  const doctorAvailPct = pct(availableDoctors, totalDoctors);
+
+  const bedPressureEl = document.getElementById('bedPressureValue');
+  const doctorSlackEl = document.getElementById('doctorSlackValue');
+  const utilizationEl = document.getElementById('utilizationValue');
+  const bedGaugeNote = document.getElementById('bedGaugeNote');
+  const doctorGaugeNote = document.getElementById('doctorGaugeNote');
+
+  if (bedPressureEl) bedPressureEl.textContent = totalBeds ? `${bedOccPct.toFixed(0)}% occupied` : 'No beds';
+  if (doctorSlackEl) doctorSlackEl.textContent = totalDoctors ? `${doctorAvailPct.toFixed(0)}% available` : 'No doctors';
+  if (utilizationEl) utilizationEl.textContent = `${Math.max(bedOccPct, 0).toFixed(0)}%`;
+  if (bedGaugeNote) bedGaugeNote.textContent = totalBeds ? `${usedBeds}/${totalBeds} occupied` : 'Unavailable';
+  if (doctorGaugeNote) doctorGaugeNote.textContent = totalDoctors ? `${availableDoctors}/${totalDoctors} available` : 'Unavailable';
+
+  bedGaugeChart = new Chart(bedCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Occupied Beds', 'Available Beds'],
+      datasets: [{
+        data: [usedBeds, Math.max(0, availableBeds)],
+        backgroundColor: ['#748bff', 'rgba(116, 139, 255, 0.25)'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutout: '76%',
+      radius: '86%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: chartTheme.muted, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' }
+        },
+        tooltip: { enabled: true },
+        title: { display: true, text: `Bed Occupancy ${bedOccPct.toFixed(0)}%`, color: chartTheme.text }
+      }
+    }
+  });
+
+  doctorGaugeChart = new Chart(doctorCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Available Doctors', 'Busy Doctors'],
+      datasets: [{
+        data: [Math.max(0, availableDoctors), busyDoctors],
+        backgroundColor: ['#00d2ff', 'rgba(0, 210, 255, 0.25)'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutout: '76%',
+      radius: '86%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: chartTheme.muted, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' }
+        },
+        tooltip: { enabled: true },
+        title: { display: true, text: `Doctor Availability ${doctorAvailPct.toFixed(0)}%`, color: chartTheme.text }
+      }
+    }
+  });
+}
+
+function renderStepTable() {
+  const tbody = document.getElementById('stepRows');
+  tbody.innerHTML = '';
+  const recent = historyData.slice(-20).reverse();
+
+  recent.forEach((item) => {
+    const invalid = Boolean(item?.info?.invalid_allocation);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.total_steps ?? '-'}</td>
+      <td>${item.action_name || item.action || '-'}</td>
+      <td class="reward-cell ${Number(item.reward || 0) < 0 ? 'neg' : 'pos'}">${Number(item.reward || 0).toFixed(2)}</td>
+      <td>${item.info?.waiting_patients ?? '-'}</td>
+      <td>${item.info?.admitted_patients ?? '-'}</td>
+      <td>${invalid ? '<span class="badge bad">INVALID</span>' : '<span class="badge ok">VALID</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderFutureLoadHeatmap() {
+  const grid = document.getElementById('loadHeatmap');
+  const peakLabel = document.getElementById('peakHoursLabel');
+  const modeLabel = document.getElementById('heatmapModeLabel');
+  const statusEl = document.getElementById('heatmapStatus');
+  const sourcePill = document.getElementById('heatmapSourcePill');
+  const confidencePill = document.getElementById('heatmapConfidencePill');
+  const loadPill = document.getElementById('heatmapLoadPill');
+  if (!grid || !peakLabel) return;
+
+  // Predictive view: next 12 steps from current step.
+  const currentStep = Number(currentState?.step ?? 0);
+  // Estimate queue growth rate from recent history (simple slope).
+  const timelineLoads = (timelineFrames || [])
+    .map(row => Number(row?.state?.waiting ?? row?.state?.waiting_patients ?? row?.info?.waiting_patients ?? row?.info?.waiting ?? 0));
+  const loads = (historyData || [])
+    .map(row => Number(row?.info?.waiting_patients ?? row?.info?.waiting ?? 0))
+    .filter(v => Number.isFinite(v));
+  const liveLoad = Number(currentState?.waiting ?? loads[loads.length - 1] ?? 0);
+
+  const lastLoad = loads.length ? loads[loads.length - 1] : (timelineLoads.length ? timelineLoads[timelineLoads.length - 1] : liveLoad);
+  const windowSize = Math.min(8, loads.length);
+  const window = windowSize ? loads.slice(-windowSize) : [];
+  const growth = window.length >= 2
+    ? (window[window.length - 1] - window[0]) / (window.length - 1)
+    : 0;
+  const trendLabel = growth >= 0.75 ? 'Rising' : growth <= -0.25 ? 'Cooling' : 'Stable';
+  const confidence = Math.max(18, Math.min(99, Math.round(58 + Math.min(20, timelineLoads.length * 2) + Math.min(12, loads.length * 1.5) - Math.abs(growth) * 8)));
+  const sourceLabel = timelineLoads.length ? `Source: timeline (${timelineLoads.length} frames)` : loads.length ? `Source: episode history (${loads.length} points)` : 'Source: live snapshot only';
+
+  // Trend analysis knobs.
+  const growingFast = growth >= 0.75; // queue +0.75 per step ≈ fast growth
+  const queueEmpty = lastLoad <= 0.01;
+  // Predict next 12 steps.
+  const horizon = 12;
+  const preds = Array.from({ length: horizon }, (_, idx) => {
+    const i = idx + 1;
+    let v = Math.max(0, lastLoad + growth * i);
+
+    // When queue is growing fast, intentionally highlight +2/+4/+6 future steps.
+    if (growingFast && [2, 4, 6].includes(i)) {
+      v = v + Math.max(2, 0.75 * lastLoad);
+    }
+
+    // If queue is empty and not growing, keep future blocks dark.
+    if (queueEmpty && growth <= 0) {
+      v = 0;
+    }
+
+    return { step: currentStep + i, v, rel: i };
+  });
+
+  const values = preds.map(p => p.v);
+  const maxV = Math.max(...values, 1);
+  const minV = Math.min(...values, 0);
+  const range = (maxV - minV) || 1;
+
+  grid.innerHTML = '';
+  if (modeLabel) modeLabel.textContent = `Next 12 steps • ${trendLabel} trend`;
+  if (statusEl) statusEl.textContent = `${trendLabel} forecast ${queueEmpty ? '• queue currently empty' : `• ${lastLoad.toFixed(1)} current load`}`;
+  if (sourcePill) sourcePill.textContent = sourceLabel;
+  if (confidencePill) confidencePill.textContent = `Confidence: ${confidence}%`;
+  if (loadPill) loadPill.textContent = `Current Load: ${lastLoad.toFixed(1)}`;
+
+  preds.forEach((p) => {
+    const norm = Math.max(0, Math.min(1, (p.v - minV) / range));
+
+    // Monochromatic load scale: pale rose (low) -> rich ruby (high).
+    const start = { r: 255, g: 241, b: 242 };
+    const end = { r: 190, g: 24, b: 93 };
+    const r = Math.round(start.r + (end.r - start.r) * norm);
+    const g = Math.round(start.g + (end.g - start.g) * norm);
+    const b = Math.round(start.b + (end.b - start.b) * norm);
+    const alpha = 0.42 + norm * 0.44;
+
+    const bg = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+    const border = `rgba(${Math.max(120, r - 16)}, ${Math.max(14, g - 18)}, ${Math.max(52, b - 14)}, ${(0.24 + norm * 0.48).toFixed(3)})`;
+
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    cell.style.background = bg;
+    cell.style.borderColor = border;
+    cell.title = `Step ${p.step} • Predicted load ${p.v.toFixed(1)} • growth ${growth.toFixed(2)}/step`;
+    cell.innerHTML = `<span class="heatmap-hour">${p.rel >= 10 ? '+' + p.rel : '+' + p.rel}</span>`;
+    grid.appendChild(cell);
+  });
+
+  // Live text update: report predicted spikes among next steps.
+  if ((!historyData || historyData.length < 2) && timelineLoads.length < 2) {
+    peakLabel.textContent = 'Predicted spikes: waiting for more live history';
+    return;
+  }
+
+  const ranked = [...preds].sort((a, b) => b.v - a.v);
+  const spikeThreshold = Math.max(3, lastLoad + Math.max(1, growth * 4));
+  const spikes = ranked.filter(x => x.v >= spikeThreshold).slice(0, 2);
+
+  if (!spikes.length) {
+    peakLabel.textContent = `Predicted spikes: none (${trendLabel.toLowerCase()} trend)`;
+    return;
+  }
+
+  const spikeSteps = spikes.map(s => `Step ${s.step}`).join(', ');
+  peakLabel.textContent = `Predicted spikes: ${spikeSteps} (high load alert)`;
+}
+
+function renderAll() {
+  updateKPIs();
+  updateCommandStrip();
+  renderCumulativeChart();
+  renderPriorityChart();
+  renderGaugeCharts();
+  renderFutureLoadHeatmap();
+  renderAnomalyRadar();
+  renderExplainability();
+  renderStepTable();
+}
+
+function scoreHealthIndex(state) {
+  const waiting = Number(state.waiting || 0);
+  const beds = Number(state.available_beds || 0);
+  const doctors = Number(state.available_doctors || 0);
+  const redWaiting = Number(state.red_waiting || 0);
+  const invalidRecent = historyData.slice(-10).reduce((acc, row) => acc + (row?.info?.invalid_allocation ? 1 : 0), 0);
+
+  let score = 100;
+  score -= waiting * 4;
+  score -= redWaiting * 8;
+  score -= invalidRecent * 10;
+  score += beds * 3;
+  score += doctors * 3;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function updateCommandStrip() {
+  const s = currentState || {};
+  const health = scoreHealthIndex(s);
+  const risk = health >= 75 ? 'LOW' : (health >= 45 ? 'MEDIUM' : 'HIGH');
+
+  const confidence = (() => {
+    const invalidRecent = historyData.slice(-10).reduce((acc, row) => acc + (row?.info?.invalid_allocation ? 1 : 0), 0);
+    const confidenceRaw = 100 - invalidRecent * 8 - Number(s.red_waiting || 0) * 6 + Number(s.available_doctors || 0) * 5;
+    return `${Math.max(25, Math.min(98, Math.round(confidenceRaw)))}%`;
+  })();
+
+  const narrative = s.ai_suggestion_action
+    ? `${s.ai_suggestion_action}: ${s.ai_suggestion_reason || 'Driven by current queue and capacity.'}`
+    : 'Model is waiting for enough signal to suggest the next action.';
+
+  const healthEl = document.getElementById('healthIndexValue');
+  const confEl = document.getElementById('decisionConfidence');
+  const riskEl = document.getElementById('riskBand');
+  const narrativeEl = document.getElementById('strategyNarrative');
+  if (healthEl) healthEl.textContent = `${health}/100`;
+  if (confEl) confEl.textContent = confidence;
+  if (riskEl) riskEl.textContent = risk;
+  if (narrativeEl) narrativeEl.textContent = narrative;
+}
+
+function renderAnomalyRadar() {
+  const radar = document.getElementById('anomalyRadar');
+  if (!radar) return;
+
+  const s = currentState || {};
+  const rows = [];
+  const waiting = Number(s.waiting || 0);
+  const redWaiting = Number(s.red_waiting || 0);
+  const beds = Number(s.available_beds || 0);
+  const doctors = Number(s.available_doctors || 0);
+  const invalidRecent = historyData.slice(-12).filter(r => r?.info?.invalid_allocation).length;
+
+  if (redWaiting > 0) rows.push({ lvl: 'high', msg: `${redWaiting} RED priority patients waiting in queue.` });
+  if (waiting >= 7) rows.push({ lvl: 'med', msg: `Queue pressure elevated (${waiting} waiting).` });
+  if (beds <= 1) rows.push({ lvl: 'high', msg: 'Bed availability critically low across current hospital.' });
+  if (doctors <= 1) rows.push({ lvl: 'med', msg: 'Doctor bandwidth constrained; triage latency may rise.' });
+  if (invalidRecent >= 2) rows.push({ lvl: 'high', msg: `${invalidRecent} invalid actions in recent stream.` });
+  if (!rows.length) rows.push({ lvl: 'ok', msg: 'No significant anomalies detected. System stable.' });
+
+  radar.innerHTML = rows.map(r => `
+    <div class="radar-item ${r.lvl}">
+      <span class="radar-dot"></span>
+      <span>${r.msg}</span>
+    </div>
+  `).join('');
+}
+
+function renderExplainability() {
+  const s = currentState || {};
+  const action = String(s.ai_suggestion_action || 'NO ACTION');
+  const titleEl = document.getElementById('xaiActionTitle');
+  const reasonsEl = document.getElementById('xaiReasons');
+  const altEl = document.getElementById('xaiAlternatives');
+  if (!titleEl || !reasonsEl || !altEl) return;
+
+  titleEl.textContent = `Suggestion: ${action}`;
+
+  const reasons = [];
+  if (Number(s.red_waiting || 0) > 0) reasons.push('RED priority queue present; urgency weighting increased.');
+  if (Number(s.available_beds || 0) > 0) reasons.push('Bed capacity available for immediate allocation.');
+  if (Number(s.available_doctors || 0) <= 1) reasons.push('Limited doctors triggered throughput-preserving strategy.');
+  if (!reasons.length) reasons.push('Balanced load and no acute risk spikes in latest snapshot.');
+
+  const alternatives = [];
+  alternatives.push('WAIT: rejected due to potential queue growth and delay risk.');
+  if (Number(s.available_beds || 0) <= 0) alternatives.push('ALLOCATE: suppressed because bed capacity is currently zero.');
+  else alternatives.push('ESCALATE: deferred because local capacity can still absorb demand.');
+  alternatives.push('REASSIGN: held unless city-wide capacity advantage becomes material.');
+
+  reasonsEl.innerHTML = reasons.slice(0, 3).map(x => `<li>${x}</li>`).join('');
+  altEl.innerHTML = alternatives.slice(0, 3).map(x => `<li>${x}</li>`).join('');
+}
+
+async function fetchTimelineFrames() {
+  const res = await fetch('/api/timeline?limit=600&offset=0').then(r => r.json());
+  return res.success ? (res.frames || []) : [];
+}
+
+function setTLFollowButton() {
+  const btn = document.getElementById('tlFollowBtn');
+  if (!btn) return;
+  btn.textContent = __tlFollowLive ? 'Follow Live: ON' : 'Follow Live: OFF';
+  btn.classList.toggle('good', __tlFollowLive);
+}
+
+function toggleTimelineFollow() {
+  __tlFollowLive = !__tlFollowLive;
+  setTLFollowButton();
+}
+
+function renderTimelineFrame(frame, idx, total) {
+  const tlIndex = document.getElementById('tlIndex');
+  const tlEvent = document.getElementById('tlEvent');
+  const tlDetail = document.getElementById('tlEventDetail');
+  const tlStateLine = document.getElementById('tlStateLine');
+  if (!tlIndex || !tlEvent || !tlDetail || !tlStateLine) return;
+
+  tlIndex.textContent = `Frame ${idx + 1}/${total}`;
+  tlEvent.textContent = `${frame?.event || 'FRAME'} • ${frame?.source || '-'}`;
+  const bits = [];
+  if (frame?.action_name) bits.push(`Action: ${frame.action_name}`);
+  if (typeof frame?.reward === 'number') bits.push(`Reward: ${Number(frame.reward).toFixed(2)}`);
+  if (typeof frame?.cumulative_reward === 'number') bits.push(`Total: ${Number(frame.cumulative_reward).toFixed(2)}`);
+  tlDetail.textContent = bits.join(' | ') || '-';
+
+  const s = frame?.state || {};
+  tlStateLine.textContent = `Step ${s.step ?? '-'} | Waiting ${s.waiting ?? '-'} | Beds ${s.available_beds ?? '-'} | Doctors ${s.available_doctors ?? '-'} | Crisis ${s.crisis_active ? 'ON' : 'OFF'}`;
+
+  // Also update the heatmap to be driven by this frame's state.
+  currentState = s;
+  renderFutureLoadHeatmap();
+}
+
+async function syncTimelineUI() {
+  const meta = document.getElementById('tlMeta');
+  const slider = document.getElementById('tlSlider');
+  if (!meta || !slider) return;
+
+  const frames = await fetchTimelineFrames();
+  __tlFrames = Array.isArray(frames) ? frames : [];
+  timelineFrames = __tlFrames;
+  meta.textContent = `Frames: ${__tlFrames.length}`;
+
+  const max = Math.max(0, __tlFrames.length - 1);
+  slider.max = String(max);
+
+  if (__tlFollowLive) {
+    slider.value = String(max);
+  }
+  const idx = Math.min(Number(slider.value || 0), max);
+  if (__tlFrames.length) renderTimelineFrame(__tlFrames[idx], idx, __tlFrames.length);
+}
+
+async function fetchSnapshot() {
+  const [historyRes, statusRes, timelineRes] = await Promise.all([
+    fetch('/api/episode_history').then(r => r.json()),
+    fetch('/api/status').then(r => r.json()),
+    fetch('/api/timeline?limit=600&offset=0').then(r => r.json())
+  ]);
+
+  const history = historyRes.success ? (historyRes.history || []) : [];
+  const timelineSnapshotFrames = timelineRes.success ? (timelineRes.frames || []) : [];
+
+  lastStatus = statusRes;
+  timelineFrames = timelineSnapshotFrames;
+  historyData = history.length ? history : historyFromTimeline(timelineSnapshotFrames);
+  currentState = statusRes.state || timelineSnapshotFrames.at(-1)?.state || {};
+}
+
+function setSyncLabel(text, isLive) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = text;
+  el.classList.toggle('live', Boolean(isLive));
+}
+
+async function forceRefresh() {
+  try {
+    setSyncLabel('SYNC • REFRESHING', true);
+    await fetchSnapshot();
+    renderAll();
+    await syncTimelineUI();
+    setSyncLabel('SYNC • LIVE', true);
+  } catch (err) {
+    setSyncLabel('SYNC • ERROR', false);
+    console.error(err);
+  }
+}
+
+async function ensureLiveAnalyticsState() {
+  if (lastStatus && lastStatus.is_initialized) return;
+
+  try {
+    setSyncLabel('SYNC • INITIALIZING DEMO', true);
+    await fetch('/api/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task: 'medium', seed: 42 })
+    });
+    await fetchSnapshot();
+    renderAll();
+    await syncTimelineUI();
+    setSyncLabel('SYNC • LIVE', true);
+  } catch (err) {
+    console.error(err);
+    setSyncLabel('SYNC • ERROR', false);
+  }
+}
+
+async function incrementalSync() {
+  try {
+    const statusRes = await fetch('/api/status').then(r => r.json());
+    const nextStep = Number(statusRes?.state?.step ?? 0);
+
+    // Sync during active progression and enforce update at 5-step boundaries.
+    const stepAdvanced = nextStep > lastObservedStep;
+    const boundaryUpdate = nextStep > 0 && nextStep % 5 === 0;
+
+    if (stepAdvanced || boundaryUpdate || historyData.length === 0) {
+      await fetchSnapshot();
+      renderAll();
+      await syncTimelineUI();
+      setSyncLabel('SYNC • LIVE', true);
+    } else {
+      setSyncLabel('SYNC • STANDBY', false);
+    }
+
+    lastObservedStep = nextStep;
+  } catch (err) {
+    setSyncLabel('SYNC • ERROR', false);
+    console.error(err);
+  }
+}
+
+async function bootAnalytics() {
+  try {
+    setTLFollowButton();
+    await forceRefresh();
+    await ensureLiveAnalyticsState();
+    setInterval(incrementalSync, 1500);
+    document.getElementById('tlSlider')?.addEventListener('input', (e) => {
+      __tlFollowLive = false;
+      setTLFollowButton();
+      const idx = Number(e.target.value || 0);
+      if (__tlFrames.length) renderTimelineFrame(__tlFrames[idx], idx, __tlFrames.length);
+    });
+  } finally {
+    document.documentElement.classList.remove('analytics-loading');
+    document.documentElement.classList.add('analytics-ready');
+  }
+}
+
+bootAnalytics();
+</script>
+
+<style>
+.analytics-shell {
+  display: grid;
+  gap: 22px;
+}
+
+.hero-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(251, 146, 60, 0.22);
+  background: radial-gradient(circle at top right, rgba(255, 107, 61, 0.16), rgba(255, 255, 255, 0.97));
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
+}
+
+.hero-card h2 {
+  margin: 0 0 6px;
+  color: #1e293b;
+}
+
+.sync-pill {
+  border: 1px solid rgba(100, 116, 139, 0.5);
+  color: #64748b;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+}
+
+.sync-pill.live {
+  border-color: rgba(16, 185, 129, 0.7);
+  color: #059669;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.15);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.command-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.9));
+}
+
+.command-item {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.75);
+}
+
+.command-item--wide {
+  grid-column: span 1;
+}
+
+.command-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.command-value {
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.command-value--small {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.kpi {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.88));
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 7px 16px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-label {
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  color: #1e293b;
+  font-size: 33px;
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.chart-card {
+  padding: 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(241, 245, 249, 0.88));
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.chart-card--hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-card--hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -80px -90px auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0));
+  pointer-events: none;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart-canvas-wrap-lg {
+  height: 420px;
+}
+
+.chart-canvas-wrap-md {
+  height: 320px;
+}
+
+.chart-canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-header-row h3 {
+  margin: 0;
+}
+
+.dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.gauge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.resource-efficiency-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 10px 0 16px;
+}
+
+.resource-summary-item {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.88));
+}
+
+.resource-summary-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.resource-summary-value {
+  margin-top: 5px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.gauge-panel {
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.9));
+}
+
+.gauge-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.gauge-panel-note {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.table-wrap {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.heatmap-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.heatmap-summary-row {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(190, 24, 93, 0.14);
+  background: linear-gradient(180deg, rgba(255, 247, 250, 0.96), rgba(255, 255, 255, 0.9));
+}
+
+.heatmap-status {
+  font-size: 14px;
+  font-weight: 800;
+  color: #9f1239;
+}
+
+.heatmap-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heatmap-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(190, 24, 93, 0.16);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.heatmap-swatch {
+  height: 12px;
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(190, 24, 93, 0.24);
+  background: linear-gradient(90deg,
+    rgba(255, 241, 242, 0.95),
+    rgba(244, 114, 182, 0.56),
+    rgba(190, 24, 93, 0.88)
+  );
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.heatmap-cell {
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid rgba(190, 24, 93, 0.14);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.heatmap-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(190, 24, 93, 0.14);
+}
+
+.heatmap-hour {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+  font-size: 11px;
+  color: rgba(241, 245, 249, 0.94);
+  font-weight: 700;
+  text-shadow: 0 1px 9px rgba(15, 23, 42, 0.5);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.step-table {
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  text-align: left;
+  padding: 11px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+  z-index: 1;
+  color: #334155;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.replay-card .kpi-value {
+  font-size: 18px;
+}
+
+.replay-note {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.replay-controls {
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(241, 245, 249, 0.78));
+}
+
+.tl-index-chip {
+  font-size: 15px !important;
+  min-width: 170px !important;
+  color: #334155;
+  letter-spacing: 0.01em;
+}
+
+.tl-follow-btn {
+  min-height: 34px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.replay-panels {
+  margin-top: 12px;
+}
+
+.tl-mini-card {
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.84));
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+}
+
+.step-stream-card {
+  padding-bottom: 18px;
+}
+
+.refresh-cta {
+  border-radius: 999px;
+  font-weight: 800;
+  padding: 9px 14px;
+  box-shadow: none;
+}
+
+.refresh-cta:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+#tlSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(90deg, #e2e8f0, #cbd5e1);
+  outline: none;
+}
+
+#tlSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #334155;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+}
+
+#tlSlider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(90deg, #e2e8f0, #cbd5e1);
+}
+
+#tlSlider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #334155;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+}
+
+tbody tr {
+  transition: background-color .18s ease;
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.55);
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+.reward-cell {
+  font-weight: 700;
+}
+
+.radar-list {
+  display: grid;
+  gap: 10px;
+}
+
+.radar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.76);
+  color: #334155;
+  font-weight: 600;
+}
+
+.radar-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.radar-item.ok .radar-dot { background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,0.2); }
+.radar-item.med .radar-dot { background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); }
+.radar-item.high .radar-dot { background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.2); }
+
+.xai-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.xai-block {
+  margin-top: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.74);
+}
+
+.xai-subtitle {
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.xai-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge.ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.badge.bad {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.pos { color: #059669; }
+.neg { color: #dc2626; }
+
+@media (max-width: 960px) {
+  .command-strip { grid-template-columns: 1fr 1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dual-grid { grid-template-columns: 1fr; }
+  .heatmap-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+</style>
+
+{% endblock %}
+

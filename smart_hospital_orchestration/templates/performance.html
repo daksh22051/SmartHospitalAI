@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}System Performance | Smart Hospital AI{% endblock %}
+
+{% block head_extra %}
+<style>
+  .perf-hero {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+  .perf-banner {
+    border-radius: 20px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(240,247,255,0.92));
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.10);
+  }
+  .perf-title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+  }
+  .perf-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .perf-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .perf-btn {
+    appearance: none;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    background: linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(209, 250, 229, 0.92));
+    color: #065f46;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .perf-btn.secondary {
+    border-color: rgba(100, 116, 139, 0.24);
+    background: rgba(255,255,255,0.9);
+    color: #334155;
+  }
+  .perf-meter {
+    border-radius: 20px;
+    padding: 22px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+    color: #f8fafc;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
+  }
+  .perf-meter-label { color: rgba(248, 250, 252, 0.74); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .perf-score { font-size: 58px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; margin: 10px 0 6px; }
+  .perf-score small { font-size: 20px; font-weight: 800; color: rgba(248,250,252,0.72); }
+  .perf-bar {
+    margin-top: 18px;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+  }
+  .perf-bar > div {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #34d399, #60a5fa, #f59e0b);
+    transition: width 0.35s ease;
+  }
+  .perf-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .perf-card {
+    border-radius: 18px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  }
+  .perf-card .label { color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+  .perf-card .value { margin-top: 10px; font-size: 30px; font-weight: 900; color: #0f172a; line-height: 1; }
+  .perf-card .hint { margin-top: 8px; color: #64748b; font-size: 13px; }
+  .perf-panel { margin-top: 18px; }
+  .perf-panel .card { padding: 22px; }
+  .perf-list { display: grid; gap: 10px; margin-top: 14px; }
+  .perf-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+  }
+  .perf-line span:first-child { color: #64748b; font-weight: 700; }
+  .perf-line span:last-child { color: #0f172a; font-weight: 800; }
+  @media (max-width: 1100px) {
+    .perf-hero, .perf-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    .perf-hero, .perf-grid { grid-template-columns: 1fr; }
+    .perf-title { font-size: 24px; }
+    .perf-score { font-size: 44px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="perf-hero">
+  <section class="perf-banner">
+    <div class="muted" style="font-weight:800; letter-spacing:0.08em; text-transform:uppercase; font-size:12px;">System Performance Tab</div>
+    <h1 class="perf-title">Live Performance Calculation</h1>
+    <p class="perf-subtitle">This page calculates the current system performance from the active episode history, total reward, and live hospital state. Use the refresh button to recalculate instantly.</p>
+    <div class="perf-actions">
+      <button class="perf-btn" id="refreshPerformanceBtn">Calculate Performance</button>
+      <a class="perf-btn secondary" href="/">Back to Dashboard</a>
+    </div>
+  </section>
+  <aside class="perf-meter">
+    <div class="perf-meter-label">Performance Score</div>
+    <div class="perf-score"><span id="performanceScore">--</span><small>/100</small></div>
+    <div id="performanceRank" style="font-weight:800;color:rgba(248,250,252,0.84);">Rank: --</div>
+    <div class="perf-bar"><div id="performanceBar"></div></div>
+  </aside>
+</div>
+
+<section class="perf-grid">
+  <div class="perf-card">
+    <div class="label">Total Reward</div>
+    <div class="value" id="totalReward">--</div>
+    <div class="hint">Sum of rewards from completed steps.</div>
+  </div>
+  <div class="perf-card">
+    <div class="label">Average Reward</div>
+    <div class="value" id="averageReward">--</div>
+    <div class="hint">Reward per executed step.</div>
+  </div>
+  <div class="perf-card">
+    <div class="label">Episode Steps</div>
+    <div class="value" id="stepsCount">--</div>
+    <div class="hint">How many actions contributed to the score.</div>
+  </div>
+  <div class="perf-card">
+    <div class="label">Current Task</div>
+    <div class="value" id="currentTask">--</div>
+    <div class="hint">Active hospital scenario being measured.</div>
+  </div>
+</section>
+
+<section class="card perf-panel">
+  <div class="card-head">
+    <h3>Live State Breakdown</h3>
+    <span class="tag" id="performanceUpdated">Waiting...</span>
+  </div>
+  <div class="perf-list" id="stateBreakdown">
+    <div class="perf-line"><span>Waiting Patients</span><span>--</span></div>
+    <div class="perf-line"><span>Admitted</span><span>--</span></div>
+    <div class="perf-line"><span>Critical Waiting</span><span>--</span></div>
+    <div class="perf-line"><span>Available Doctors</span><span>--</span></div>
+    <div class="perf-line"><span>Available Beds</span><span>--</span></div>
+    <div class="perf-line"><span>City Beds Available</span><span>--</span></div>
+  </div>
+</section>
+
+<script>
+  (function initPerformancePage() {
+    const btn = document.getElementById('refreshPerformanceBtn');
+    const scoreEl = document.getElementById('performanceScore');
+    const rankEl = document.getElementById('performanceRank');
+    const barEl = document.getElementById('performanceBar');
+    const totalRewardEl = document.getElementById('totalReward');
+    const averageRewardEl = document.getElementById('averageReward');
+    const stepsCountEl = document.getElementById('stepsCount');
+    const currentTaskEl = document.getElementById('currentTask');
+    const updatedEl = document.getElementById('performanceUpdated');
+    const stateBreakdown = document.getElementById('stateBreakdown');
+
+    function renderBreakdown(state) {
+      if (!stateBreakdown) return;
+      const rows = [
+        ['Waiting Patients', state.waiting],
+        ['Admitted', state.admitted],
+        ['Critical Waiting', state.critical_waiting],
+        ['Available Doctors', state.available_doctors],
+        ['Available Beds', state.available_beds],
+        ['City Beds Available', state.city_available_beds],
+      ];
+      stateBreakdown.innerHTML = rows.map(([label, value]) => `<div class="perf-line"><span>${label}</span><span>${value}</span></div>`).join('');
+    }
+
+    function render(data) {
+      if (!data || data.success === false) return;
+      scoreEl.textContent = Number(data.performance_score || 0).toFixed(2);
+      barEl.style.width = `${Math.max(0, Math.min(100, Number(data.performance_score || 0)))}%`;
+      rankEl.textContent = `Rank: ${data.rank?.label || '--'} ${data.rank?.badge || ''}`;
+      totalRewardEl.textContent = Number(data.total_reward || 0).toFixed(2);
+      averageRewardEl.textContent = Number(data.average_reward || 0).toFixed(2);
+      stepsCountEl.textContent = String(data.steps ?? 0);
+      currentTaskEl.textContent = String(data.task || '--');
+      updatedEl.textContent = `Updated: ${new Date(data.last_updated || Date.now()).toLocaleTimeString()}`;
+      renderBreakdown(data.current_state || {});
+    }
+
+    async function refresh() {
+      if (btn) btn.disabled = true;
+      try {
+        const response = await fetch('/api/performance', { cache: 'no-store' });
+        const data = await response.json();
+        render(data);
+      } catch (error) {
+        console.error('Performance refresh failed:', error);
+        updatedEl.textContent = 'Performance data unavailable';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    if (btn) btn.addEventListener('click', refresh);
+    refresh();
+    setInterval(refresh, 5000);
+  })();
+</script>
+{% endblock %}

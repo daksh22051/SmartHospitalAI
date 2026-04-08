@@ -1,0 +1,2716 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<style>
+/* ========== ENHANCED UI STYLES ========== */
+
+/* Tour styles */
+.tour-backdrop { position: fixed; inset: 0; background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(3px); z-index: 10000; transition: opacity 0.3s ease; }
+.tour-backdrop.hiding { opacity: 0; pointer-events: none; }
+.tour-highlight { position: relative; z-index: 10001; box-shadow: 0 0 0 4px var(--primary), 0 0 0 8px rgba(255, 107, 61, 0.3), 0 0 40px rgba(255, 107, 61, 0.4) !important; transform: scale(1.02); transition: all 0.3s ease; border-radius: var(--radius-lg); }
+.tour-tooltip { position: fixed; z-index: 10002; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #f8fafc; padding: 16px 20px; border-radius: 14px; max-width: 320px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1); animation: tourPopIn 0.3s ease; }
+@keyframes tourPopIn { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.tour-tooltip::before { content: ''; position: absolute; width: 12px; height: 12px; background: #1e293b; transform: rotate(45deg); }
+.tour-tooltip.arrow-top::before { top: -6px; left: 50%; margin-left: -6px; }
+.tour-tooltip.arrow-bottom::before { bottom: -6px; left: 50%; margin-left: -6px; }
+.tour-tooltip.arrow-left::before { left: -6px; top: 50%; margin-top: -6px; }
+.tour-tooltip.arrow-right::before { right: -6px; top: 50%; margin-top: -6px; }
+.tour-tooltip h4 { margin: 0 0 8px; font-size: 15px; color: var(--primary, #ff6b3d); font-weight: 700; }
+.tour-tooltip p { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: #e2e8f0; }
+.tour-tooltip-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.tour-step-indicator { font-size: 12px; color: rgba(255, 255, 255, 0.6); font-weight: 600; }
+.tour-nav-btns { display: flex; gap: 8px; }
+.tour-btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.tour-btn-primary { background: linear-gradient(135deg, var(--primary, #ff6b3d), var(--primary-2, #ff8a4c)); color: white; }
+.tour-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 107, 61, 0.4); }
+.tour-btn-secondary { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15); }
+.tour-btn-secondary:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* Help icons */
+.help-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, rgba(100, 116, 139, 0.15), rgba(100, 116, 139, 0.25)); color: #64748b; font-size: 10px; font-weight: 700; cursor: help; margin-left: 6px; vertical-align: middle; transition: all 0.2s ease; position: relative; border: 1px solid rgba(100, 116, 139, 0.2); }
+.help-icon:hover { background: linear-gradient(135deg, var(--primary, #ff6b3d), var(--primary-2, #ff8a4c)); color: white; transform: scale(1.15); border-color: transparent; box-shadow: 0 4px 12px rgba(255, 107, 61, 0.3); }
+.help-tooltip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #1e293b, #334155); color: #f8fafc; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 400; white-space: nowrap; max-width: 260px; white-space: normal; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); z-index: 100; opacity: 0; visibility: hidden; transition: all 0.25s ease; }
+.help-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 7px solid transparent; border-top-color: #1e293b; }
+.help-icon:hover .help-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-4px); }
+
+/* Quick Actions */
+#quickNavCard h3 { margin-bottom: 18px; font-size: 16px; }
+.qa-nav-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.qa-btn { appearance: none; border: 1px solid transparent; border-radius: 14px; padding: 14px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; transition: all 0.25s ease; min-height: 52px; position: relative; overflow: hidden; }
+.qa-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%); opacity: 0; transition: opacity 0.25s ease; }
+.qa-btn:hover::before { opacity: 1; }
+.qa-btn .qa-icon { width: 20px; height: 20px; stroke-width: 2; flex-shrink: 0; transition: transform 0.25s ease; }
+.qa-btn:hover .qa-icon { transform: scale(1.1); }
+.qa-btn-secondary { background: linear-gradient(135deg, #f8fafc, #f1f5f9); color: #1E293B; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8); }
+.qa-btn-secondary:hover { background: linear-gradient(135deg, #ffffff, #f8fafc); border-color: #cbd5e1; box-shadow: 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9); transform: translateY(-2px); }
+.qa-divider { margin: 20px 0 16px; padding-top: 18px; border-top: 1px solid rgba(226, 232, 240, 0.8); }
+.qa-label { margin: 0 0 14px; font-size: 11px; font-weight: 700; color: #94A3B8; letter-spacing: 0.1em; text-transform: uppercase; }
+.qa-btn-danger { width: 100%; background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04)); color: #dc2626; border: 2px solid #ef4444; font-weight: 700; min-height: 56px; font-size: 15px; }
+.qa-btn-danger:hover { background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35); transform: translateY(-2px); }
+.qa-helper { margin: 14px 0 0; font-size: 13px; line-height: 1.5; color: #94A3B8; font-style: italic; }
+.qa-btn-ghost { width: 100%; margin-top: 14px; background: transparent; color: #475569; border: 1px solid #E2E8F0; min-height: 48px; }
+.qa-btn-ghost:hover { background: linear-gradient(135deg, #f8fafc, #f1f5f9); color: #334155; border-color: #cbd5e1; }
+
+/* Critical state styling for doctors/capacity cards */
+.kpi-card.critical-state { 
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04)) !important; 
+  border: 2px solid rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08), 0 8px 24px rgba(239, 68, 68, 0.12) !important;
+  animation: criticalPulse 2s ease-in-out infinite;
+}
+@keyframes criticalPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08), 0 8px 24px rgba(239, 68, 68, 0.12); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.12), 0 8px 32px rgba(239, 68, 68, 0.2); }
+}
+.kpi-card.critical-state .kpi { color: #dc2626 !important; text-shadow: 0 2px 8px rgba(220, 38, 38, 0.2); }
+.kpi-card.critical-state .kpi-header .muted { color: #dc2626 !important; font-weight: 600; }
+.kpi-card.critical-state .warning-icon { display: inline-flex !important; }
+.warning-icon { display: none; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 8px; animation: pulse-warning 1.2s ease-in-out infinite; }
+@keyframes pulse-warning { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.2); } }
+
+/* Enhanced KPI Cards */
+.kpi-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85)) !important;
+  border: 1px solid rgba(226, 232, 240, 0.6) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.kpi-card:hover::before { opacity: 1; }
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.95) !important;
+  border-color: rgba(203, 213, 225, 0.8) !important;
+}
+
+/* Enhanced KPI values */
+.kpi {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #1e293b, #475569);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  margin-top: 8px;
+}
+.kpi-header { margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.kpi-header .muted { 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.kpi-icon { 
+  width: 36px; 
+  height: 36px; 
+  border-radius: 10px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+}
+
+/* Enhanced Mobile responsiveness */
+@media (max-width: 768px) {
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  .right-sidebar { position: static !important; max-width: none !important; margin-top: 20px; }
+  .qa-nav-grid { grid-template-columns: 1fr !important; }
+  .ops-pulse-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .qa-btn { padding: 18px 20px !important; font-size: 16px !important; min-height: 60px; }
+  .kpi { font-size: 32px !important; }
+  .grid { gap: 14px !important; }
+  .card { padding: 20px !important; }
+  .left-content { gap: 16px !important; }
+}
+@media (max-width: 480px) {
+  .shell { padding: 14px !important; }
+  .ops-pulse-grid { grid-template-columns: 1fr; }
+  .kpi { font-size: 28px !important; }
+  .card h3 { font-size: 16px !important; }
+  .qa-btn { padding: 16px !important; font-size: 15px !important; }
+}
+
+/* Dashboard grid layout */
+.dashboard-grid { perspective: 1600px; perspective-origin: 12% 8%; gap: 24px; }
+.left-content { display: grid; gap: 24px; }
+.left-content > .card { margin: 0; }
+.right-sidebar { gap: 20px; position: sticky; top: 92px; align-self: start; }
+.dashboard-grid .card.tilt-card { transform-style: preserve-3d; will-change: transform; transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; }
+
+/* Status tag */
+#statusTag.good { position: relative; padding-left: 22px; }
+#statusTag.good::before { content: ''; position: absolute; left: 8px; top: 50%; width: 10px; height: 10px; transform: translateY(-50%); border-radius: 50%; background: radial-gradient(circle at 30% 28%, #eafff2 0%, #22c55e 55%, #15803d 100%); box-shadow: 0 0 12px rgba(34, 197, 94, 0.6), 0 0 20px rgba(34, 197, 94, 0.4), inset 1px 1px 0 rgba(255, 255, 255, 0.95); animation: statusGlow 2s ease-in-out infinite; }
+@keyframes statusGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(34, 197, 94, 0.6), 0 0 20px rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(34, 197, 94, 0.8), 0 0 28px rgba(34, 197, 94, 0.5); }
+}
+
+/* Enhanced Sparkline graph */
+.sparkline-container { 
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.6)); 
+  border-radius: 14px; 
+  padding: 20px; 
+  margin-top: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+.sparkline-graph { position: relative; overflow: hidden; border-radius: 10px; }
+.sparkline-graph::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 45%), linear-gradient(90deg, rgba(148,163,184,0.06), rgba(148,163,184,0)); border-radius: 10px; }
+
+/* Icon shadows */
+.kpi-header svg, .card h3 svg, .qa-icon { filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9)) drop-shadow(0 2px 4px rgba(15, 23, 42, 0.15)); }
+
+/* Alert list */
+.alert-list { display: flex; flex-direction: column; gap: 14px; }
+.critical-alert { display: flex; align-items: center; gap: 12px; margin: 0; padding: 16px 18px; border-left: 5px solid transparent; border-radius: 14px; line-height: 1.5; transition: all 0.25s ease; }
+.critical-alert__icon { flex-shrink: 0; font-size: 1.2rem; }
+.critical-alert__text { font-size: 14px; }
+.critical-alert--nominal { 
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02)); 
+  border-left-color: #10B981; 
+  color: #047857; 
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08);
+}
+.critical-alert--active { 
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.03)); 
+  border-left-width: 6px; 
+  border-left-color: #EF4444; 
+  color: #991B1B;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.12);
+}
+.critical-alert--active .critical-alert__text { font-weight: 700; }
+@keyframes alertBorderPulse { 0% { border-left-color: rgba(239, 68, 68, 0.6); } 50% { border-left-color: rgba(239, 68, 68, 1); } 100% { border-left-color: rgba(239, 68, 68, 0.6); } }
+.critical-alert--pulse { animation: alertBorderPulse 1.2s ease-in-out infinite; }
+
+/* Operations Pulse */
+.ops-pulse-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.ops-pulse-item {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,250,252,0.86));
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+.ops-pulse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ops-pulse-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.ops-pulse-chip {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  color: #334155;
+  background: rgba(248, 250, 252, 0.95);
+}
+.ops-pulse-chip.good { color: #047857; border-color: rgba(16,185,129,0.35); background: rgba(236, 253, 245, 0.92); }
+.ops-pulse-chip.warn { color: #b45309; border-color: rgba(245,158,11,0.38); background: rgba(255, 247, 237, 0.94); }
+.ops-pulse-chip.critical { color: #b91c1c; border-color: rgba(239,68,68,0.42); background: rgba(254, 242, 242, 0.95); }
+.ops-pulse-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+.ops-pulse-value small {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  margin-left: 5px;
+}
+.ops-pulse-note {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 6px;
+}
+.ops-meter {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.24);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.ops-meter > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  transition: width .45s ease, background .3s ease;
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+.ops-meter > span.warn { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.ops-meter > span.critical { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+/* Enhanced Blood Bank Progress Bars */
+.blood-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (max-width: 900px) { .blood-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .blood-grid { grid-template-columns: 1fr; } }
+
+.blood-item {
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85));
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  transition: all 0.25s ease;
+}
+.blood-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+.blood-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.blood-type {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.blood-percent {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+.blood-bar-container {
+  height: 10px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.6), rgba(241, 245, 249, 0.8));
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+.blood-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease, background 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.blood-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+  border-radius: 10px 10px 0 0;
+}
+.blood-bar.high { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+.blood-bar.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+.blood-bar.low { background: linear-gradient(90deg, #ef4444, #f87171); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
+.blood-bar.critical { 
+  background: linear-gradient(90deg, #dc2626, #ef4444); 
+  box-shadow: 0 2px 12px rgba(220, 38, 38, 0.4);
+  animation: bloodCritical 1s ease-in-out infinite;
+}
+@keyframes bloodCritical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced Card Headers */
+.card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.card-head-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.card-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 6px 12px;
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 8px;
+}
+.collapse-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.collapse-toggle:hover {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+/* Collapsible cards */
+.card.is-collapsed .collapse-body { display: none; }
+
+/* Intelligence Overview + AI Recommendation */
+.intel-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.92));
+  border: 1px solid rgba(125, 211, 252, 0.36);
+  box-shadow: 0 16px 34px rgba(2, 132, 199, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+.intel-card::before {
+  content: '';
+  position: absolute;
+  top: -68px;
+  right: -52px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.22), rgba(14, 165, 233, 0));
+  pointer-events: none;
+}
+.intel-card .card-summary {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+}
+.intel-lead {
+  margin-top: 10px;
+  max-width: 62ch;
+  font-size: 18px;
+  line-height: 1.45;
+  color: #475569;
+  font-weight: 600;
+}
+.intel-brief-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.intel-brief-block {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(239, 246, 255, 0.88));
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.08);
+}
+.intel-brief-title {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0369a1;
+}
+.intel-brief-copy {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #334155;
+}
+.intel-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+#intelligenceSplitCard .role-pill {
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: linear-gradient(145deg, rgba(236, 254, 255, 0.95), rgba(219, 234, 254, 0.86));
+  color: #0c4a6e;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+.intel-cta {
+  margin-top: 16px;
+  display: inline-flex;
+  text-decoration: none;
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  color: #0f172a;
+  box-shadow: 0 8px 18px rgba(56, 189, 248, 0.2);
+}
+.intel-cta:hover {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-color: rgba(56, 189, 248, 0.55);
+  transform: translateY(-1px);
+}
+
+.suggestion-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, rgba(236, 253, 245, 0.86), rgba(224, 242, 254, 0.9)) !important;
+  border: 1px solid rgba(52, 211, 153, 0.38) !important;
+  box-shadow: 0 18px 36px rgba(16, 185, 129, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+.suggestion-card::before {
+  content: '';
+  position: absolute;
+  inset: auto -48px -56px auto;
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0));
+  pointer-events: none;
+}
+.suggestion-card.good {
+  border-color: rgba(16, 185, 129, 0.42) !important;
+}
+.suggestion-card.bad {
+  background: linear-gradient(155deg, rgba(255, 251, 235, 0.9), rgba(254, 243, 199, 0.9)) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 18px 36px rgba(245, 158, 11, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+.suggestion-subtitle {
+  margin-bottom: 8px;
+  max-width: 34ch;
+}
+#suggestionAction {
+  font-size: 34px;
+  line-height: 1.04;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #10b981, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 10px 0 10px;
+}
+.suggestion-card.bad #suggestionAction {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.suggestion-reason-text {
+  font-size: 17px;
+  line-height: 1.3;
+  color: #42526b;
+}
+.suggestion-reason-list {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.reason-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 13px;
+  line-height: 1.25;
+  color: #334155;
+  font-weight: 600;
+}
+.reason-pill.primary {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(220, 252, 231, 0.9));
+  color: #047857;
+}
+.suggestion-card.bad .reason-pill.primary {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.95), rgba(254, 243, 199, 0.9));
+  color: #b45309;
+}
+.reason-pill.error {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.95), rgba(254, 226, 226, 0.9));
+  color: #b91c1c;
+}
+
+@media (max-width: 1100px) {
+  .intel-lead {
+    max-width: none;
+    font-size: 17px;
+  }
+  .intel-brief-grid {
+    grid-template-columns: 1fr;
+  }
+  #suggestionAction {
+    font-size: 29px;
+  }
+}
+
+/* Facility list */
+.facility-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.facility-item {
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(248,250,252,0.8));
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  text-align: center;
+  transition: all 0.25s ease;
+}
+.facility-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+.facility-item.available { border-color: rgba(16, 185, 129, 0.3); }
+.facility-item.occupied { border-color: rgba(239, 68, 68, 0.3); background: linear-gradient(145deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02)); }
+.facility-name { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+.facility-status { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.facility-item.available .facility-status { color: #10b981; }
+.facility-item.occupied .facility-status { color: #ef4444; }
+
+/* Dashboard Facility Monitoring uses dynamic .facility-row items. Keep them full-width and readable. */
+#facilityCard .facility-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#facilityCard .facility-row {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+#facilityCard .facility-left {
+  min-width: 0;
+  flex: 1;
+}
+#facilityCard .facility-name {
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#facilityCard .facility-meta {
+  min-width: auto;
+  flex: 0 0 auto;
+}
+#facilityCard .facility-status {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+#facilityCard .card-head {
+  cursor: pointer;
+}
+
+#bloodCard .card-head {
+  cursor: pointer;
+}
+
+/* Live Reward Card subcards */
+#rewardCard .subcard {
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85)) !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+}
+#rewardCard .kpi {
+  font-size: 32px !important;
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ========== NEW SECTIONS STYLES ========== */
+
+/* Patient Queue View */
+.patient-queue {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85));
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.25s ease;
+}
+.queue-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.queue-item.priority-red {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.06), rgba(255,255,255,0.95));
+}
+.queue-item.priority-yellow {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.06), rgba(255,255,255,0.95));
+}
+.queue-item.priority-green {
+  border-left: 4px solid #10b981;
+}
+.queue-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.queue-avatar.red { background: linear-gradient(135deg, #fecaca, #fca5a5); }
+.queue-avatar.yellow { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.queue-avatar.green { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+.queue-info { flex: 1; min-width: 0; }
+.queue-name { font-weight: 700; color: #1e293b; font-size: 14px; margin-bottom: 2px; }
+.queue-details { font-size: 12px; color: #64748b; }
+.queue-wait {
+  text-align: right;
+  flex-shrink: 0;
+}
+.queue-wait-time {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+}
+.queue-wait-label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+.queue-item.priority-red .queue-wait-time { color: #dc2626; }
+.queue-item.priority-yellow .queue-wait-time { color: #d97706; }
+
+/* Doctor Schedule */
+.doctor-schedule {
+  display: grid;
+  gap: 12px;
+}
+.doctor-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85));
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.25s ease;
+}
+.doctor-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+.doctor-item.on-duty {
+  border-left: 4px solid #10b981;
+}
+.doctor-item.off-duty {
+  border-left: 4px solid #94a3b8;
+  opacity: 0.7;
+}
+.doctor-item.in-surgery {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.04), rgba(255,255,255,0.95));
+}
+.doctor-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.doctor-info { flex: 1; }
+.doctor-name { font-weight: 700; color: #1e293b; font-size: 14px; }
+.doctor-specialty { font-size: 12px; color: #64748b; margin-top: 2px; }
+.doctor-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.doctor-status.on-duty { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.doctor-status.off-duty { background: rgba(148, 163, 184, 0.2); color: #64748b; }
+.doctor-status.in-surgery { background: rgba(239, 68, 68, 0.15); color: #dc2626; animation: surgeryPulse 2s ease-in-out infinite; }
+@keyframes surgeryPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Emergency Timeline */
+.timeline {
+  position: relative;
+  padding-left: 24px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #e2e8f0, transparent);
+}
+.timeline-item {
+  position: relative;
+  padding-bottom: 20px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.timeline-dot.critical { background: #ef4444; }
+.timeline-dot.warning { background: #f59e0b; }
+.timeline-dot.info { background: #3b82f6; }
+.timeline-dot.success { background: #10b981; }
+.timeline-content {
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85));
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+.timeline-time {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.timeline-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+.timeline-desc {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Notification Center */
+.notification-center {
+  max-height: 280px;
+  overflow-y: auto;
+}
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85));
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.notification-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.notification-item.unread {
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.06), rgba(255,255,255,0.95));
+  border-color: rgba(59, 130, 246, 0.2);
+}
+.notification-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.notification-icon.alert { background: linear-gradient(135deg, #fecaca, #fca5a5); }
+.notification-icon.info { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+.notification-icon.success { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+.notification-icon.warning { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.notification-content { flex: 1; min-width: 0; }
+.notification-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+.notification-message { font-size: 12px; color: #64748b; line-height: 1.4; }
+.notification-message.notification-reason {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.notification-time { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.notification-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.notification-item:not(.unread) .notification-badge { display: none; }
+
+/* Weather Widget */
+.weather-widget {
+  background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.weather-widget::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+.weather-widget::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -20%;
+  width: 150px;
+  height: 150px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+.weather-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+.weather-location {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+.weather-date {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+.weather-source {
+  font-size: 11px;
+  opacity: 0.82;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.weather-icon {
+  font-size: 48px;
+}
+.weather-main {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 16px 0;
+  position: relative;
+  z-index: 1;
+}
+.weather-temp {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+}
+.weather-temp span {
+  font-size: 24px;
+  font-weight: 600;
+  vertical-align: top;
+}
+.weather-condition {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.weather-details {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  position: relative;
+  z-index: 1;
+}
+.weather-detail {
+  text-align: center;
+}
+.weather-detail-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+.weather-detail-label {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.weather-impact {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  font-size: 12px;
+  position: relative;
+  z-index: 1;
+}
+.weather-impact-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.weather-impact-text {
+  opacity: 0.9;
+  line-height: 1.4;
+}
+.weather-footnote {
+  margin-top: 10px;
+  text-align: right;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* Command Intelligence Suite */
+.role-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.role-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.78);
+  gap: 4px;
+}
+.role-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: transparent;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.role-btn.active {
+  background: linear-gradient(120deg, #0ea5e9, #2563eb);
+  color: #fff;
+}
+.ci-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+.ci-tile {
+  grid-column: span 6;
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(241,245,249,0.86));
+  border: 1px solid rgba(148,163,184,0.22);
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 170px;
+}
+.ci-tile h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #0f172a;
+}
+.ci-metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #334155;
+}
+.ci-metric strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+.ci-meter {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148,163,184,0.25);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.ci-meter span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #10b981, #22c55e);
+  transition: width 0.35s ease, background 0.35s ease;
+}
+.ci-meter span.warn { background: linear-gradient(90deg, #f59e0b, #f97316); }
+.ci-meter span.critical { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.whatif-controls {
+  display: grid;
+  gap: 8px;
+}
+.whatif-controls label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+.whatif-controls input[type="range"] {
+  width: 100%;
+}
+.explain-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed rgba(148,163,184,0.35);
+  padding: 6px 0;
+  gap: 10px;
+  font-size: 12px;
+}
+.explain-line strong {
+  color: #0f172a;
+  text-align: right;
+}
+.timeline-strip {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 6px;
+}
+.timeline-dot {
+  height: 12px;
+  border-radius: 4px;
+  background: rgba(148,163,184,0.28);
+}
+.timeline-dot.level-1 { background: rgba(234,179,8,0.65); }
+.timeline-dot.level-2 { background: rgba(249,115,22,0.75); }
+.timeline-dot.level-3 { background: rgba(239,68,68,0.9); }
+.network-list {
+  display: grid;
+  gap: 8px;
+}
+.network-node {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(248,250,252,0.95);
+  border: 1px solid rgba(148,163,184,0.28);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.network-node strong { color: #0f172a; }
+.triage-board {
+  display: grid;
+  gap: 7px;
+}
+.triage-row {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.triage-tag {
+  border-radius: 999px;
+  font-weight: 800;
+  text-align: center;
+  padding: 3px 8px;
+  color: #fff;
+}
+.triage-tag.red { background: #ef4444; }
+.triage-tag.yellow { background: #f59e0b; }
+.triage-tag.green { background: #10b981; }
+.triage-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148,163,184,0.28);
+  overflow: hidden;
+}
+.triage-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+}
+.radar-shell {
+  width: 100%;
+  height: 140px;
+}
+#riskRadarSvg {
+  width: 100%;
+  height: 100%;
+}
+.alert-ranking {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+.alert-ranking li {
+  font-size: 12px;
+  color: #1e293b;
+}
+.role-pill-row {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.role-pill {
+  border-radius: 999px;
+  background: rgba(14,165,233,0.12);
+  border: 1px solid rgba(14,165,233,0.25);
+  color: #0c4a6e;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ci-mini-chart {
+  height: 72px;
+}
+
+body[data-role="ops"] [data-role-visible]:not([data-role-visible*="ops"]),
+body[data-role="medical"] [data-role-visible]:not([data-role-visible*="medical"]),
+body[data-role="admin"] [data-role-visible]:not([data-role-visible*="admin"]) {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .ci-tile { grid-column: span 12; }
+  .role-toggle-wrap { flex-wrap: wrap; justify-content: flex-end; }
+}
+
+@media (max-width: 760px) {
+  .role-toggle { width: 100%; justify-content: space-between; }
+  .role-btn { flex: 1; }
+  .triage-row { grid-template-columns: 62px 1fr auto; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="left-content">
+        <section class="card">
+            <h3>System Overview <span class="tag" id="statusTag">Loading...</span> <button class="tour-btn tour-btn-primary" onclick="startTour()" style="margin-left:10px;padding:6px 12px;font-size:12px;">ℹ️ How it Works</button></h3>
+            <div class="grid" style="margin-top: 24px; gap: 20px;">
+                <div class="card subcard kpi-card" style="grid-column: span 3;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                        <span class="muted">Total Patients</span>
+                    </div>
+                    <div class="kpi" id="totalPatients">-</div>
+                </div>
+                <div class="card subcard kpi-card" style="grid-column: span 3;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                        <span class="muted">Waiting</span>
+                    </div>
+                    <div class="kpi" id="waiting">-</div>
+                    <div class="muted" id="avgWaitBadge" style="margin-top:10px; font-weight:500; font-size:12px;">Avg. Wait Time: -</div>
+                </div>
+                <div class="card subcard kpi-card" style="grid-column: span 3;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+                        <span class="muted">Admitted</span>
+                    </div>
+                    <div class="kpi" id="admitted">-</div>
+                </div>
+                <div class="card subcard kpi-card" style="grid-column: span 3;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span>
+                        <span class="muted">Episodes<span class="help-icon">?<span class="help-tooltip">Episodes: Each complete run of the hospital simulation from start to finish.</span></span></span>
+                    </div>
+                    <div class="kpi" id="episodes">-</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="liveCapacityCard">
+            <h3>Live Capacity</h3>
+            <div class="grid" style="margin-top: 24px; gap: 20px;">
+                <div class="card subcard kpi-card" id="doctorsCard" style="grid-column: span 4;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/></svg></span>
+                        <span class="muted">Doctors Available</span>
+                        <span class="warning-icon" title="Critical: No doctors available!"><svg width="16" height="16" viewBox="0 0 24 24" fill="#dc2626" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13" stroke="white"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="white"/></svg></span>
+                    </div>
+                    <div class="kpi" id="doctors">-</div>
+                </div>
+                <div class="card subcard kpi-card" style="grid-column: span 4;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+                        <span class="muted">Beds Available</span>
+                    </div>
+                    <div class="kpi" id="beds">-</div>
+                </div>
+                <div class="card subcard kpi-card" style="grid-column: span 4;">
+                    <div class="kpi-header">
+                        <span class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                        <span class="muted">Current Step<span class="help-icon">?<span class="help-tooltip">Current Step: The current moment in the simulation timeline. Higher steps mean more time has passed.</span></span></span>
+                    </div>
+                    <div class="kpi" id="step">-</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card is-collapsed" id="facilityCard">
+            <div class="card-head" role="button" tabindex="0" aria-label="Toggle Facility Monitoring" onclick="toggleCard('facilityCard')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard('facilityCard');}">
+                <h3>Facility Monitoring</h3>
+                <div class="card-head-meta">
+                    <span class="card-summary" id="facilitySummary">AVAILABLE</span>
+                <button class="collapse-toggle" type="button" aria-label="Toggle Facility Monitoring" onclick="event.stopPropagation(); toggleCard('facilityCard')" id="facilityToggle">▼</button>
+                </div>
+            </div>
+            <div class="collapse-body">
+                <p class="muted" style="margin-top:8px;">Live OT/Lab availability. Becomes OCCUPIED briefly when a RED admission is detected.</p>
+                <div id="facilityList" class="facility-list" style="margin-top:10px;"></div>
+            </div>
+        </section>
+
+        <section class="card is-collapsed" id="bloodCard">
+            <div class="card-head" role="button" tabindex="0" aria-label="Toggle Blood Bank Inventory" onclick="toggleCard('bloodCard')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard('bloodCard');}">
+                <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>Blood Bank Inventory</h3>
+                <div class="card-head-meta">
+                    <span class="card-summary" id="bloodSummary">NORMAL</span>
+                <button class="collapse-toggle" type="button" aria-label="Toggle Blood Bank" onclick="event.stopPropagation(); toggleCard('bloodCard')" id="bloodToggle">▼</button>
+                </div>
+            </div>
+            <div class="collapse-body">
+                <p class="muted" style="margin-top:8px;">Inventory levels (demo). RED admissions consume O- / AB- by 5-10%.</p>
+                <div id="bloodGrid" class="blood-grid"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Critical Alerts</h3>
+            <div id="criticalAlerts" class="alert-list">
+                <p class="muted">Checking system health…</p>
+            </div>
+        </section>
+
+        <section class="card" id="opsPulseCard">
+          <div class="card-head">
+            <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>Operations Pulse</h3>
+            <div class="card-head-meta">
+              <span class="card-summary" id="opsPulseSummary">STABLE</span>
+            </div>
+          </div>
+          <div class="ops-pulse-grid">
+            <div class="ops-pulse-item">
+              <div class="ops-pulse-head">
+                <span class="ops-pulse-label">Queue Pressure</span>
+                <span class="ops-pulse-chip" id="opsQueueChip">OK</span>
+              </div>
+              <div class="ops-pulse-value" id="opsQueueValue">0<small>patients</small></div>
+              <div class="ops-meter"><span id="opsQueueMeter"></span></div>
+              <div class="ops-pulse-note" id="opsQueueNote">Queue is under control.</div>
+            </div>
+            <div class="ops-pulse-item">
+              <div class="ops-pulse-head">
+                <span class="ops-pulse-label">Staffing Stress</span>
+                <span class="ops-pulse-chip" id="opsStaffChip">OK</span>
+              </div>
+              <div class="ops-pulse-value" id="opsStaffValue">0<small>doctors free</small></div>
+              <div class="ops-meter"><span id="opsStaffMeter"></span></div>
+              <div class="ops-pulse-note" id="opsStaffNote">Doctor coverage is healthy.</div>
+            </div>
+            <div class="ops-pulse-item">
+              <div class="ops-pulse-head">
+                <span class="ops-pulse-label">Bed Utilization</span>
+                <span class="ops-pulse-chip" id="opsBedsChip">OK</span>
+              </div>
+              <div class="ops-pulse-value" id="opsBedsValue">0<small>% occupied</small></div>
+              <div class="ops-meter"><span id="opsBedsMeter"></span></div>
+              <div class="ops-pulse-note" id="opsBedsNote">Capacity headroom available.</div>
+            </div>
+            <div class="ops-pulse-item">
+              <div class="ops-pulse-head">
+                <span class="ops-pulse-label">City Support</span>
+                <span class="ops-pulse-chip" id="opsCityChip">READY</span>
+              </div>
+              <div class="ops-pulse-value" id="opsCityValue">0<small>beds</small></div>
+              <div class="ops-meter"><span id="opsCityMeter"></span></div>
+              <div class="ops-pulse-note" id="opsCityNote">Transfer network ready.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card intel-card" id="intelligenceSplitCard">
+          <div class="card-head">
+            <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>Intelligence Overview</h3>
+            <div class="card-head-meta">
+              <span class="card-summary">Split View</span>
+            </div>
+          </div>
+          <p class="muted intel-lead">Run the floor from a clean command core, then jump to Clinical Ops only when deep orchestration is needed.</p>
+          <div class="intel-brief-grid" aria-label="Command split overview">
+            <article class="intel-brief-block">
+              <h4 class="intel-brief-title">Live Here</h4>
+              <p class="intel-brief-copy">Core KPIs, active alerts, and operations pulse stay visible for fast executive scans.</p>
+            </article>
+            <article class="intel-brief-block">
+              <h4 class="intel-brief-title">Dive There</h4>
+              <p class="intel-brief-copy">Clinical Ops opens advanced forecasting, what-if simulation, and explainability tools.</p>
+            </article>
+          </div>
+          <div class="row intel-pill-row">
+            <span class="role-pill">Overview: Core KPIs, Alerts, and Ops Pulse</span>
+            <span class="role-pill">Clinical Ops: Forecasts, What-If, Radar, and Explainability</span>
+          </div>
+          <a class="qa-btn qa-btn-secondary intel-cta" href="/clinical_ops" style="text-decoration:none;">Open Clinical Ops Dashboard</a>
+        </section>
+
+    </div>
+
+    <aside class="right-sidebar">
+        <!-- Weather Widget -->
+        <section class="card" style="padding: 0; overflow: hidden;" id="weatherCard">
+            <div class="weather-widget" id="weatherWidget">
+                <div class="weather-header">
+                    <div>
+                        <div class="weather-location" id="weatherLocation">📍 Ahmedabad, India</div>
+                        <div class="weather-date" id="weatherDate">Loading...</div>
+                    <div class="weather-source" id="weatherSource">Source: -</div>
+                    </div>
+                    <div class="weather-icon" id="weatherIcon">🌤️</div>
+                </div>
+                <div class="weather-main">
+                    <div class="weather-temp" id="weatherTemp">--<span>°C</span></div>
+                    <div class="weather-condition" id="weatherCondition">Loading...</div>
+                </div>
+                <div class="weather-details">
+                    <div class="weather-detail">
+                        <div class="weather-detail-value" id="weatherHumidity">--%</div>
+                        <div class="weather-detail-label">Humidity</div>
+                    </div>
+                    <div class="weather-detail">
+                        <div class="weather-detail-value" id="weatherWind">-- km/h</div>
+                        <div class="weather-detail-label">Wind</div>
+                    </div>
+                    <div class="weather-detail">
+                        <div class="weather-detail-value" id="weatherAQI">--</div>
+                        <div class="weather-detail-label">AQI</div>
+                    </div>
+                </div>
+                <div class="weather-impact" id="weatherImpact">
+                    <div class="weather-impact-title">🏥 Hospital Impact</div>
+                    <div class="weather-impact-text" id="weatherImpactText">Analyzing weather patterns...</div>
+                </div>
+                <div class="weather-footnote" id="weatherUpdatedAt">Last updated: -</div>
+            </div>
+        </section>
+
+        <!-- Notification Center -->
+        <section class="card" id="notificationCard">
+            <div class="card-head">
+                <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span id="notifBadge" style="background:#ef4444;color:white;font-size:11px;padding:2px 7px;border-radius:10px;margin-left:8px;font-weight:700;">3</span></h3>
+                <div class="card-head-meta">
+                    <button class="collapse-toggle" type="button" onclick="toggleCard('notificationCard')" id="notifToggle">▲</button>
+                </div>
+            </div>
+            <div class="collapse-body">
+                <div class="notification-center" id="notificationCenter">
+                    <p class="muted">Loading notifications...</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="quickNavCard">
+            <h3>Quick Actions</h3>
+            <div class="qa-nav-grid" style="margin-top: 12px;">
+                <a class="qa-btn qa-btn-secondary" href="/controls" style="text-decoration:none;">
+                    <svg class="qa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    <span>Open Controls</span>
+                </a>
+                <a class="qa-btn qa-btn-secondary" href="/analytics" style="text-decoration:none;">
+                    <svg class="qa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Open Analytics</span>
+                </a>
+                  <a class="qa-btn qa-btn-secondary" href="/clinical_ops" style="text-decoration:none;">
+                    <svg class="qa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M3 21h18"></path>
+                      <path d="M6 21V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13"></path>
+                      <path d="M9 10h6"></path>
+                      <path d="M9 14h6"></path>
+                      <path d="M12 3v6"></path>
+                    </svg>
+                    <span>Clinical Ops Hub</span>
+                  </a>
+            </div>
+            <div class="qa-divider">
+                <p class="qa-label">Simulation Controls</p>
+                <button class="qa-btn qa-btn-danger" id="crisisBtn" onclick="triggerCrisis()">
+                    <span aria-hidden="true">⚠️</span>
+                    <span>TRIGGER RESOURCE CRISIS</span>
+                </button>
+                <p class="qa-helper">Crisis Simulator locks ~50% of currently available beds</p>
+                <button class="qa-btn qa-btn-ghost" type="button" onclick="openReplayDrawer()">Open History Replay</button>
+            </div>
+        </section>
+
+        <section class="card suggestion-card" id="aiSuggestionCard">
+          <h3>AI Recommendation</h3>
+          <p class="muted suggestion-subtitle">Live action guidance based on the current system state</p>
+            <p id="suggestionAction">-</p>
+            <div class="muted suggestion-reason-list" id="suggestionReason">
+              <span class="reason-pill">Reasoning will appear here</span>
+            </div>
+        </section>
+    </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setToggleIcon(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const btn = card.querySelector('.collapse-toggle');
+  if (!btn) return;
+  btn.textContent = card.classList.contains('is-collapsed') ? '▼' : '▲';
+}
+
+function toggleCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.toggle('is-collapsed');
+  setToggleIcon(cardId);
+  if (!card.classList.contains('is-collapsed')) {
+    try {
+      const last = window.__prevOverviewState || {};
+      window.HospitalInfra && window.HospitalInfra.onStateUpdate && window.HospitalInfra.onStateUpdate(last, { mode: 'live' });
+    } catch (_) {}
+  }
+}
+
+function openReplayDrawer() {
+  const overlay = document.getElementById('replayOverlay');
+  const drawer = document.getElementById('replayDrawer');
+  overlay && overlay.classList.add('open');
+  drawer && drawer.classList.add('open');
+  syncReplayUI().catch(() => {});
+}
+
+function closeReplayDrawer() {
+  const overlay = document.getElementById('replayOverlay');
+  const drawer = document.getElementById('replayDrawer');
+  overlay && overlay.classList.remove('open');
+  drawer && drawer.classList.remove('open');
+}
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReplayDrawer(); });
+
+function setTextById(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  el.textContent = String(value);
+  return true;
+}
+
+function setOpsChipState(id, level) {
+  const chip = document.getElementById(id);
+  if (!chip) return;
+  chip.classList.remove('good', 'warn', 'critical');
+  if (level === 'critical') chip.classList.add('critical');
+  else if (level === 'warn') chip.classList.add('warn');
+  else chip.classList.add('good');
+}
+
+function setOpsMeter(id, percent, level) {
+  const meter = document.getElementById(id);
+  if (!meter) return;
+  const bounded = Math.max(0, Math.min(100, Number(percent) || 0));
+  meter.style.width = `${bounded.toFixed(1)}%`;
+  meter.classList.remove('warn', 'critical');
+  if (level === 'critical') meter.classList.add('critical');
+  else if (level === 'warn') meter.classList.add('warn');
+}
+
+function updateOperationsPulse(s = {}) {
+  const waiting = Number(s.waiting ?? 0);
+  const availableDoctors = Number(s.available_doctors ?? 0);
+  const availableBeds = Number(s.available_beds ?? 0);
+  const totalBeds = Math.max(1, Number(s.total_beds ?? 1));
+  const cityBeds = Number(s.city_available_beds ?? 0);
+
+  const queueLimit = Math.max(1, Number(s.queue_soft_limit ?? 12));
+  const queuePressure = Math.min(100, (waiting / queueLimit) * 100);
+  const queueLevel = queuePressure > 90 ? 'critical' : queuePressure > 65 ? 'warn' : 'good';
+  const queueText = queueLevel === 'critical' ? 'HIGH' : queueLevel === 'warn' ? 'WATCH' : 'OK';
+
+  const staffStress = Math.min(100, (Math.max(0, 4 - availableDoctors) / 4) * 100);
+  const staffLevel = availableDoctors <= 0 ? 'critical' : availableDoctors < 2 ? 'warn' : 'good';
+  const staffText = staffLevel === 'critical' ? 'CRITICAL' : staffLevel === 'warn' ? 'LOW' : 'OK';
+
+  const occupiedBeds = Math.max(0, totalBeds - Math.max(0, availableBeds));
+  const bedUtil = Math.min(100, (occupiedBeds / totalBeds) * 100);
+  const bedsLevel = bedUtil > 90 ? 'critical' : bedUtil > 70 ? 'warn' : 'good';
+  const bedsText = bedsLevel === 'critical' ? 'FULL' : bedsLevel === 'warn' ? 'HIGH' : 'OK';
+
+  const cityRatio = Math.min(100, (cityBeds / 20) * 100);
+  const cityLevel = cityBeds <= 0 ? 'critical' : cityBeds < 8 ? 'warn' : 'good';
+  const cityText = cityLevel === 'critical' ? 'LIMITED' : cityLevel === 'warn' ? 'LOW' : 'READY';
+
+  setTextById('opsQueueValue', `${waiting}`);
+  setTextById('opsStaffValue', `${availableDoctors}`);
+  setTextById('opsBedsValue', `${Math.round(bedUtil)}`);
+  setTextById('opsCityValue', `${cityBeds}`);
+
+  setTextById('opsQueueChip', queueText);
+  setTextById('opsStaffChip', staffText);
+  setTextById('opsBedsChip', bedsText);
+  setTextById('opsCityChip', cityText);
+
+  setOpsChipState('opsQueueChip', queueLevel);
+  setOpsChipState('opsStaffChip', staffLevel);
+  setOpsChipState('opsBedsChip', bedsLevel);
+  setOpsChipState('opsCityChip', cityLevel);
+
+  setOpsMeter('opsQueueMeter', queuePressure, queueLevel);
+  setOpsMeter('opsStaffMeter', staffStress, staffLevel);
+  setOpsMeter('opsBedsMeter', bedUtil, bedsLevel);
+  setOpsMeter('opsCityMeter', cityRatio, cityLevel);
+
+  setTextById('opsQueueNote', queueLevel === 'critical' ? 'Queue is overloaded, prioritize red cases.' : queueLevel === 'warn' ? 'Queue rising, monitor throughput closely.' : 'Queue is under control.');
+  setTextById('opsStaffNote', staffLevel === 'critical' ? 'No doctors free, trigger escalation now.' : staffLevel === 'warn' ? 'Coverage is tight, avoid non-critical admissions.' : 'Doctor coverage is healthy.');
+  setTextById('opsBedsNote', bedsLevel === 'critical' ? 'Beds are near full capacity.' : bedsLevel === 'warn' ? 'Bed pressure rising, watch allocations.' : 'Capacity headroom available.');
+  setTextById('opsCityNote', cityLevel === 'critical' ? 'No city support currently available.' : cityLevel === 'warn' ? 'Limited transfer capacity in city network.' : 'Transfer network ready.');
+
+  const summary = document.getElementById('opsPulseSummary');
+  if (summary) {
+    const overall = [queueLevel, staffLevel, bedsLevel, cityLevel].includes('critical') ? 'CRITICAL' : [queueLevel, staffLevel, bedsLevel, cityLevel].includes('warn') ? 'WATCH' : 'STABLE';
+    summary.textContent = overall;
+  }
+}
+
+let __ciState = {};
+let __ciConfidenceHistory = [];
+let __ciIncidentHistory = [];
+let __dashboardRole = 'all';
+
+function setCiMeter(id, percent, level) {
+  const meter = document.getElementById(id);
+  if (!meter) return;
+  const bounded = Math.max(0, Math.min(100, Number(percent) || 0));
+  meter.style.width = `${bounded.toFixed(1)}%`;
+  meter.classList.remove('warn', 'critical');
+  if (level === 'critical') meter.classList.add('critical');
+  else if (level === 'warn') meter.classList.add('warn');
+}
+
+function describePrimaryReason(s) {
+  const waiting = Number(s.waiting ?? 0);
+  const doctors = Number(s.available_doctors ?? 0);
+  const beds = Number(s.available_beds ?? 0);
+  if (doctors <= 0) return 'No doctors available now';
+  if (beds <= 0) return 'No beds available for intake';
+  if (waiting > 10) return 'Waiting queue above safe threshold';
+  if (Number(s.red_waiting ?? 0) > 0) return 'Critical patients need priority allocation';
+  return 'System remains in stable corridor';
+}
+
+function setDashboardRole(role) {
+  const safeRole = ['all', 'ops', 'medical', 'admin'].includes(role) ? role : 'all';
+  __dashboardRole = safeRole;
+  document.body.setAttribute('data-role', safeRole);
+  document.querySelectorAll('#roleToggle .role-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.role === safeRole);
+  });
+  const roleMap = {
+    all: 'All modules visible. Switch role to focus specific workflows.',
+    ops: 'Ops focus active: capacity, transfers, crisis containment.',
+    medical: 'Medical focus active: triage priority and explainability.',
+    admin: 'Admin focus active: strategic risk and network posture.'
+  };
+  setTextById('roleViewSummary', roleMap[safeRole] || roleMap.all);
+}
+
+function updateWhatIfProjection() {
+  const surge = Number(document.getElementById('whatIfSurge')?.value ?? 0);
+  const extraDoctors = Number(document.getElementById('whatIfDoctors')?.value ?? 0);
+  const extraBeds = Number(document.getElementById('whatIfBeds')?.value ?? 0);
+  const waiting = Number(__ciState.waiting ?? 0);
+  const doctors = Number(__ciState.available_doctors ?? 0) + extraDoctors;
+  const beds = Number(__ciState.available_beds ?? 0) + extraBeds;
+  const projectedQueue = Math.max(0, waiting + surge - Math.max(0, doctors * 2) - Math.max(0, beds * 0.6));
+  const pressure = Math.min(100, Math.round((projectedQueue / Math.max(8, Number(__ciState.queue_soft_limit ?? 12))) * 100));
+  const label = pressure > 85 ? 'critical' : pressure > 60 ? 'watch' : 'stable';
+  setTextById('whatIfProjection', `Projected queue pressure: ${pressure}% (${label}) with +${surge} arrivals, +${extraDoctors} doctors, +${extraBeds} beds.`);
+}
+
+function renderIncidentHeatmap(level) {
+  const strip = document.getElementById('incidentTimelineStrip');
+  if (!strip) return;
+  __ciIncidentHistory.push(Math.max(0, Math.min(3, Number(level) || 0)));
+  if (__ciIncidentHistory.length > 24) __ciIncidentHistory.shift();
+  const padded = Array.from({ length: 24 }, (_, idx) => __ciIncidentHistory[idx] ?? 0);
+  strip.innerHTML = padded.map((v) => `<span class="timeline-dot ${v > 0 ? `level-${v}` : ''}" title="Incident level ${v}"></span>`).join('');
+}
+
+function renderNetworkMap(s) {
+  const container = document.getElementById('networkMapList');
+  if (!container) return;
+  const localBeds = Number(s.available_beds ?? 0);
+  const cityBeds = Number(s.city_available_beds ?? 0);
+  const waiting = Number(s.waiting ?? 0);
+  const nodes = [
+    { name: 'Central Hub', beds: localBeds, distance: '0.8 km', eta: '4m' },
+    { name: 'North Wing', beds: Math.max(0, cityBeds - 4), distance: '3.1 km', eta: '11m' },
+    { name: 'Metro Care', beds: Math.max(0, cityBeds), distance: '5.6 km', eta: '17m' },
+    { name: 'Riverfront ER', beds: Math.max(0, cityBeds - 2), distance: '7.0 km', eta: '21m' }
+  ];
+  container.innerHTML = nodes.map((n) => `<div class="network-node"><div><strong>${n.name}</strong><div class="muted">ETA ${n.eta} • ${n.distance}</div></div><div>${n.beds} beds</div></div>`).join('');
+
+  const hint = document.getElementById('networkTransferHint');
+  if (hint) {
+    if (waiting > localBeds && cityBeds > 0) {
+      hint.textContent = `Recommended: transfer ${Math.min(waiting - localBeds, cityBeds)} non-critical patients to Metro Care network.`;
+    } else if (cityBeds <= 0) {
+      hint.textContent = 'City network constrained. Trigger defer strategy and internal surge protocol.';
+    } else {
+      hint.textContent = 'Network healthy. Keep transfers optional for red-priority stabilization.';
+    }
+  }
+}
+
+function renderTriageBoard(s) {
+  const board = document.getElementById('triageBoard');
+  if (!board) return;
+  const totalWaiting = Math.max(1, Number(s.waiting ?? 0));
+  const red = Math.max(0, Number(s.red_waiting ?? 0));
+  const yellow = Math.max(0, Math.round((totalWaiting - red) * 0.45));
+  const green = Math.max(0, totalWaiting - red - yellow);
+  const rows = [
+    { label: 'RED', cls: 'red', count: red },
+    { label: 'YELLOW', cls: 'yellow', count: yellow },
+    { label: 'GREEN', cls: 'green', count: green }
+  ];
+  board.innerHTML = rows.map((r) => {
+    const percent = Math.min(100, (r.count / totalWaiting) * 100);
+    return `<div class="triage-row"><span class="triage-tag ${r.cls}">${r.label}</span><div class="triage-bar"><span style="width:${percent.toFixed(1)}%"></span></div><strong>${r.count}</strong></div>`;
+  }).join('');
+}
+
+function renderRiskRadar(s) {
+  const svg = document.getElementById('riskRadarSvg');
+  if (!svg) return;
+  const waiting = Number(s.waiting ?? 0);
+  const doctors = Number(s.available_doctors ?? 0);
+  const beds = Number(s.available_beds ?? 0);
+  const totalBeds = Math.max(1, Number(s.total_beds ?? 1));
+  const cityBeds = Number(s.city_available_beds ?? 0);
+  const crisis = Number(!!s.crisis_active);
+
+  const metrics = [
+    Math.min(100, (waiting / Math.max(8, Number(s.queue_soft_limit ?? 12))) * 100),
+    Math.min(100, (Math.max(0, 4 - doctors) / 4) * 100),
+    Math.min(100, ((Math.max(0, totalBeds - beds)) / totalBeds) * 100),
+    Math.min(100, (Math.max(0, 10 - cityBeds) / 10) * 100),
+    crisis ? 95 : 20
+  ];
+
+  const cx = 110;
+  const cy = 88;
+  const radius = 62;
+  const labels = ['Queue', 'Staff', 'Beds', 'Network', 'Crisis'];
+  const rings = [20, 40, 60, 80, 100];
+
+  const ringSvg = rings.map((r) => `<polygon points="${labels.map((_, i) => {
+    const angle = (-90 + (i * 360) / labels.length) * (Math.PI / 180);
+    const rr = (radius * r) / 100;
+    return `${(cx + Math.cos(angle) * rr).toFixed(1)},${(cy + Math.sin(angle) * rr).toFixed(1)}`;
+  }).join(' ')}" fill="none" stroke="rgba(148,163,184,0.32)" stroke-width="1" />`).join('');
+
+  const axisSvg = labels.map((label, i) => {
+    const angle = (-90 + (i * 360) / labels.length) * (Math.PI / 180);
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    const lx = cx + Math.cos(angle) * (radius + 16);
+    const ly = cy + Math.sin(angle) * (radius + 16);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(148,163,184,0.4)" stroke-width="1" /><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#475569" font-size="9" text-anchor="middle">${label}</text>`;
+  }).join('');
+
+  const polygon = labels.map((_, i) => {
+    const angle = (-90 + (i * 360) / labels.length) * (Math.PI / 180);
+    const rr = (radius * metrics[i]) / 100;
+    return `${(cx + Math.cos(angle) * rr).toFixed(1)},${(cy + Math.sin(angle) * rr).toFixed(1)}`;
+  }).join(' ');
+
+  svg.innerHTML = `${ringSvg}${axisSvg}<polygon points="${polygon}" fill="rgba(14,165,233,0.28)" stroke="#0284c7" stroke-width="2" />`;
+  const avgRisk = metrics.reduce((sum, m) => sum + m, 0) / metrics.length;
+  const summary = document.getElementById('riskRadarSummary');
+  if (summary) {
+    summary.textContent = avgRisk > 75 ? 'Risk posture elevated. Activate contingency protocols.' : avgRisk > 55 ? 'Moderate risk. Keep buffer teams ready.' : 'Balanced risk posture.';
+  }
+}
+
+function scoreAlert(item, s) {
+  const typeWeight = item.type === 'alert' ? 40 : item.type === 'warning' ? 25 : item.type === 'info' ? 10 : 5;
+  const waitingWeight = Math.min(25, Number(s.waiting ?? 0) * 1.2);
+  const redWeight = Math.min(20, Number(s.red_waiting ?? 0) * 3);
+  const crisisWeight = s.crisis_active ? 25 : 0;
+  return Math.round(typeWeight + waitingWeight + redWeight + crisisWeight);
+}
+
+function renderAlertRanking(s, rankedAlerts) {
+  const list = document.getElementById('smartAlertRanking');
+  if (!list) return;
+  const base = Array.isArray(rankedAlerts) ? rankedAlerts : [];
+  const sorted = base
+    .map((item) => ({ ...item, score: scoreAlert(item, s) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+  if (!sorted.length) {
+    list.innerHTML = '<li>No active alerts. Monitoring remains proactive.</li>';
+    return;
+  }
+  list.innerHTML = sorted.map((item) => `<li><strong>${item.score}</strong> - ${item.title}: ${item.message}</li>`).join('');
+}
+
+function renderConfidenceTrend(confidence) {
+  const chart = document.getElementById('confidenceTrendChart');
+  if (!chart) return;
+  const value = Math.max(0, Math.min(100, Number(confidence) || 0));
+  __ciConfidenceHistory.push(value);
+  if (__ciConfidenceHistory.length > 20) __ciConfidenceHistory.shift();
+
+  if (!__ciConfidenceHistory.length) {
+    chart.innerHTML = '<p class="muted">No confidence samples yet.</p>';
+    return;
+  }
+
+  const w = 220;
+  const h = 72;
+  const p = 6;
+  const pts = __ciConfidenceHistory.map((v, i, arr) => {
+    const x = p + (i / Math.max(1, arr.length - 1)) * (w - p * 2);
+    const y = h - p - (v / 100) * (h - p * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  chart.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><rect x="0" y="0" width="${w}" height="${h}" fill="rgba(241,245,249,0.8)" rx="10" /><polyline points="${pts}" fill="none" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
+}
+
+function updateCommandIntelligence(s = {}, rankedAlerts = []) {
+  __ciState = s || {};
+  const waiting = Number(s.waiting ?? 0);
+  const doctors = Number(s.available_doctors ?? 0);
+  const beds = Number(s.available_beds ?? 0);
+  const totalBeds = Math.max(1, Number(s.total_beds ?? 1));
+  const crisis = !!s.crisis_active;
+  const redWaiting = Number(s.red_waiting ?? 0);
+
+  const prevWaiting = Number(window.__ciPrevWaiting ?? waiting);
+  const waitingTrend = waiting - prevWaiting;
+  window.__ciPrevWaiting = waiting;
+
+  const drainRate = Math.max(0.5, doctors * 1.6 + beds * 0.4);
+  const load10 = Math.min(100, ((waiting + Math.max(0, waitingTrend) * 2) / Math.max(8, drainRate * 1.2)) * 100);
+  const load30 = Math.min(100, ((waiting + Math.max(0, waitingTrend) * 6 + redWaiting * 2) / Math.max(8, drainRate * 2.8)) * 100);
+  const l10Level = load10 > 88 ? 'critical' : load10 > 65 ? 'warn' : 'good';
+  const l30Level = load30 > 88 ? 'critical' : load30 > 65 ? 'warn' : 'good';
+
+  setTextById('predLoad10', `${Math.round(load10)}%`);
+  setTextById('predLoad30', `${Math.round(load30)}%`);
+  setCiMeter('predLoad10Meter', load10, l10Level);
+  setCiMeter('predLoad30Meter', load30, l30Level);
+  setTextById('predLoadNote', l30Level === 'critical' ? 'Overload risk high within 30 minutes. Trigger surge staffing.' : l30Level === 'warn' ? 'Pressure building. Pre-position transfer options.' : 'Projection stable across next operational window.');
+
+  const confidenceRaw = s.ai_confidence ?? s.ai_suggestion_confidence ?? (100 - ((load10 + load30) / 2) * 0.5);
+  const confidence = Math.max(8, Math.min(99, Number(confidenceRaw) || 0));
+  setTextById('xpPrimaryReason', describePrimaryReason(s));
+  setTextById('xpCounterfactual', doctors <= 0 ? 'If +2 doctors, queue clears faster in 10-15 min.' : beds <= 0 ? 'If +4 beds, defer risk drops sharply.' : 'If arrivals rise by 20%, REASSIGN becomes dominant.');
+  setTextById('xpRiskIgnored', crisis ? 'High chance of escalation to city-wide alert.' : load30 > 85 ? 'Likely SLA breach and critical wait-time spike.' : 'Low operational downside expected.');
+  setTextById('xpConfidence', `${confidence.toFixed(0)}%`);
+
+  const incidentLevel = crisis ? 3 : (redWaiting > 1 || load30 > 80 ? 2 : (load10 > 55 ? 1 : 0));
+  renderIncidentHeatmap(incidentLevel);
+  setTextById('incidentTimelineLabel', incidentLevel >= 2 ? 'Recent incident intensity elevated.' : incidentLevel === 1 ? 'Minor spikes detected in operational flow.' : 'No incident spikes detected.');
+
+  renderNetworkMap(s);
+  renderTriageBoard(s);
+  renderRiskRadar(s);
+  renderAlertRanking(s, rankedAlerts);
+  renderConfidenceTrend(confidence);
+
+  const avgConfidence = __ciConfidenceHistory.length ? (__ciConfidenceHistory.reduce((sum, v) => sum + v, 0) / __ciConfidenceHistory.length) : confidence;
+  setTextById('confidenceTrendNote', avgConfidence < 45 ? 'Confidence volatile. Prefer conservative action policies.' : avgConfidence < 70 ? 'Confidence moderate. Keep human-in-loop checks active.' : 'Confidence stable over recent decision horizon.');
+
+  const criticalCount = [l10Level, l30Level].filter((v) => v === 'critical').length + (crisis ? 1 : 0);
+  const ciSummary = document.getElementById('ciSummary');
+  if (ciSummary) {
+    ciSummary.textContent = criticalCount > 1 ? 'SURGE' : criticalCount === 1 ? 'WATCH' : 'COORDINATED';
+  }
+
+  updateWhatIfProjection();
+}
+
+let __replayMode = false;
+let __replayFrames = [];
+let __replayTimer = null;
+
+function setReplayMode(on) {
+  __replayMode = Boolean(on);
+  const btn = document.getElementById('replayToggleBtn');
+  if (btn) btn.textContent = __replayMode ? 'Replay: ON' : 'Replay: OFF';
+}
+
+async function fetchTimeline() {
+  const res = await fetch('/api/timeline?limit=600&offset=0').then(r => r.json());
+  if (!res.success) return [];
+  return Array.isArray(res.frames) ? res.frames : [];
+}
+
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function reasonSegments(reason, alertExplanation) {
+  const segments = [];
+  const primary = String(reason || '').split(/[;•]/).map(part => part.trim()).filter(Boolean);
+  primary.forEach(part => segments.push(part));
+  if (alertExplanation) segments.push(`Status: ${alertExplanation}`);
+  return segments.length ? segments : ['No recommendation details available'];
+}
+
+function renderSuggestionReason(reasonEl, reason, alertExplanation) {
+  if (!reasonEl) return;
+  const segments = reasonSegments(reason, alertExplanation);
+  reasonEl.innerHTML = segments
+    .map((segment, idx) => `<span class="reason-pill ${idx === 0 ? 'primary' : ''}">${escapeHtml(segment)}</span>`)
+    .join('');
+}
+
+function renderSuggestionError(reasonEl, message) {
+  if (!reasonEl) return;
+  reasonEl.innerHTML = `<span class="reason-pill error">${escapeHtml(message)}</span>`;
+}
+
+function renderReplayFrame(frame, idx, total) {
+  if (!frame || !frame.state) return;
+  const s = frame.state;
+  setTextById('totalPatients', s.total_patients ?? '-');
+  setTextById('waiting', s.waiting ?? '-');
+  setTextById('admitted', s.admitted ?? '-');
+  setTextById('doctors', s.available_doctors ?? '-');
+  setTextById('beds', s.available_beds ?? '-');
+  setTextById('step', s.step ?? '-');
+  updateOperationsPulse(s);
+  const suggestionAction = document.getElementById('suggestionAction');
+  const suggestionReason = document.getElementById('suggestionReason');
+  const suggestionCard = document.getElementById('aiSuggestionCard');
+  const action = s.ai_suggestion_action || '-';
+  const reason = s.ai_suggestion_reason || '';
+  suggestionAction.textContent = action;
+  renderSuggestionReason(suggestionReason, reason, s.alert_explanation);
+  suggestionCard.classList.toggle('good', action !== 'HOLD');
+  suggestionCard.classList.toggle('bad', action === 'HOLD');
+  setTextById('replayIndex', `Frame ${idx + 1}/${total}`);
+  setTextById('replayEvent', `${frame.event || 'FRAME'} • ${frame.source || '-'}`);
+  const detailBits = [];
+  if (frame.action_name) detailBits.push(`Action: ${frame.action_name}`);
+  if (typeof frame.reward === 'number') detailBits.push(`Reward: ${Number(frame.reward).toFixed(2)}`);
+  if (typeof frame.cumulative_reward === 'number') detailBits.push(`Total: ${Number(frame.cumulative_reward).toFixed(2)}`);
+  setTextById('replayEventDetail', detailBits.join(' | ') || '-');
+  const sig = Array.isArray(frame.events) && frame.events.length ? frame.events.join(', ') : '-';
+  setTextById('replaySignals', sig);
+  window.HospitalInfra && window.HospitalInfra.onStateUpdate(s, { mode: 'replay' });
+}
+
+async function syncReplayUI() {
+  const meta = document.getElementById('replayMeta');
+  const slider = document.getElementById('replaySlider');
+  if (!meta || !slider) return;
+  const frames = await fetchTimeline();
+  __replayFrames = frames;
+  meta.textContent = `Frames: ${frames.length}`;
+  const max = Math.max(0, frames.length - 1);
+  const cur = Math.min(Number(slider.value || 0), max);
+  slider.max = String(max);
+  slider.value = String(cur);
+  if (__replayMode && frames.length) renderReplayFrame(frames[cur], cur, frames.length);
+}
+
+function toggleReplay() {
+  setReplayMode(!__replayMode);
+  if (__replayMode) {
+    const slider = document.getElementById('replaySlider');
+    const idx = Number(slider?.value || 0);
+    if (__replayFrames.length) renderReplayFrame(__replayFrames[idx], idx, __replayFrames.length);
+  }
+}
+
+async function clearReplayTimeline() {
+  try { await fetch('/api/timeline/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (_) {}
+  await syncReplayUI();
+}
+
+document.getElementById('replaySlider')?.addEventListener('input', (e) => {
+  if (!__replayMode) return;
+  const idx = Number(e.target.value || 0);
+  if (!__replayFrames.length) return;
+  renderReplayFrame(__replayFrames[idx], idx, __replayFrames.length);
+});
+
+async function triggerCrisis() {
+  const btn = document.getElementById('crisisBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/trigger_crisis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lock_ratio: 0.5 }) });
+    const data = await res.json();
+    if (!data.success) console.error('Crisis trigger failed', data);
+  } catch (e) { console.error('Crisis trigger error', e); }
+  finally { if (btn) btn.disabled = false; loadOverview(); }
+}
+
+async function apiJson(url, options = {}, label = 'API') {
+  const method = options.method || 'GET';
+  console.log(`[Overview] ${label} -> ${method} ${url}`);
+  const response = await fetch(url, options);
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch (parseErr) {
+    console.error(`[Overview] ${label} invalid JSON`, parseErr);
+    throw new Error(`${label} returned invalid JSON`);
+  }
+
+  if (!response.ok) {
+    console.error(`[Overview] ${label} HTTP ${response.status}`, payload);
+    throw new Error(`${label} failed with HTTP ${response.status}`);
+  }
+
+  console.log(`[Overview] ${label} <-`, payload);
+  return payload;
+}
+
+async function ensureOverviewInitialized() {
+  const statusRes = await apiJson('/api/status', {}, 'STATUS');
+  if (statusRes?.is_initialized) {
+    return statusRes;
+  }
+
+  console.warn('[Overview] Environment not initialized. Attempting auto-init...');
+  const initRes = await apiJson('/api/init', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task: 'medium', seed: 42 })
+  }, 'INIT');
+
+  if (!initRes?.success) {
+    throw new Error(initRes?.error || 'Environment initialization failed');
+  }
+
+  console.log('[Overview] Auto-init completed successfully');
+  return await apiJson('/api/status', {}, 'STATUS');
+}
+
+async function loadOverview() {
+  if (__replayMode) { syncReplayUI().catch(() => {}); return; }
+  const statusTag = document.getElementById('statusTag');
+  if (statusTag && statusTag.textContent === 'Loading...') {
+    statusTag.textContent = 'LOADING...';
+  }
+
+  try {
+    await ensureOverviewInitialized();
+
+    const [stateRes, statusRes, historyRes] = await Promise.all([
+      apiJson('/api/get_state', {}, 'GET_STATE'),
+      apiJson('/api/status', {}, 'STATUS'),
+      apiJson('/api/episode_history', {}, 'EPISODE_HISTORY')
+    ]);
+
+    if (!stateRes?.success || !stateRes?.state) {
+      throw new Error(stateRes?.error || 'State payload missing');
+    }
+
+    const s = stateRes.state || {};
+    const prev = window.__prevOverviewState || {};
+    window.HospitalInfra && window.HospitalInfra.onStateUpdate(s, { mode: 'live' });
+    setTextById('totalPatients', s.total_patients ?? '-');
+    setTextById('waiting', s.waiting ?? '-');
+    setTextById('admitted', s.admitted ?? '-');
+    setTextById('doctors', s.available_doctors ?? '-');
+    setTextById('beds', s.available_beds ?? '-');
+    setTextById('step', s.step ?? '-');
+    updateOperationsPulse(s);
+    const availableDoctors = s.available_doctors ?? 0;
+    
+    // Critical state for doctors card when 0 doctors available
+    const doctorsCard = document.getElementById('doctorsCard');
+    if (doctorsCard) {
+      if (availableDoctors === 0) {
+        doctorsCard.classList.add('critical-state');
+      } else {
+        doctorsCard.classList.remove('critical-state');
+      }
+    }
+    const availableBeds = s.available_beds ?? 0;
+    const waitingPatients = s.waiting ?? 0;
+    const redWaitingPatients = s.red_waiting ?? 0;
+    const cityAvailableBeds = s.city_available_beds ?? 0;
+    const crisisActive = !!s.crisis_active;
+    const cityWideAlert = s.city_wide_alert;
+    const avgWaitBadge = document.getElementById('avgWaitBadge');
+    if (avgWaitBadge) {
+      if (availableDoctors > 0) {
+        const est = Math.ceil((waitingPatients / availableDoctors) * 5);
+        avgWaitBadge.textContent = `🕒 Avg. Wait Time: ${est} mins`;
+        avgWaitBadge.style.color = est > 15 ? '#ef4444' : '';
+        if (est > 15 && (prev.__highWaitSpoken !== true)) {
+          window.HospitalVoice && window.HospitalVoice.speak('Alert: Patient wait times exceeding 15 minutes. Efficiency drop detected.', { cooldownMs: 5000 });
+          prev.__highWaitSpoken = true;
+        }
+        if (est <= 15) prev.__highWaitSpoken = false;
+      } else {
+        avgWaitBadge.textContent = '🕒 Avg. Wait Time: High Delay - All Staff Busy';
+        avgWaitBadge.style.color = '#ef4444';
+        if (prev.__highWaitSpoken !== true) {
+          window.HospitalVoice && window.HospitalVoice.speak('Alert: Patient wait times exceeding 15 minutes. Efficiency drop detected.', { cooldownMs: 5000 });
+          prev.__highWaitSpoken = true;
+        }
+      }
+    }
+    const alertsContainer = document.getElementById('criticalAlerts');
+    const generatedNotifications = buildNotificationsFromState(s);
+    syncNotificationsFromState(s);
+    const bloodEntries = Object.entries(s.blood_inventory || {}).map(([type, value]) => ({ type, value: Number(value) })).filter((entry) => Number.isFinite(entry.value));
+    const lowestBlood = bloodEntries.length ? bloodEntries.reduce((lowest, entry) => (entry.value < lowest.value ? entry : lowest), bloodEntries[0]) : null;
+    const lowBloodActive = !!(lowestBlood && lowestBlood.value < 30);
+    
+    // Voice announce blood low only on state change
+    const prevLowBlood = prev.__lowBloodActive;
+    if (lowBloodActive && !prevLowBlood && lowestBlood) {
+      window.HospitalVoice && window.HospitalVoice.speak(`Warning: Blood bank running low. ${lowestBlood.type} supply at ${lowestBlood.value.toFixed(0)} percent.`, { cooldownMs: 3500, rate: 0.95, pitch: 0.88 });
+    } else if (!lowBloodActive && prevLowBlood) {
+      window.HospitalVoice && window.HospitalVoice.speak('Blood supply levels restored to adequate levels.', { cooldownMs: 3500 });
+    }
+    prev.__lowBloodActive = lowBloodActive;
+    
+    // Auto-expand blood bank card when blood is critically low
+    const bloodCard = document.getElementById('bloodCard');
+    if (bloodCard && lowBloodActive) {
+      if (bloodCard.classList.contains('is-collapsed')) {
+        bloodCard.classList.remove('is-collapsed');
+        setToggleIcon('bloodCard');
+      }
+    }
+    
+    let criticalMessage = '';
+    if (generatedNotifications.length) {
+      const alertItem = generatedNotifications.find((item) => item.type !== 'success') || generatedNotifications[0];
+      const explanation = normalizeAlertExplanation(s.alert_explanation);
+      criticalMessage = `${alertItem.title}: ${alertItem.message}${explanation ? ` Reason: ${explanation}` : ''}`;
+      
+      // Voice announce only on state change (not every refresh)
+      const prevAlertTitle = prev.__lastAlertTitle;
+      if (alertItem.title !== prevAlertTitle) {
+        window.HospitalVoice && window.HospitalVoice.speak(`Alert: ${alertItem.message}`, { cooldownMs: 3500, rate: 1.05, pitch: 0.85 });
+        prev.__lastAlertTitle = alertItem.title;
+      }
+    }
+    if (!!crisisActive && !prev.__crisisActive) {
+      window.HospitalVoice && window.HospitalVoice.speak('Emergency: Hospital resources are at critical levels. Initiating City-Wide re-assignment.', { cooldownMs: 6000 });
+    } else if (!crisisActive && prev.__crisisActive) {
+      window.HospitalVoice && window.HospitalVoice.speak('Crisis resolved. Returning to normal operations.', { cooldownMs: 6000 });
+    }
+    if (alertsContainer) {
+      if (criticalMessage) {
+        alertsContainer.innerHTML = `<div class="critical-alert critical-alert--active critical-alert--pulse" role="alert" aria-live="assertive"><span class="critical-alert__icon">🚨</span><span class="critical-alert__text">${criticalMessage}</span></div>`;
+      } else {
+        alertsContainer.innerHTML = `<p class="critical-alert critical-alert--nominal" aria-live="polite"><span class="critical-alert__icon">✅</span><span class="critical-alert__text">All systems nominal.</span></p>`;
+      }
+    }
+    const suggestionAction = document.getElementById('suggestionAction');
+    const suggestionReason = document.getElementById('suggestionReason');
+    const suggestionCard = document.getElementById('aiSuggestionCard');
+    let action = s.ai_suggestion_action;
+    let reason = s.ai_suggestion_reason;
+    if (availableDoctors === 0) {
+      const bloodZero = Object.values(s.blood_inventory || {}).every((value) => Number(value) <= 0);
+      action = bloodZero || crisisActive ? 'ESCALATE' : 'REQUEST HELP';
+      reason = 'No doctors available; activate staffing escalation and incident response.';
+    } else if (crisisActive && waitingPatients > 0 && availableBeds === 0) {
+      action = cityAvailableBeds > 0 ? 'REASSIGN' : 'DEFER';
+      reason = cityAvailableBeds > 0 ? 'Crisis active: city capacity available for overflow transfer.' : 'Crisis active: no city capacity; defer non-critical patients.';
+    }
+    if (!action) {
+      if (waitingPatients === 0) { action = 'HOLD'; reason = 'No patients waiting'; }
+      else if (redWaitingPatients > 0 && availableBeds > 0 && availableDoctors > 0) { action = 'URGENT ALLOCATE'; reason = 'RED patients waiting and beds available'; }
+      else if (waitingPatients > 0 && availableBeds > 0 && availableDoctors > 0) { action = 'ALLOCATE'; reason = 'Patients waiting and beds available'; }
+      else if (waitingPatients > 0 && availableBeds === 0) {
+        if (cityAvailableBeds > 0 && availableDoctors > 0) { action = 'REASSIGN'; reason = 'Local beds full; city capacity available'; }
+        else { action = 'DEFER'; reason = 'Local beds full or staffing unavailable; defer non-critical patients'; }
+      } else { action = 'HOLD'; reason = 'No applicable suggestion rule matched'; }
+    }
+    suggestionAction.textContent = action;
+    renderSuggestionReason(suggestionReason, reason || '', s.alert_explanation);
+    const isHold = action === 'HOLD';
+    suggestionCard.classList.toggle('good', !isHold);
+    suggestionCard.classList.toggle('bad', isHold);
+    const prevRed = Number(prev.red_waiting ?? 0);
+    const nextRed = Number(s.red_waiting ?? 0);
+    if (nextRed > prevRed) {
+      window.HospitalVoice && window.HospitalVoice.speak('Warning: Critical Red Patient arrived. Prioritizing resources.', { cooldownMs: 5000 });
+    }
+    
+    // Voice announce AI suggestion (if different from previous)
+    const prevAction = prev.__lastSuggestedAction;
+    if (action && action !== prevAction && action !== 'HOLD') {
+      const voiceText = `AI recommends: ${action}. Reason: ${reason}`;
+      window.HospitalVoice && window.HospitalVoice.speak(voiceText, { cooldownMs: 4000, rate: 1.0, pitch: 0.95 });
+      prev.__lastSuggestedAction = action;
+    } else if (action === 'HOLD' && prevAction && prevAction !== 'HOLD') {
+      window.HospitalVoice && window.HospitalVoice.speak('System stable. No action required at this time.', { cooldownMs: 4000 });
+      prev.__lastSuggestedAction = action;
+    }
+    
+    prev.__crisisActive = !!crisisActive;
+    prev.red_waiting = nextRed;
+    window.__prevOverviewState = prev;
+
+    setTextById('episodes', statusRes.episode_count ?? '-');
+    const isInit = statusRes.is_initialized ? 'ONLINE' : 'NOT INITIALIZED';
+    if (statusTag) {
+      statusTag.textContent = isInit;
+      statusTag.classList.toggle('good', statusRes.is_initialized);
+      statusTag.classList.toggle('bad', !statusRes.is_initialized);
+    }
+
+    const history = Array.isArray(historyRes?.history) ? historyRes.history : [];
+    const totalReward = Number(historyRes?.total_reward ?? 0);
+    const avgReward = history.length ? totalReward / history.length : 0;
+    const lastReward = history.length ? Number(history[history.length - 1]?.reward ?? 0) : 0;
+    setTextById('totalReward', totalReward.toFixed(2));
+    setTextById('avgReward', avgReward.toFixed(2));
+    setTextById('lastReward', lastReward.toFixed(2));
+    const rewardSummary = document.getElementById('rewardSummary');
+    if (rewardSummary) rewardSummary.textContent = `Total: ${totalReward.toFixed(2)} • Avg: ${avgReward.toFixed(2)}`;
+    renderRewardSparkline(history.map(entry => Number(entry.reward ?? 0)));
+  } catch (error) {
+    console.error('[Overview] loadOverview failed:', error);
+    if (statusTag) {
+      statusTag.textContent = 'ERROR';
+      statusTag.classList.remove('good');
+      statusTag.classList.add('bad');
+    }
+    const suggestionReason = document.getElementById('suggestionReason');
+    if (suggestionReason) {
+      renderSuggestionError(
+        suggestionReason,
+        `Data sync failed. Retrying automatically. Details: ${error?.message || error}`
+      );
+    }
+
+    const alertsContainer = document.getElementById('criticalAlerts');
+    if (alertsContainer) {
+      const errorText = String(error?.message || error || 'Unknown backend error');
+      alertsContainer.innerHTML = `
+        <div class="critical-alert critical-alert--active" role="alert" aria-live="assertive">
+          <span class="critical-alert__icon">⚠️</span>
+          <span class="critical-alert__text">
+            Backend connection failed: ${errorText}. Please reconnect.
+            <button class="btn" style="margin-left:10px;padding:6px 10px;" onclick="forceReconnect()">Reconnect to Server</button>
+          </span>
+        </div>
+      `;
+    }
+  }
+}
+
+async function forceReconnect() {
+  console.log('[Overview] Manual reconnect requested');
+  try {
+    await apiJson('/api/status', {}, 'STATUS_RECONNECT_CHECK');
+    await ensureOverviewInitialized();
+    await loadOverview();
+    console.log('[Overview] Reconnect successful');
+  } catch (error) {
+    console.error('[Overview] Reconnect failed:', error);
+    const alertsContainer = document.getElementById('criticalAlerts');
+    if (alertsContainer) {
+      alertsContainer.innerHTML = `<div class="critical-alert critical-alert--active" role="alert" aria-live="assertive"><span class="critical-alert__icon">🚨</span><span class="critical-alert__text">Reconnect failed: ${error?.message || error}. Check backend process and try again.</span></div>`;
+    }
+  }
+}
+
+const tourSteps = [
+    { id: 'statusTag', selector: null, text: '1/4: Track live patient emergencies and waiting times here.', title: 'System Overview', arrow: 'bottom' },
+    { id: 'aiSuggestionCard', selector: '#aiSuggestionCard', text: '2/4: Our Smart AI analyzes the hospital state and recommends the best action to save lives.', title: 'AI Suggestion', arrow: 'left' },
+    { id: 'liveCapacityCard', selector: '#liveCapacityCard', text: '3/4: Monitor available doctors and beds in real-time.', title: 'Live Capacity', arrow: 'top' },
+    { id: 'quickNavCard', selector: '#quickNavCard', text: '4/4: Navigate to Controls to take action, or view Analytics. You are ready!', title: 'Quick Actions', arrow: 'top' }
+];
+let tourState = { active: false, step: 0 };
+let tourBackdrop, tourTooltip, tourHighlight;
+
+function createTourUI() {
+    tourBackdrop = document.createElement('div');
+    tourBackdrop.className = 'tour-backdrop';
+    document.body.appendChild(tourBackdrop);
+    tourTooltip = document.createElement('div');
+    tourTooltip.className = 'tour-tooltip';
+    document.body.appendChild(tourTooltip);
+}
+
+function removeTourUI() {
+    if (tourBackdrop) { tourBackdrop.remove(); tourBackdrop = null; }
+    if (tourTooltip) { tourTooltip.remove(); tourTooltip = null; }
+    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+}
+
+function positionTooltip(targetEl, arrow) {
+    const tooltipRect = tourTooltip.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+    const margin = 16;
+    let top, left;
+    switch (arrow) {
+        case 'bottom': top = targetRect.bottom + margin; left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2; tourTooltip.className = 'tour-tooltip arrow-top'; break;
+        case 'top': top = targetRect.top - tooltipRect.height - margin; left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2; tourTooltip.className = 'tour-tooltip arrow-bottom'; break;
+        case 'left': top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2; left = targetRect.left - tooltipRect.width - margin; tourTooltip.className = 'tour-tooltip arrow-right'; break;
+        case 'right': top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2; left = targetRect.right + margin; tourTooltip.className = 'tour-tooltip arrow-left'; break;
+    }
+    tourTooltip.style.top = Math.max(10, Math.min(top, window.innerHeight - tooltipRect.height - 10)) + 'px';
+    tourTooltip.style.left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10)) + 'px';
+}
+
+function renderTourStep() {
+    if (!tourState.active) return;
+    const stepData = tourSteps[tourState.step];
+    const isLastStep = tourState.step === tourSteps.length - 1;
+    const isFirstStep = tourState.step === 0;
+    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+    const targetEl = document.getElementById(stepData.id) || document.querySelector(stepData.selector);
+    if (targetEl) { targetEl.classList.add('tour-highlight'); positionTooltip(targetEl, stepData.arrow); }
+    tourTooltip.innerHTML = `<h4>${stepData.title}</h4><p>${stepData.text}</p><div class="tour-tooltip-actions"><span class="tour-step-indicator">Step ${tourState.step + 1} of ${tourSteps.length}</span><div class="tour-nav-btns">${!isFirstStep ? '<button class="tour-btn tour-btn-secondary" onclick="prevTourStep()">Back</button>' : ''}${isLastStep ? '<button class="tour-btn tour-btn-primary" onclick="endTour()">Got it!</button>' : '<button class="tour-btn tour-btn-primary" onclick="nextTourStep()">Next</button>'}</div></div>`;
+    tourBackdrop.classList.remove('hiding');
+}
+
+function startTour() { tourState = { active: true, step: 0 }; createTourUI(); renderTourStep(); }
+function nextTourStep() { if (tourState.step < tourSteps.length - 1) { tourState.step++; renderTourStep(); } }
+function prevTourStep() { if (tourState.step > 0) { tourState.step--; renderTourStep(); } }
+function endTour() { tourState.active = false; if (tourBackdrop) { tourBackdrop.classList.add('hiding'); setTimeout(removeTourUI, 300); } else { removeTourUI(); } }
+
+document.addEventListener('keydown', (e) => { if (!tourState.active) return; if (e.key === 'Escape') endTour(); if (e.key === 'ArrowRight' || e.key === 'Enter') nextTourStep(); if (e.key === 'ArrowLeft') prevTourStep(); });
+window.addEventListener('resize', () => { if (tourState.active) renderTourStep(); });
+
+function renderRewardSparkline(rewards) {
+  const container = document.getElementById('rewardTrend');
+  if (!container) return;
+  const data = rewards.slice(-10);
+  if (!data.length) { container.innerHTML = '<p class="muted">No reward data yet.</p>'; return; }
+  const width = 340, height = 140, padding = 14;
+  const maxValue = Math.max(...data), minValue = Math.min(...data), range = maxValue - minValue || 1;
+  const points = data.map((value, index) => {
+    const x = padding + (index / ((data.length - 1) || 1)) * (width - padding * 2);
+    const y = padding + ((maxValue - value) / range) * (height - padding * 2);
+    return { x, y };
+  });
+  const linePath = points.reduce((acc, point, idx) => { const command = idx === 0 ? 'M' : 'L'; return `${acc} ${command}${point.x.toFixed(2)},${point.y.toFixed(2)}`; }, '').trim();
+  const firstPoint = points[0], lastPoint = points[points.length - 1];
+  const areaPath = `${linePath} L${lastPoint.x.toFixed(2)},${height - padding} L${firstPoint.x.toFixed(2)},${height - padding} Z`;
+  const circles = points.map((point, idx) => `<circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4" fill="#3b82f6" stroke="#fff" stroke-width="2" />`).join('');
+  const yTicks = [0, 0.33, 0.66, 1].map((ratio) => { const y = (padding + ratio * (height - padding * 2)); const value = (maxValue - ratio * range); return { y, label: Number.isFinite(value) ? value.toFixed(0) : '0' }; });
+  const yGuides = yTicks.map((t) => `<line x1="${padding}" y1="${t.y.toFixed(2)}" x2="${(width - padding).toFixed(2)}" y2="${t.y.toFixed(2)}" stroke="rgba(148,163,184,0.24)" stroke-width="1" stroke-dasharray="3 4" />`).join('');
+  const yLabels = yTicks.map((t) => `<text x="${(padding + 2).toFixed(2)}" y="${(t.y - 4).toFixed(2)}" fill="rgba(71,85,105,0.74)" font-size="9" font-weight="600">${t.label}</text>`).join('');
+  container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><defs><linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35" /><stop offset="60%" stop-color="#3b82f6" stop-opacity="0.12" /><stop offset="100%" stop-color="#3b82f6" stop-opacity="0.02" /></linearGradient><linearGradient id="areaSideGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb" stop-opacity="0.30" /><stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05" /></linearGradient><filter id="terrainShadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1e3a8a" flood-opacity="0.25"/></filter></defs>${yGuides}${yLabels}<path d="${areaPath}" transform="translate(0,6)" fill="url(#areaSideGradient)" opacity="0.72" /><path d="${areaPath}" fill="url(#areaGradient)" /><path d="${linePath}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#terrainShadow)" />${circles}</svg>`;
+}
+
+function initCardParallax() {
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || window.innerWidth < 992) return;
+  const cards = document.querySelectorAll('.dashboard-grid .card');
+  cards.forEach((card) => {
+    card.classList.add('tilt-card');
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      const ry = (px - 0.5) * 8;
+      const rx = (0.5 - py) * 6;
+      card.style.transform = `translateY(-5px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+}
+
+loadOverview();
+setInterval(loadOverview, 4000);
+syncReplayUI();
+setInterval(() => syncReplayUI().catch(() => {}), 5000);
+initCardParallax();
+setToggleIcon('facilityCard');
+setToggleIcon('bloodCard');
+setToggleIcon('notificationCard');
+
+// ========== NOTIFICATION CENTER ==========
+
+let notifications = [];
+const dismissedNotifications = new Set();
+
+function normalizeAlertExplanation(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return '';
+  const compact = text.replace(/\s+/g, ' ');
+
+  if (/doctors?\s*=\s*0/i.test(compact) || /zero\s+doctor/i.test(compact)) {
+    return 'Zero doctor availability detected.';
+  }
+  if (/beds?\s*=\s*0/i.test(compact) || /zero\s+bed/i.test(compact)) {
+    return 'No available beds detected.';
+  }
+  if (/waiting\s*[>=]+\s*\d+/i.test(compact) || /queue/i.test(compact)) {
+    return 'Queue pressure exceeded the configured threshold.';
+  }
+
+  const cleaned = compact
+    .replace(/^why\s+this\s+alert\??\s*/i, '')
+    .replace(/^crisis\s+triggered\s+because\s*/i, '')
+    .replace(/^debug\s*[:\-]?\s*/i, '')
+    .replace(/doctors?\s*=\s*0/gi, 'zero doctor availability')
+    .replace(/beds?\s*=\s*0/gi, 'no bed availability');
+
+  const sentence = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  return /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
+}
+
+function buildNotificationsFromState(s) {
+  const items = [];
+  const nowLabel = 'Just now';
+  const availableDoctors = Number(s?.available_doctors ?? 0);
+  const availableBeds = Number(s?.available_beds ?? 0);
+  const waitingPatients = Number(s?.waiting ?? 0);
+  const queueLimit = Number(s?.queue_soft_limit ?? 12);
+  const blood = s?.blood_inventory && typeof s.blood_inventory === 'object' ? s.blood_inventory : {};
+  const bloodEntries = Object.entries(blood).map(([type, value]) => ({ type, value: Number(value) })).filter((entry) => Number.isFinite(entry.value));
+  const lowestBlood = bloodEntries.length ? bloodEntries.reduce((lowest, entry) => (entry.value < lowest.value ? entry : lowest), bloodEntries[0]) : null;
+  const alertExplanation = normalizeAlertExplanation(s?.alert_explanation);
+
+  if (availableDoctors < 2) {
+    items.push({
+      id: `staff-shortage-${availableDoctors}`,
+      type: 'warning',
+      title: 'Staff Shortage',
+      message: `Only ${availableDoctors} doctor${availableDoctors === 1 ? '' : 's'} available. Emergency shift coverage is tight.`,
+      time: nowLabel,
+      unread: true,
+    });
+  }
+
+  if (lowestBlood && lowestBlood.value < 30) {
+    items.push({
+      id: `blood-low-${lowestBlood.type}`,
+      type: lowestBlood.value <= 0 ? 'alert' : 'warning',
+      title: lowestBlood.value <= 0 ? 'Blood Supply Critical' : 'Low Blood Supply',
+      message: lowestBlood.value <= 0
+        ? `${lowestBlood.type} blood is at 0%. Immediate resupply required.`
+        : `${lowestBlood.type} blood is at ${Math.max(0, Math.round(lowestBlood.value))}%. Trigger resupply and donation workflow.`,
+      time: nowLabel,
+      unread: true,
+    });
+  }
+
+  if (waitingPatients > queueLimit) {
+    items.push({
+      id: `overload-${waitingPatients}`,
+      type: 'warning',
+      title: 'System Overload',
+      message: `Waiting queue is ${waitingPatients}, above the limit of ${queueLimit}.`,
+      time: nowLabel,
+      unread: true,
+    });
+  }
+
+  if (!items.length && Number(s?.crisis_active ?? 0) === 0) {
+    items.push({
+      id: 'all-clear',
+      type: 'success',
+      title: 'System Stable',
+      message: 'All monitored thresholds are within acceptable ranges.',
+      time: nowLabel,
+      unread: false,
+    });
+  }
+
+  if (Number(s?.crisis_active ?? 0) === 1) {
+    items.unshift({
+      id: 'crisis-active',
+      type: 'alert',
+      title: 'Crisis Mode Active',
+      message: s?.city_wide_alert || 'Hospital resources are under active crisis management.',
+      time: nowLabel,
+      unread: true,
+    });
+  }
+
+  if (alertExplanation) {
+    items.push({
+      id: 'why-this-alert',
+      type: 'info',
+      title: 'Reason',
+      message: alertExplanation,
+      time: nowLabel,
+      unread: false,
+      isReason: true,
+    });
+  }
+
+  return items.filter((item) => !dismissedNotifications.has(item.id));
+}
+
+function renderNotifications(list = notifications) {
+  const container = document.getElementById('notificationCenter');
+  const badge = document.getElementById('notifBadge');
+  if (!container) return;
+
+  const unreadCount = list.filter(n => n.unread).length;
+  if (badge) {
+    badge.textContent = unreadCount;
+    badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+  }
+  
+  container.innerHTML = list.map(n => `
+    <div class="notification-item ${n.unread ? 'unread' : ''}" onclick="markNotificationRead('${n.id}')">
+      <div class="notification-icon ${n.type}">${n.type === 'alert' ? '🚨' : (n.type === 'warning' ? '⚠️' : (n.type === 'success' ? '✅' : 'ℹ️'))}</div>
+      <div class="notification-content">
+        <div class="notification-title">${n.title}</div>
+        <div class="notification-message ${n.isReason ? 'notification-reason' : ''}">${n.isReason ? `Reason: ${n.message}` : n.message}</div>
+        <div class="notification-time">${n.time}</div>
+      </div>
+      <div class="notification-badge"></div>
+    </div>
+  `).join('');
+}
+
+function markNotificationRead(id) {
+  dismissedNotifications.add(String(id));
+  notifications = notifications.map((notif) => notif.id === id ? { ...notif, unread: false } : notif);
+  renderNotifications();
+}
+
+function syncNotificationsFromState(s) {
+  notifications = buildNotificationsFromState(s);
+  renderNotifications(notifications);
+}
+
+renderNotifications(notifications);
+
+// ========== LIVE WEATHER WIDGET ==========
+
+let isWeatherLoading = false;
+let hasWeatherData = false;
+
+async function updateWeather() {
+  if (isWeatherLoading) return;
+  
+  try {
+    isWeatherLoading = true;
+    
+    // Show loading state without clearing last good reading.
+    document.getElementById('weatherCondition').textContent = 'Syncing live weather...';
+    
+    const response = await fetch('/api/weather', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data || !data.success) {
+      throw new Error((data && (data.error || data.message)) || `Failed to fetch weather (${response.status})`);
+    }
+    
+    // Update date
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    
+    // Update location (city, country)
+    const locationEl = document.getElementById('weatherLocation');
+    if (locationEl) {
+      locationEl.innerHTML = '📍 Ahmedabad, India';
+    }
+    
+    // Update all weather data with smooth transition
+    document.getElementById('weatherDate').textContent = dateStr;
+    document.getElementById('weatherIcon').textContent = data.icon || '🌤️';
+    document.getElementById('weatherTemp').innerHTML = `${Number(data.temp).toFixed(1)}<span>°C</span>`;
+    document.getElementById('weatherCondition').textContent = data.condition || 'Clear Sky';
+    document.getElementById('weatherHumidity').textContent = `${data.humidity}%`;
+    document.getElementById('weatherWind').textContent = `${Number(data.wind_kph).toFixed(1)} km/h`;
+    document.getElementById('weatherAQI').textContent = Number.isFinite(Number(data.aqi)) ? String(Math.round(Number(data.aqi))) : '--';
+    document.getElementById('weatherImpactText').textContent = data.hospital_impact || 'Normal conditions.';
+    hasWeatherData = true;
+    const sourceEl = document.getElementById('weatherSource');
+    if (sourceEl) {
+      sourceEl.textContent = `Source: ${data.source || 'OpenWeather'}${data.stale ? ' (cached)' : ' (Live)'}`;
+      sourceEl.classList.toggle('stale', Boolean(data.stale));
+    }
+    const updatedEl = document.getElementById('weatherUpdatedAt');
+    if (updatedEl) {
+      updatedEl.textContent = `Last updated: ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    
+    // Update widget background based on weather
+    const widget = document.getElementById('weatherWidget');
+    if (widget) {
+      widget.style.background = data.bg_gradient || 'linear-gradient(135deg, #0ea5e9, #3b82f6)';
+    }
+    
+    // Add AQI color coding
+    const aqiEl = document.getElementById('weatherAQI');
+    const aqi = Number(data.aqi);
+    if (!Number.isFinite(aqi)) {
+      aqiEl.style.color = 'rgba(255,255,255,0.82)';
+    } else if (aqi > 200) {
+      aqiEl.style.color = '#ef4444'; // Red for unhealthy
+    } else if (aqi > 150) {
+      aqiEl.style.color = '#f59e0b'; // Orange for moderate
+    } else {
+      aqiEl.style.color = '#10b981'; // Green for good
+    }
+    
+    console.log('Weather updated:', data.city || 'Ahmedabad', data.temp + 'C', data.condition);
+    
+  } catch (error) {
+    console.error('❌ Weather update failed:', error);
+    if (!hasWeatherData) {
+      const sourceEl = document.getElementById('weatherSource');
+      if (sourceEl && sourceEl.textContent.trim() === 'Source: -') {
+        sourceEl.textContent = 'Source: unavailable';
+        sourceEl.classList.remove('stale');
+      }
+      const updatedEl = document.getElementById('weatherUpdatedAt');
+      if (updatedEl && updatedEl.textContent.trim() === 'Last updated: -') {
+        updatedEl.textContent = 'Last updated: unavailable';
+      }
+      document.getElementById('weatherCondition').textContent = 'Live weather unavailable';
+      document.getElementById('weatherImpactText').textContent = 'Weather service is temporarily unavailable.';
+    } else {
+      document.getElementById('weatherCondition').textContent = 'Showing last synced weather';
+    }
+  } finally {
+    isWeatherLoading = false;
+  }
+}
+
+// Initial load
+updateWeather();
+
+// Refresh every 5 minutes (weather data is cached on backend for performance)
+setInterval(updateWeather, 300000);
+
+</script>
+
+<div class="drawer-overlay" id="replayOverlay" onclick="closeReplayDrawer()"></div>
+<aside class="drawer" id="replayDrawer" aria-label="Time-Travel Replay Drawer">
+  <div class="drawer-head">
+    <div>
+      <h3 style="margin:0;">⏪ Time-Travel Replay</h3>
+      <div class="muted" style="margin-top:6px;">Scrub through recorded simulation frames without changing the live environment.</div>
+    </div>
+    <button class="btn" type="button" onclick="closeReplayDrawer()">Close</button>
+  </div>
+  <div class="row" style="justify-content:space-between;align-items:center;">
+    <span class="muted" id="replayMeta">Frames: -</span>
+  </div>
+  <div class="row" style="margin-top:12px;align-items:center;gap:12px;">
+    <input id="replaySlider" type="range" min="0" max="0" step="1" value="0" style="flex:1;" />
+    <div class="kpi" style="font-size:18px;margin:0;min-width:220px;" id="replayIndex">Frame -/-</div>
+    <button class="btn" type="button" onclick="toggleReplay()" id="replayToggleBtn">Replay: OFF</button>
+    <button class="btn danger" type="button" onclick="clearReplayTimeline()">Clear</button>
+  </div>
+  <div class="row" style="margin-top:10px;gap:16px;flex-wrap:wrap;">
+    <div class="card" style="flex:1;min-width:260px;">
+      <div class="muted">Selected Frame Event</div>
+      <div style="font-weight:800;font-size:16px;margin-top:6px;" id="replayEvent">-</div>
+      <div class="muted" id="replayEventDetail" style="margin-top:6px;">-</div>
+    </div>
+    <div class="card" style="flex:1;min-width:260px;">
+      <div class="muted">Derived Signals</div>
+      <div style="font-weight:800;font-size:16px;margin-top:6px;" id="replaySignals">-</div>
+      <div class="muted" style="margin-top:6px;">(e.g., CRISIS_ON, NEW_RED_WAITING)</div>
+    </div>
+  </div>
+</aside>
+{% endblock %}

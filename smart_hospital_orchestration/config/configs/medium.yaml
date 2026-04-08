@@ -1,0 +1,66 @@
+description: Medium difficulty hospital scenario
+
+environment:
+  duration: 168
+  time_step: 1
+  random_seed: null
+
+  resources:
+    icu_beds: 20
+    target_utilization: 0.75
+    equipment_per_bed:
+      - ventilator
+      - monitor
+      - infusion_pump
+      - defibrillator
+    maintenance_schedule: random
+
+  staff:
+    doctors: 10
+    max_patients_per_doctor: 4
+    specialties:
+      - general
+      - cardiology
+      - neurology
+      - trauma
+      - icu_specialist
+    shift_duration: 12
+
+  patients:
+    arrival_rate: 4.0
+    arrival_pattern: time_varying
+    priority_distribution:
+      critical: 0.10
+      high: 0.25
+      medium: 0.35
+      low: 0.30
+    avg_stay_duration: 72
+    readmission_rate: 0.05
+
+state:
+  state_dim: 128
+  include_patient_history: true
+  history_length: 12
+  include_doctor_workload: true
+  include_resource_queue: true
+  include_time_features: true
+  normalization: standardize
+
+reward:
+  reward_weights:
+    patient_outcome: 1.0
+    resource_utilization: 0.5
+    waiting_time: -0.3
+    workload_balance: 0.2
+    operational_cost: -0.1
+    emergency_response: 0.3
+  use_reward_shaping: true
+  target_utilization: 0.75
+  max_wait_threshold: 3.0
+  gamma: 0.99
+
+agent:
+  action_space_type: discrete
+  num_actions: 50
+  learning_rate: 0.0005
+  exploration_schedule: linear_decay
