@@ -52,7 +52,9 @@ def performance_page_fastapi(request: Request):
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return {"status": "Smart Hospital AI is running", "ui_path": "/controls", "openenv_ready": True}
+    # Redirect root to controls UI so the Space displays the dashboard by default
+    # Keep API discoverability via /health and other endpoints
+    return RedirectResponse(url="/controls", status_code=307)
 
 
 class ResetRequest(BaseModel):
