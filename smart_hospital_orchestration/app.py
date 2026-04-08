@@ -50,9 +50,9 @@ def performance_page_fastapi(request: Request):
     return templates.TemplateResponse("performance.html", {"request": request})
 
 
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-def root_redirect(_: Request) -> RedirectResponse:
-    return RedirectResponse(url="/controls", status_code=307)
+@app.get("/", include_in_schema=False)
+async def root():
+    return {"status": "Smart Hospital AI is running", "ui_path": "/controls", "openenv_ready": True}
 
 
 class ResetRequest(BaseModel):
@@ -298,6 +298,11 @@ def run_inference() -> JSONResponse:
 async def startup_event():
     print("[STARTUP] OpenEnv API started successfully", flush=True)
     print("[STARTUP] Available endpoints: /reset, /step, /state, /run_inference, /health", flush=True)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
 
 
 @app.on_event("shutdown")
