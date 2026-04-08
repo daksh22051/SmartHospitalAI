@@ -1406,12 +1406,59 @@ def get_episode_history():
 
 @app.route('/api/reset', methods=['POST'])
 def reset_environment():
-    """Reset environment to initial state"""
     global episode_history
     try:
-        data = request.get_json()
-        seed = data.get('seed', 42) if data else 42
-        task = data.get('task') if data else None
+        # ✅ FIX: handle empty/null JSON safely
+        data = request.get_json(silent=True) or {}
+
+        seed = data.get('seed', 42)
+        task = data.get('task', None)
+
+        logger.info(f"Resetting environment: seed={seed}, task={task}")
+
+        # Clear episode history
+        episode_history = []
+
+        # If task provided → recreate env
+        if task and (not env_manager.is_initialized or str(env_manager.current_task or '').lower() != str(task).lower()):
+            success = env_manager.create_environment(str(task), seed)
+            if success:
+                return jsonify({
+                    'success': True,
+                    'info': {'task': str(task), 'seed': seed},
+                    'episode_count': env_manager.episode_count,
+                    'message': 'Environment reset successfully'
+                })
+            return jsonify({
+                'success': False,
+                'error': f'Failed to initialize task {task}',
+                'message': 'Environment reset failed'
+            })
+
+        # Normal reset
+        success, info = env_manager.reset_environment(seed)
+
+        if success:
+            return jsonify({
+                'success': True,
+                'info': info,
+                'episode_count': env_manager.episode_count,
+                'message': 'Environment reset successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': info.get('error', 'Unknown error'),
+                'message': 'Environment reset failed'
+            })
+
+    except Exception as e:
+        logger.error(f"Error resetting environment: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Environment reset failed due to error'
+        })
         
         logger.info(f"Resetting environment: seed={seed}, task={task}")
         
