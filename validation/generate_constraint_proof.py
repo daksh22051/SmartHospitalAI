@@ -75,8 +75,19 @@ def _run_inference(
     child_env = os.environ.copy()
     if disable_llm:
         # Keep runtime benchmark independent from network/API quota variance.
+        # Also ensure the inference process does not auto-load .env or provider keys.
         child_env["API_BASE_URL"] = ""
         child_env["MODEL_NAME"] = ""
+        child_env["OPENAI_API_KEY"] = ""
+        child_env["HF_TOKEN"] = ""
+        child_env["GROQ_API_KEY"] = ""
+        child_env["GROK_API_KEY"] = ""
+        child_env["HF_API_BASE_URL"] = ""
+        child_env["HF_MODEL"] = ""
+        child_env["GROQ_API_BASE_URL"] = ""
+        child_env["GROK_API_BASE_URL"] = ""
+        # Signal inference runner to skip reading local .env file
+        child_env["OPENENV_DISABLE_DOTENV"] = "1"
     started = time.perf_counter()
     proc = subprocess.run(cmd, capture_output=True, text=True, env=child_env)
     elapsed = time.perf_counter() - started

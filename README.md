@@ -138,6 +138,8 @@ docker run --rm smart-hospital-orchestration python inference.py --task medium -
 ### Hugging Face Spaces Deployment
 This project is ready for a Docker Space on Hugging Face.
 
+Space URL: https://huggingface.co/spaces/daksh2205/SmartHospitalAI
+
 1. Create a new Space and choose `Docker` as the SDK.
 2. Push this repository with the `Dockerfile`, `openenv.yaml`, `README.md`, and source package intact.
 3. Keep the default container command as `python inference.py --task medium --seed 42`.
@@ -698,3 +700,22 @@ MIT License - see LICENSE file for details.
 ## Contact
 
 For questions or issues, please open a GitHub issue or contact the Hospital AI Team.
+
+
+## 📸 Proof of Deployment & Validation
+
+### 🚀 Space Running
+
+![Space Running](./screenshots/01_space_running.png)
+
+### ⚙️ Build Logs Success
+
+![Build Logs](./screenshots/02_build_logs_success.png)
+
+### 📦 Container Logs
+
+![Container Logs](./screenshots/03_container_inference_logs.png)
+
+### ✅ OpenEnv Validation PASS
+
+![Validation](./screenshots/04_openenv_validate_success.png)

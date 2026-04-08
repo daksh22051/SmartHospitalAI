@@ -55,7 +55,15 @@ def main() -> None:
 
     project_root = Path(__file__).resolve().parents[1]
 
-    build_cmd = ["docker", "build", "-t", args.image, "."]
+    # Build from project_root (which points to smart_hospital_orchestration/),
+    # using its Dockerfile and local files as context so COPY paths resolve.
+    build_cmd = [
+        "docker",
+        "build",
+        "-t",
+        args.image,
+        ".",
+    ]
     build_code, build_out, build_err, build_elapsed = _run_cmd(build_cmd, cwd=project_root)
 
     run_stdout = ""

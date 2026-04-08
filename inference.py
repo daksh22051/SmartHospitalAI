@@ -47,6 +47,9 @@ ACTION_NAMES = {
 
 def _load_dotenv() -> None:
     """Lightweight .env loader for local runs without extra dependencies."""
+    # Allow disabling via env so benchmarks can enforce no-provider mode
+    if os.getenv("OPENENV_DISABLE_DOTENV", "0").strip() == "1":
+        return
     env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
     if not os.path.exists(env_path):
         return
