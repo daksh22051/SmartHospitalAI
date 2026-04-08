@@ -17,7 +17,7 @@ def health() -> dict[str, str]:
 
 
 @app.get("/run_inference")
-def run_inference() -> JSONResponse | PlainTextResponse:
+def run_inference():
     """Run inference.py and mirror stdout/stderr to container logs."""
     repo_root = Path(__file__).resolve().parent
     inference_path = repo_root / "inference.py"

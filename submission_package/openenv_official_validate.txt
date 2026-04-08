@@ -1,0 +1,689 @@
+[2026-04-08T09:19:16Z] OFFICIAL VALIDATOR NOT AVAILABLE – FALLBACK USED
+This log contains output from the in-repo validator:
+  python smart_hospital_orchestration/validation/validate_env.py --episodes 3 --log-file C:\coding\hospital\hospital\smart_hospital_orchestration\submission_package\openenv_official_validate.txt
+[2026-04-08T09:15:06Z] OFFICIAL VALIDATOR NOT AVAILABLE – FALLBACK USED
+This log contains output from the in-repo validator:
+  python smart_hospital_orchestration/validation/validate_env.py --episodes 3 --log-file C:\coding\hospital\hospital\smart_hospital_orchestration\submission_package\openenv_official_validate.txt
+[2026-04-08T09:04:22Z] OFFICIAL VALIDATOR NOT AVAILABLE – FALLBACK USED
+This log contains output from the in-repo validator:
+  python smart_hospital_orchestration/validation/validate_env.py --episodes 3 --log-file C:\coding\hospital\hospital\smart_hospital_orchestration\submission_package\openenv_official_validate.txt
+[2026-04-08T09:02:59Z] OFFICIAL VALIDATOR NOT AVAILABLE – FALLBACK USED
+This log contains output from the in-repo validator:
+  python smart_hospital_orchestration/validation/validate_env.py --episodes 3 --log-file C:\coding\hospital\hospital\smart_hospital_orchestration\submission_package\openenv_official_validate.txt
+[2026-04-08T09:02:23Z] OFFICIAL VALIDATOR NOT AVAILABLE – FALLBACK USED
+This log contains output from the in-repo validator:
+  python smart_hospital_orchestration/validation/validate_env.py --episodes 3 --log-file C:\coding\hospital\hospital\smart_hospital_orchestration\submission_package\openenv_official_validate.txt
+[14:32:23] INFO: ============================================================
+[14:32:23] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:32:23] INFO: ============================================================
+[14:32:23] INFO: 
+--- Environment Imports ---
+[14:32:23] INFO: Testing environment imports...
+
+[VALIDATE_ENV STDOUT]
+[14:32:23] INFO: ============================================================
+[14:32:23] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:32:23] INFO: ============================================================
+[14:32:23] INFO: 
+--- Environment Imports ---
+[14:32:23] INFO: Testing environment imports...
+
+[VALIDATE_ENV STDERR]
+Traceback (most recent call last):
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 92, in validate_environment_imports
+    from smart_hospital_orchestration.environment import HospitalEnv
+ModuleNotFoundError: No module named 'smart_hospital_orchestration'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 564, in run_comprehensive_validation
+    if test_func():
+       ~~~~~~~~~^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 106, in validate_environment_imports
+    self.log(f"\u2717 Import failed: {e}", "ERROR")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 67, in log
+    print(formatted_msg)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Daksh\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2717' in position 18: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 631, in <module>
+    main()
+    ~~~~^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 619, in main
+    metrics = validator.run_comprehensive_validation()
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 570, in run_comprehensive_validation
+    self.log(f"\u2717 {test_name} ERROR: {e}", "ERROR")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 67, in log
+    print(formatted_msg)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Daksh\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2717' in position 18: character maps to <undefined>
+[14:32:59] INFO: ============================================================
+[14:32:59] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:32:59] INFO: ============================================================
+[14:32:59] INFO: 
+--- Environment Imports ---
+[14:32:59] INFO: Testing environment imports...
+
+[VALIDATE_ENV STDOUT]
+[14:32:59] INFO: ============================================================
+[14:32:59] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:32:59] INFO: ============================================================
+[14:32:59] INFO: 
+--- Environment Imports ---
+[14:32:59] INFO: Testing environment imports...
+
+[VALIDATE_ENV STDERR]
+Traceback (most recent call last):
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 92, in validate_environment_imports
+    from smart_hospital_orchestration.environment import HospitalEnv
+ModuleNotFoundError: No module named 'smart_hospital_orchestration'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 564, in run_comprehensive_validation
+    if test_func():
+       ~~~~~~~~~^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 106, in validate_environment_imports
+    self.log(f"\u2717 Import failed: {e}", "ERROR")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 67, in log
+    print(formatted_msg)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Daksh\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2717' in position 18: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 631, in <module>
+    main()
+    ~~~~^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 619, in main
+    metrics = validator.run_comprehensive_validation()
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 570, in run_comprehensive_validation
+    self.log(f"\u2717 {test_name} ERROR: {e}", "ERROR")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\coding\hospital\hospital\smart_hospital_orchestration\validation\validate_env.py", line 67, in log
+    print(formatted_msg)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Daksh\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2717' in position 18: character maps to <undefined>
+[14:34:22] INFO: ============================================================
+[14:34:22] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:34:22] INFO: ============================================================
+[14:34:22] INFO: 
+--- Environment Imports ---
+[14:34:22] INFO: Testing environment imports...
+[14:34:22] INFO: ✓ HospitalEnv imported successfully
+[14:34:22] INFO: ✓ HospitalBaselineAgent imported successfully
+[14:34:22] INFO: ✓ Task system imported successfully
+[14:34:22] INFO: ✓ Environment Imports PASSED
+[14:34:22] INFO: 
+--- Environment Creation ---
+[14:34:22] INFO: Testing environment creation...
+[14:34:22] INFO: ✓ easy environment created successfully
+[14:34:22] INFO: ✓ easy environment attributes validated
+[14:34:22] INFO: ✓ medium environment created successfully
+[14:34:22] INFO: ✓ medium environment attributes validated
+[14:34:22] INFO: ✓ hard environment created successfully
+[14:34:22] INFO: ✓ hard environment attributes validated
+[14:34:22] INFO: ✓ Environment Creation PASSED
+[14:34:22] INFO: 
+--- Environment Reset ---
+[14:34:22] INFO: Testing environment reset...
+[14:34:22] INFO: ✓ easy environment reset validated
+[14:34:22] INFO: ✓ medium environment reset validated
+[14:34:22] INFO: ✓ hard environment reset validated
+[14:34:22] INFO: ✓ Environment Reset PASSED
+[14:34:22] INFO: 
+--- Step Execution ---
+[14:34:22] INFO: Testing step execution...
+[14:34:22] INFO: ✓ easy step execution validated (11 steps)
+[14:34:22] INFO: ✓ medium step execution validated (11 steps)
+[14:34:22] INFO: ✓ hard step execution validated (11 steps)
+[14:34:22] INFO: ✓ Step Execution PASSED
+[14:34:22] INFO: 
+--- Reward Dynamics ---
+[14:34:22] INFO: Testing reward dynamics...
+[14:34:22] INFO: ✓ easy reward variance: 416.7762
+[14:34:22] INFO: ✓ medium reward variance: 954.8630
+[14:34:22] INFO: ✓ hard reward variance: 1335.2435
+[14:34:22] INFO: ✓ Reward Dynamics PASSED
+[14:34:22] INFO: 
+--- Task Differentiation ---
+[14:34:22] INFO: Testing task differentiation...
+[14:34:22] INFO: ✓ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[14:34:22] INFO: ✓ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[14:34:22] INFO: ✓ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[14:34:22] INFO: ✓ Task differentiation validated
+[14:34:22] INFO: ✓ Task Differentiation PASSED
+[14:34:22] INFO: 
+--- Edge Cases ---
+[14:34:22] INFO: Testing edge cases...
+[14:34:22] INFO:   Testing No available resources...
+[14:34:22] INFO:   ✓ No available resources passed
+[14:34:22] INFO:   Testing Full capacity...
+[14:34:22] INFO:   ✓ Full capacity passed
+[14:34:22] INFO:   Testing Multiple critical patients...
+[14:34:22] INFO:   ✓ Multiple critical patients passed
+[14:34:22] INFO:   Testing Invalid actions...
+[14:34:22] INFO:   ✓ Invalid actions passed
+[14:34:22] INFO:   Testing Multiple resets...
+[14:34:22] INFO:   ✓ Multiple resets passed
+[14:34:22] INFO: ✓ Edge Cases PASSED
+[14:34:22] INFO: 
+--- Baseline Agent Integration ---
+[14:34:22] INFO: Testing baseline agent integration...
+[14:34:22] INFO: ✓ easy baseline agent integration validated
+[14:34:22] INFO: ✓ medium baseline agent integration validated
+[14:34:22] INFO: ✓ hard baseline agent integration validated
+[14:34:22] INFO: ✓ Baseline Agent Integration PASSED
+[14:34:22] INFO: 
+--- System Stability ---
+[14:34:22] INFO: Testing system stability...
+[14:34:22] INFO: ✓ Stability test: 3/3 episodes successful (100.0%)
+[14:34:22] INFO: ✓ Reward standard deviation: 71.50
+[14:34:22] INFO: ✓ System Stability PASSED
+[14:34:22] INFO: 
+============================================================
+[14:34:22] INFO: VALIDATION SUMMARY
+[14:34:22] INFO: ============================================================
+[14:34:22] INFO: Tests Passed: 9/9
+[14:34:22] INFO: Success Rate: 100.0%
+[14:34:22] INFO: Total Episodes Run: 3
+[14:34:22] INFO: Successful Episodes: 9
+[14:34:22] INFO: Crashed Episodes: 0
+[14:34:22] INFO: State Transitions: 33
+[14:34:22] INFO: Edge Cases Tested: 5
+[14:34:22] INFO: Reward Variance: 902.294262
+[14:34:22] INFO: Bugs Detected: 0
+[14:34:22] INFO: Validation Time: 0.09 seconds
+[14:34:22] INFO: ============================================================
+
+[VALIDATE_ENV STDOUT]
+[14:34:22] INFO: ============================================================
+[14:34:22] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:34:22] INFO: ============================================================
+[14:34:22] INFO: 
+--- Environment Imports ---
+[14:34:22] INFO: Testing environment imports...
+[14:34:22] INFO: âœ“ HospitalEnv imported successfully
+[14:34:22] INFO: âœ“ HospitalBaselineAgent imported successfully
+[14:34:22] INFO: âœ“ Task system imported successfully
+[14:34:22] INFO: âœ“ Environment Imports PASSED
+[14:34:22] INFO: 
+--- Environment Creation ---
+[14:34:22] INFO: Testing environment creation...
+[14:34:22] INFO: âœ“ easy environment created successfully
+[14:34:22] INFO: âœ“ easy environment attributes validated
+[14:34:22] INFO: âœ“ medium environment created successfully
+[14:34:22] INFO: âœ“ medium environment attributes validated
+[14:34:22] INFO: âœ“ hard environment created successfully
+[14:34:22] INFO: âœ“ hard environment attributes validated
+[14:34:22] INFO: âœ“ Environment Creation PASSED
+[14:34:22] INFO: 
+--- Environment Reset ---
+[14:34:22] INFO: Testing environment reset...
+[14:34:22] INFO: âœ“ easy environment reset validated
+[14:34:22] INFO: âœ“ medium environment reset validated
+[14:34:22] INFO: âœ“ hard environment reset validated
+[14:34:22] INFO: âœ“ Environment Reset PASSED
+[14:34:22] INFO: 
+--- Step Execution ---
+[14:34:22] INFO: Testing step execution...
+[14:34:22] INFO: âœ“ easy step execution validated (11 steps)
+[14:34:22] INFO: âœ“ medium step execution validated (11 steps)
+[14:34:22] INFO: âœ“ hard step execution validated (11 steps)
+[14:34:22] INFO: âœ“ Step Execution PASSED
+[14:34:22] INFO: 
+--- Reward Dynamics ---
+[14:34:22] INFO: Testing reward dynamics...
+[14:34:22] INFO: âœ“ easy reward variance: 416.7762
+[14:34:22] INFO: âœ“ medium reward variance: 954.8630
+[14:34:22] INFO: âœ“ hard reward variance: 1335.2435
+[14:34:22] INFO: âœ“ Reward Dynamics PASSED
+[14:34:22] INFO: 
+--- Task Differentiation ---
+[14:34:22] INFO: Testing task differentiation...
+[14:34:22] INFO: âœ“ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[14:34:22] INFO: âœ“ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[14:34:22] INFO: âœ“ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[14:34:22] INFO: âœ“ Task differentiation validated
+[14:34:22] INFO: âœ“ Task Differentiation PASSED
+[14:34:22] INFO: 
+--- Edge Cases ---
+[14:34:22] INFO: Testing edge cases...
+[14:34:22] INFO:   Testing No available resources...
+[14:34:22] INFO:   âœ“ No available resources passed
+[14:34:22] INFO:   Testing Full capacity...
+[14:34:22] INFO:   âœ“ Full capacity passed
+[14:34:22] INFO:   Testing Multiple critical patients...
+[14:34:22] INFO:   âœ“ Multiple critical patients passed
+[14:34:22] INFO:   Testing Invalid actions...
+[14:34:22] INFO:   âœ“ Invalid actions passed
+[14:34:22] INFO:   Testing Multiple resets...
+[14:34:22] INFO:   âœ“ Multiple resets passed
+[14:34:22] INFO: âœ“ Edge Cases PASSED
+[14:34:22] INFO: 
+--- Baseline Agent Integration ---
+[14:34:22] INFO: Testing baseline agent integration...
+[14:34:22] INFO: âœ“ easy baseline agent integration validated
+[14:34:22] INFO: âœ“ medium baseline agent integration validated
+[14:34:22] INFO: âœ“ hard baseline agent integration validated
+[14:34:22] INFO: âœ“ Baseline Agent Integration PASSED
+[14:34:22] INFO: 
+--- System Stability ---
+[14:34:22] INFO: Testing system stability...
+[14:34:22] INFO: âœ“ Stability test: 3/3 episodes successful (100.0%)
+[14:34:22] INFO: âœ“ Reward standard deviation: 71.50
+[14:34:22] INFO: âœ“ System Stability PASSED
+[14:34:22] INFO: 
+============================================================
+[14:34:22] INFO: VALIDATION SUMMARY
+[14:34:22] INFO: ============================================================
+[14:34:22] INFO: Tests Passed: 9/9
+[14:34:22] INFO: Success Rate: 100.0%
+[14:34:22] INFO: Total Episodes Run: 3
+[14:34:22] INFO: Successful Episodes: 9
+[14:34:22] INFO: Crashed Episodes: 0
+[14:34:22] INFO: State Transitions: 33
+[14:34:22] INFO: Edge Cases Tested: 5
+[14:34:22] INFO: Reward Variance: 902.294262
+[14:34:22] INFO: Bugs Detected: 0
+[14:34:22] INFO: Validation Time: 0.09 seconds
+[14:34:22] INFO: ============================================================
+
+ðŸŽ‰ ALL VALIDATIONS PASSED! Environment is ready for use.
+[14:45:07] INFO: ============================================================
+[14:45:07] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:45:07] INFO: ============================================================
+[14:45:07] INFO: 
+--- Environment Imports ---
+[14:45:07] INFO: Testing environment imports...
+[14:45:07] INFO: ✓ HospitalEnv imported successfully
+[14:45:07] INFO: ✓ HospitalBaselineAgent imported successfully
+[14:45:07] INFO: ✓ Task system imported successfully
+[14:45:07] INFO: ✓ Environment Imports PASSED
+[14:45:07] INFO: 
+--- Environment Creation ---
+[14:45:07] INFO: Testing environment creation...
+[14:45:07] INFO: ✓ easy environment created successfully
+[14:45:07] INFO: ✓ easy environment attributes validated
+[14:45:07] INFO: ✓ medium environment created successfully
+[14:45:07] INFO: ✓ medium environment attributes validated
+[14:45:07] INFO: ✓ hard environment created successfully
+[14:45:07] INFO: ✓ hard environment attributes validated
+[14:45:07] INFO: ✓ Environment Creation PASSED
+[14:45:07] INFO: 
+--- Environment Reset ---
+[14:45:07] INFO: Testing environment reset...
+[14:45:07] INFO: ✓ easy environment reset validated
+[14:45:07] INFO: ✓ medium environment reset validated
+[14:45:07] INFO: ✓ hard environment reset validated
+[14:45:07] INFO: ✓ Environment Reset PASSED
+[14:45:07] INFO: 
+--- Step Execution ---
+[14:45:07] INFO: Testing step execution...
+[14:45:07] INFO: ✓ easy step execution validated (11 steps)
+[14:45:07] INFO: ✓ medium step execution validated (11 steps)
+[14:45:07] INFO: ✓ hard step execution validated (11 steps)
+[14:45:07] INFO: ✓ Step Execution PASSED
+[14:45:07] INFO: 
+--- Reward Dynamics ---
+[14:45:07] INFO: Testing reward dynamics...
+[14:45:07] INFO: ✓ easy reward variance: 416.7762
+[14:45:07] INFO: ✓ medium reward variance: 954.8630
+[14:45:07] INFO: ✓ hard reward variance: 1335.2435
+[14:45:07] INFO: ✓ Reward Dynamics PASSED
+[14:45:07] INFO: 
+--- Task Differentiation ---
+[14:45:07] INFO: Testing task differentiation...
+[14:45:07] INFO: ✓ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[14:45:07] INFO: ✓ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[14:45:07] INFO: ✓ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[14:45:07] INFO: ✓ Task differentiation validated
+[14:45:07] INFO: ✓ Task Differentiation PASSED
+[14:45:07] INFO: 
+--- Edge Cases ---
+[14:45:07] INFO: Testing edge cases...
+[14:45:07] INFO:   Testing No available resources...
+[14:45:07] INFO:   ✓ No available resources passed
+[14:45:07] INFO:   Testing Full capacity...
+[14:45:07] INFO:   ✓ Full capacity passed
+[14:45:07] INFO:   Testing Multiple critical patients...
+[14:45:07] INFO:   ✓ Multiple critical patients passed
+[14:45:07] INFO:   Testing Invalid actions...
+[14:45:07] INFO:   ✓ Invalid actions passed
+[14:45:07] INFO:   Testing Multiple resets...
+[14:45:07] INFO:   ✓ Multiple resets passed
+[14:45:07] INFO: ✓ Edge Cases PASSED
+[14:45:07] INFO: 
+--- Baseline Agent Integration ---
+[14:45:07] INFO: Testing baseline agent integration...
+[14:45:07] INFO: ✓ easy baseline agent integration validated
+[14:45:07] INFO: ✓ medium baseline agent integration validated
+[14:45:07] INFO: ✓ hard baseline agent integration validated
+[14:45:07] INFO: ✓ Baseline Agent Integration PASSED
+[14:45:07] INFO: 
+--- System Stability ---
+[14:45:07] INFO: Testing system stability...
+[14:45:07] INFO: ✓ Stability test: 3/3 episodes successful (100.0%)
+[14:45:07] INFO: ✓ Reward standard deviation: 71.50
+[14:45:07] INFO: ✓ System Stability PASSED
+[14:45:07] INFO: 
+============================================================
+[14:45:07] INFO: VALIDATION SUMMARY
+[14:45:07] INFO: ============================================================
+[14:45:07] INFO: Tests Passed: 9/9
+[14:45:07] INFO: Success Rate: 100.0%
+[14:45:07] INFO: Total Episodes Run: 3
+[14:45:07] INFO: Successful Episodes: 9
+[14:45:07] INFO: Crashed Episodes: 0
+[14:45:07] INFO: State Transitions: 33
+[14:45:07] INFO: Edge Cases Tested: 5
+[14:45:07] INFO: Reward Variance: 902.294262
+[14:45:07] INFO: Bugs Detected: 0
+[14:45:07] INFO: Validation Time: 0.08 seconds
+[14:45:07] INFO: ============================================================
+
+[VALIDATE_ENV STDOUT]
+[14:45:07] INFO: ============================================================
+[14:45:07] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:45:07] INFO: ============================================================
+[14:45:07] INFO: 
+--- Environment Imports ---
+[14:45:07] INFO: Testing environment imports...
+[14:45:07] INFO: âœ“ HospitalEnv imported successfully
+[14:45:07] INFO: âœ“ HospitalBaselineAgent imported successfully
+[14:45:07] INFO: âœ“ Task system imported successfully
+[14:45:07] INFO: âœ“ Environment Imports PASSED
+[14:45:07] INFO: 
+--- Environment Creation ---
+[14:45:07] INFO: Testing environment creation...
+[14:45:07] INFO: âœ“ easy environment created successfully
+[14:45:07] INFO: âœ“ easy environment attributes validated
+[14:45:07] INFO: âœ“ medium environment created successfully
+[14:45:07] INFO: âœ“ medium environment attributes validated
+[14:45:07] INFO: âœ“ hard environment created successfully
+[14:45:07] INFO: âœ“ hard environment attributes validated
+[14:45:07] INFO: âœ“ Environment Creation PASSED
+[14:45:07] INFO: 
+--- Environment Reset ---
+[14:45:07] INFO: Testing environment reset...
+[14:45:07] INFO: âœ“ easy environment reset validated
+[14:45:07] INFO: âœ“ medium environment reset validated
+[14:45:07] INFO: âœ“ hard environment reset validated
+[14:45:07] INFO: âœ“ Environment Reset PASSED
+[14:45:07] INFO: 
+--- Step Execution ---
+[14:45:07] INFO: Testing step execution...
+[14:45:07] INFO: âœ“ easy step execution validated (11 steps)
+[14:45:07] INFO: âœ“ medium step execution validated (11 steps)
+[14:45:07] INFO: âœ“ hard step execution validated (11 steps)
+[14:45:07] INFO: âœ“ Step Execution PASSED
+[14:45:07] INFO: 
+--- Reward Dynamics ---
+[14:45:07] INFO: Testing reward dynamics...
+[14:45:07] INFO: âœ“ easy reward variance: 416.7762
+[14:45:07] INFO: âœ“ medium reward variance: 954.8630
+[14:45:07] INFO: âœ“ hard reward variance: 1335.2435
+[14:45:07] INFO: âœ“ Reward Dynamics PASSED
+[14:45:07] INFO: 
+--- Task Differentiation ---
+[14:45:07] INFO: Testing task differentiation...
+[14:45:07] INFO: âœ“ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[14:45:07] INFO: âœ“ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[14:45:07] INFO: âœ“ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[14:45:07] INFO: âœ“ Task differentiation validated
+[14:45:07] INFO: âœ“ Task Differentiation PASSED
+[14:45:07] INFO: 
+--- Edge Cases ---
+[14:45:07] INFO: Testing edge cases...
+[14:45:07] INFO:   Testing No available resources...
+[14:45:07] INFO:   âœ“ No available resources passed
+[14:45:07] INFO:   Testing Full capacity...
+[14:45:07] INFO:   âœ“ Full capacity passed
+[14:45:07] INFO:   Testing Multiple critical patients...
+[14:45:07] INFO:   âœ“ Multiple critical patients passed
+[14:45:07] INFO:   Testing Invalid actions...
+[14:45:07] INFO:   âœ“ Invalid actions passed
+[14:45:07] INFO:   Testing Multiple resets...
+[14:45:07] INFO:   âœ“ Multiple resets passed
+[14:45:07] INFO: âœ“ Edge Cases PASSED
+[14:45:07] INFO: 
+--- Baseline Agent Integration ---
+[14:45:07] INFO: Testing baseline agent integration...
+[14:45:07] INFO: âœ“ easy baseline agent integration validated
+[14:45:07] INFO: âœ“ medium baseline agent integration validated
+[14:45:07] INFO: âœ“ hard baseline agent integration validated
+[14:45:07] INFO: âœ“ Baseline Agent Integration PASSED
+[14:45:07] INFO: 
+--- System Stability ---
+[14:45:07] INFO: Testing system stability...
+[14:45:07] INFO: âœ“ Stability test: 3/3 episodes successful (100.0%)
+[14:45:07] INFO: âœ“ Reward standard deviation: 71.50
+[14:45:07] INFO: âœ“ System Stability PASSED
+[14:45:07] INFO: 
+============================================================
+[14:45:07] INFO: VALIDATION SUMMARY
+[14:45:07] INFO: ============================================================
+[14:45:07] INFO: Tests Passed: 9/9
+[14:45:07] INFO: Success Rate: 100.0%
+[14:45:07] INFO: Total Episodes Run: 3
+[14:45:07] INFO: Successful Episodes: 9
+[14:45:07] INFO: Crashed Episodes: 0
+[14:45:07] INFO: State Transitions: 33
+[14:45:07] INFO: Edge Cases Tested: 5
+[14:45:07] INFO: Reward Variance: 902.294262
+[14:45:07] INFO: Bugs Detected: 0
+[14:45:07] INFO: Validation Time: 0.08 seconds
+[14:45:07] INFO: ============================================================
+
+ðŸŽ‰ ALL VALIDATIONS PASSED! Environment is ready for use.
+
+VALIDATION RESULT: PASS
+[14:49:16] INFO: ============================================================
+[14:49:16] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:49:16] INFO: ============================================================
+[14:49:16] INFO: 
+--- Environment Imports ---
+[14:49:16] INFO: Testing environment imports...
+[14:49:16] INFO: ✓ HospitalEnv imported successfully
+[14:49:16] INFO: ✓ HospitalBaselineAgent imported successfully
+[14:49:16] INFO: ✓ Task system imported successfully
+[14:49:16] INFO: ✓ Environment Imports PASSED
+[14:49:16] INFO: 
+--- Environment Creation ---
+[14:49:16] INFO: Testing environment creation...
+[14:49:16] INFO: ✓ easy environment created successfully
+[14:49:16] INFO: ✓ easy environment attributes validated
+[14:49:16] INFO: ✓ medium environment created successfully
+[14:49:16] INFO: ✓ medium environment attributes validated
+[14:49:16] INFO: ✓ hard environment created successfully
+[14:49:16] INFO: ✓ hard environment attributes validated
+[14:49:16] INFO: ✓ Environment Creation PASSED
+[14:49:16] INFO: 
+--- Environment Reset ---
+[14:49:16] INFO: Testing environment reset...
+[14:49:16] INFO: ✓ easy environment reset validated
+[14:49:16] INFO: ✓ medium environment reset validated
+[14:49:16] INFO: ✓ hard environment reset validated
+[14:49:16] INFO: ✓ Environment Reset PASSED
+[14:49:16] INFO: 
+--- Step Execution ---
+[14:49:16] INFO: Testing step execution...
+[14:49:16] INFO: ✓ easy step execution validated (14 steps)
+[14:49:16] INFO: ✓ medium step execution validated (11 steps)
+[14:49:16] INFO: ✓ hard step execution validated (11 steps)
+[14:49:16] INFO: ✓ Step Execution PASSED
+[14:49:16] INFO: 
+--- Reward Dynamics ---
+[14:49:16] INFO: Testing reward dynamics...
+[14:49:16] INFO: ✓ easy reward variance: 416.7762
+[14:49:16] INFO: ✓ medium reward variance: 954.8630
+[14:49:16] INFO: ✓ hard reward variance: 1335.2435
+[14:49:16] INFO: ✓ Reward Dynamics PASSED
+[14:49:16] INFO: 
+--- Task Differentiation ---
+[14:49:16] INFO: Testing task differentiation...
+[14:49:16] INFO: ✓ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[14:49:16] INFO: ✓ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[14:49:16] INFO: ✓ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[14:49:16] INFO: ✓ Task differentiation validated
+[14:49:16] INFO: ✓ Task Differentiation PASSED
+[14:49:16] INFO: 
+--- Edge Cases ---
+[14:49:16] INFO: Testing edge cases...
+[14:49:16] INFO:   Testing No available resources...
+[14:49:16] INFO:   ✓ No available resources passed
+[14:49:16] INFO:   Testing Full capacity...
+[14:49:16] INFO:   ✓ Full capacity passed
+[14:49:16] INFO:   Testing Multiple critical patients...
+[14:49:16] INFO:   ✓ Multiple critical patients passed
+[14:49:16] INFO:   Testing Invalid actions...
+[14:49:16] INFO:   ✓ Invalid actions passed
+[14:49:16] INFO:   Testing Multiple resets...
+[14:49:16] INFO:   ✓ Multiple resets passed
+[14:49:16] INFO: ✓ Edge Cases PASSED
+[14:49:16] INFO: 
+--- Baseline Agent Integration ---
+[14:49:16] INFO: Testing baseline agent integration...
+[14:49:16] INFO: ✓ easy baseline agent integration validated
+[14:49:16] INFO: ✓ medium baseline agent integration validated
+[14:49:16] INFO: ✓ hard baseline agent integration validated
+[14:49:16] INFO: ✓ Baseline Agent Integration PASSED
+[14:49:16] INFO: 
+--- System Stability ---
+[14:49:16] INFO: Testing system stability...
+[14:49:16] INFO: ✓ Stability test: 3/3 episodes successful (100.0%)
+[14:49:16] INFO: ✓ Reward standard deviation: 71.50
+[14:49:16] INFO: ✓ System Stability PASSED
+[14:49:16] INFO: 
+============================================================
+[14:49:16] INFO: VALIDATION SUMMARY
+[14:49:16] INFO: ============================================================
+[14:49:16] INFO: Tests Passed: 9/9
+[14:49:16] INFO: Success Rate: 100.0%
+[14:49:16] INFO: Total Episodes Run: 3
+[14:49:16] INFO: Successful Episodes: 9
+[14:49:16] INFO: Crashed Episodes: 0
+[14:49:16] INFO: State Transitions: 36
+[14:49:16] INFO: Edge Cases Tested: 5
+[14:49:16] INFO: Reward Variance: 902.294262
+[14:49:16] INFO: Bugs Detected: 0
+[14:49:16] INFO: Validation Time: 0.10 seconds
+[14:49:16] INFO: ============================================================
+
+[VALIDATE_ENV STDOUT]
+[14:49:16] INFO: ============================================================
+[14:49:16] INFO: STARTING COMPREHENSIVE ENVIRONMENT VALIDATION
+[14:49:16] INFO: ============================================================
+[14:49:16] INFO: 
+--- Environment Imports ---
+[14:49:16] INFO: Testing environment imports...
+[14:49:16] INFO: âœ“ HospitalEnv imported successfully
+[14:49:16] INFO: âœ“ HospitalBaselineAgent imported successfully
+[14:49:16] INFO: âœ“ Task system imported successfully
+[14:49:16] INFO: âœ“ Environment Imports PASSED
+[14:49:16] INFO: 
+--- Environment Creation ---
+[14:49:16] INFO: Testing environment creation...
+[14:49:16] INFO: âœ“ easy environment created successfully
+[14:49:16] INFO: âœ“ easy environment attributes validated
+[14:49:16] INFO: âœ“ medium environment created successfully
+[14:49:16] INFO: âœ“ medium environment attributes validated
+[14:49:16] INFO: âœ“ hard environment created successfully
+[14:49:16] INFO: âœ“ hard environment attributes validated
+[14:49:16] INFO: âœ“ Environment Creation PASSED
+[14:49:16] INFO: 
+--- Environment Reset ---
+[14:49:16] INFO: Testing environment reset...
+[14:49:16] INFO: âœ“ easy environment reset validated
+[14:49:16] INFO: âœ“ medium environment reset validated
+[14:49:16] INFO: âœ“ hard environment reset validated
+[14:49:16] INFO: âœ“ Environment Reset PASSED
+[14:49:16] INFO: 
+--- Step Execution ---
+[14:49:16] INFO: Testing step execution...
+[14:49:16] INFO: âœ“ easy step execution validated (14 steps)
+[14:49:16] INFO: âœ“ medium step execution validated (11 steps)
+[14:49:16] INFO: âœ“ hard step execution validated (11 steps)
+[14:49:16] INFO: âœ“ Step Execution PASSED
+[14:49:16] INFO: 
+--- Reward Dynamics ---
+[14:49:16] INFO: Testing reward dynamics...
+[14:49:16] INFO: âœ“ easy reward variance: 416.7762
+[14:49:16] INFO: âœ“ medium reward variance: 954.8630
+[14:49:16] INFO: âœ“ hard reward variance: 1335.2435
+[14:49:16] INFO: âœ“ Reward Dynamics PASSED
+[14:49:16] INFO: 
+--- Task Differentiation ---
+[14:49:16] INFO: Testing task differentiation...
+[14:49:16] INFO: âœ“ easy metrics: {'initial_patients': 5, 'initial_doctors': 3, 'initial_beds': 5, 'avg_reward_per_step': -23.597870417956656}
+[14:49:16] INFO: âœ“ medium metrics: {'initial_patients': 8, 'initial_doctors': 4, 'initial_beds': 6, 'avg_reward_per_step': -3.079618083989078}
+[14:49:16] INFO: âœ“ hard metrics: {'initial_patients': 10, 'initial_doctors': 5, 'initial_beds': 7, 'avg_reward_per_step': 26.331829881247234}
+[14:49:16] INFO: âœ“ Task differentiation validated
+[14:49:16] INFO: âœ“ Task Differentiation PASSED
+[14:49:16] INFO: 
+--- Edge Cases ---
+[14:49:16] INFO: Testing edge cases...
+[14:49:16] INFO:   Testing No available resources...
+[14:49:16] INFO:   âœ“ No available resources passed
+[14:49:16] INFO:   Testing Full capacity...
+[14:49:16] INFO:   âœ“ Full capacity passed
+[14:49:16] INFO:   Testing Multiple critical patients...
+[14:49:16] INFO:   âœ“ Multiple critical patients passed
+[14:49:16] INFO:   Testing Invalid actions...
+[14:49:16] INFO:   âœ“ Invalid actions passed
+[14:49:16] INFO:   Testing Multiple resets...
+[14:49:16] INFO:   âœ“ Multiple resets passed
+[14:49:16] INFO: âœ“ Edge Cases PASSED
+[14:49:16] INFO: 
+--- Baseline Agent Integration ---
+[14:49:16] INFO: Testing baseline agent integration...
+[14:49:16] INFO: âœ“ easy baseline agent integration validated
+[14:49:16] INFO: âœ“ medium baseline agent integration validated
+[14:49:16] INFO: âœ“ hard baseline agent integration validated
+[14:49:16] INFO: âœ“ Baseline Agent Integration PASSED
+[14:49:16] INFO: 
+--- System Stability ---
+[14:49:16] INFO: Testing system stability...
+[14:49:16] INFO: âœ“ Stability test: 3/3 episodes successful (100.0%)
+[14:49:16] INFO: âœ“ Reward standard deviation: 71.50
+[14:49:16] INFO: âœ“ System Stability PASSED
+[14:49:16] INFO: 
+============================================================
+[14:49:16] INFO: VALIDATION SUMMARY
+[14:49:16] INFO: ============================================================
+[14:49:16] INFO: Tests Passed: 9/9
+[14:49:16] INFO: Success Rate: 100.0%
+[14:49:16] INFO: Total Episodes Run: 3
+[14:49:16] INFO: Successful Episodes: 9
+[14:49:16] INFO: Crashed Episodes: 0
+[14:49:16] INFO: State Transitions: 36
+[14:49:16] INFO: Edge Cases Tested: 5
+[14:49:16] INFO: Reward Variance: 902.294262
+[14:49:16] INFO: Bugs Detected: 0
+[14:49:16] INFO: Validation Time: 0.10 seconds
+[14:49:16] INFO: ============================================================
+
+ðŸŽ‰ ALL VALIDATIONS PASSED! Environment is ready for use.
+
+VALIDATION RESULT: PASS
