@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Request, Body
-from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader, pass_context
@@ -97,11 +97,42 @@ def performance_page_fastapi(request: Request):
     return HTMLResponse(template.render(request=request))
 
 
-@app.get("/", include_in_schema=False)
-async def root():
-    # Redirect root to controls UI so the Space displays the dashboard by default
-    # Keep API discoverability via /health and other endpoints
-    return RedirectResponse(url="/controls", status_code=307)
+@app.get("/", response_class=HTMLResponse)
+def dashboard_page_fastapi(request: Request):
+    template = _jinja_env.get_template("dashboard.html")
+    return HTMLResponse(template.render(request=request))
+
+
+@app.get("/benchmark_dashboard", response_class=HTMLResponse)
+def benchmark_dashboard_page_fastapi(request: Request):
+    template = _jinja_env.get_template("benchmark_dashboard_page.html")
+    return HTMLResponse(template.render(request=request))
+
+
+@app.get("/benchmark_dashboard/raw")
+def benchmark_dashboard_raw_fastapi() -> FileResponse:
+    dashboard_path = BASE_DIR / "submission_package" / "benchmark_dashboard.html"
+    if not dashboard_path.exists():
+        raise HTTPException(status_code=404, detail="Benchmark dashboard not generated yet.")
+    return FileResponse(str(dashboard_path), media_type="text/html")
+
+
+@app.get("/3d_view", response_class=HTMLResponse)
+def view_3d_page_fastapi(request: Request):
+    template = _jinja_env.get_template("3d_view.html")
+    return HTMLResponse(template.render(request=request))
+
+
+@app.get("/clinical_ops", response_class=HTMLResponse)
+def clinical_ops_page_fastapi(request: Request):
+    template = _jinja_env.get_template("clinical_ops.html")
+    return HTMLResponse(template.render(request=request))
+
+
+@app.get("/ai_lab", response_class=HTMLResponse)
+def ai_lab_page_fastapi(request: Request):
+    template = _jinja_env.get_template("ai_lab.html")
+    return HTMLResponse(template.render(request=request))
 
 
 class ResetRequest(BaseModel):
