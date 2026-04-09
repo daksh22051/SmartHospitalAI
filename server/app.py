@@ -1,17 +1,24 @@
-from __future__ import annotations
-
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 
-from app import app
+app = FastAPI()
 
+# 1. Static files (JS/CSS) serve karne ke liye
+# Check kar ki tera build folder 'dist' hai ya 'build'
+dist_path = os.path.join(os.getcwd(), "dist")
 
-def main() -> None:
-    import uvicorn
+if os.path.exists(dist_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
 
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
-
-
-# Allow running this module directly for validators that execute
-# `python server/app.py` and expect the server to start.
-if __name__ == "__main__":
-    main()
+# 2. CATCH-ALL ROUTE: Ye sabse important hai
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    # Agar file exist karti hai (jaise logo.png), toh wo dikhao
+    file_path = os.path.join(dist_path, full_path)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    
+    # Nahi toh hamesha index.html bhejo (React Router handle kar lega)
+    return FileResponse(os.path.join(dist_path, "index.html"))

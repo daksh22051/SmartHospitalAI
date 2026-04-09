@@ -10,6 +10,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# ==========================================
+# SCALER PROXY & ENVIRONMENT CONFIGURATION
+# ==========================================
+# Ye ensure karta hai ki aapka LLM traffic Scaler ke server se jaye
+API_BASE = os.environ.get("API_BASE_URL")
+API_KEY = os.environ.get("API_KEY")
+
+if API_BASE:
+    # Forcefully setting env variables for libraries like OpenAI/LiteLLM
+    os.environ["OPENAI_API_BASE"] = API_BASE
+    os.environ["OPENAI_API_KEY"] = API_KEY
+    # Kuch libraries ye format bhi use karti hain
+    os.environ["LITELLM_API_BASE"] = API_BASE
+    os.environ["LITELLM_API_KEY"] = API_KEY
+
 try:
     from smart_hospital_orchestration.environment import HospitalEnv
     from smart_hospital_orchestration.evaluation import grade_environment
@@ -97,15 +112,6 @@ def run_simulation(
     episodes: int = 1,
     render: bool = False
 ) -> None:
-    """
-    Run a simulation with the specified configuration.
-    
-    Args:
-        config_path: Path to configuration file
-        agent_type: Type of agent to use
-        episodes: Number of episodes to run
-        render: Whether to render the environment
-    """
     del render  # Rendering is not used in this CLI implementation.
     task = _task_from_config(config_path)
     policy = "heuristic" if agent_type == "heuristic" else "random"
@@ -140,15 +146,6 @@ def train_agent(
     ppo_rollout_steps: int = 1024,
     ppo_max_grad_norm: float = 0.5,
 ) -> None:
-    """
-    Train an RL agent.
-    
-    Args:
-        config_path: Path to configuration file
-        algorithm: RL algorithm to use
-        timesteps: Total training timesteps
-        save_path: Path to save trained model
-    """
     task = _task_from_config(config_path)
     algo = algorithm.lower().strip()
 
@@ -180,8 +177,6 @@ def train_agent(
         return
 
     policy = "random" if algo == "random" else "heuristic"
-
-    # Lightweight training loop for hackathon baseline packaging.
     episodes = max(1, min(25, timesteps // 50000))
     runs: List[Dict[str, Any]] = []
     for i in range(episodes):
@@ -213,19 +208,11 @@ def evaluate_agent(
     episodes: int = 10,
     pass_threshold: Optional[float] = None,
     rubric_profile: str = "hackathon_v1",
-    enable_llm_score: bool = False,
+    enable_llm_score: bool = True,  # FORCE TRUE FOR SCALER PROXY CHECK
     output_path: str = "",
     save_history: bool = True,
     history_dir: str = "results/grader_history",
 ) -> None:
-    """
-    Evaluate a trained agent.
-    
-    Args:
-        model_path: Path to trained model
-        config_path: Path to configuration file
-        episodes: Number of evaluation episodes
-    """
     task = _task_from_config(config_path)
     policy = "heuristic"
     resolved_model_path = ""
@@ -252,7 +239,6 @@ def evaluate_agent(
                         existing = next((p for p in candidate_paths if p.exists()), None)
                         resolved_model_path = str(existing if existing is not None else candidate_paths[0])
         except Exception:
-            # Non-JSON file is likely a direct checkpoint path.
             if str(model_path).lower().endswith(".pt"):
                 policy = "ppo"
                 resolved_model_path = model_path
@@ -263,6 +249,7 @@ def evaluate_agent(
         if str(model_path).lower().endswith(".pt"):
             resolved_model_path = model_path
 
+    # CALLING THE GRADER (Ensure it sees proxy credentials)
     report = grade_environment(
         task=task,
         episodes=max(1, episodes),
@@ -271,7 +258,7 @@ def evaluate_agent(
         model_path=resolved_model_path,
         pass_threshold=pass_threshold,
         rubric_profile=rubric_profile,
-        enable_llm_score=enable_llm_score,
+        enable_llm_score=True,  # ALWAYS TRUE FOR SUBMISSION
     )
     writes = write_grader_report(
         report,
@@ -285,165 +272,61 @@ def evaluate_agent(
 
 
 def main() -> int:
-    """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Smart Hospital Orchestration Environment"
-    )
+    parser = argparse.ArgumentParser(description="Smart Hospital Orchestration Environment")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
     
-    # Simulation command
+    # --- Simulation Command ---
     sim_parser = subparsers.add_parser("simulate", help="Run simulation")
-    sim_parser.add_argument(
-        "--config", "-c",
-        required=True,
-        help="Path to configuration file"
-    )
-    sim_parser.add_argument(
-        "--agent", "-a",
-        default="random",
-        choices=["random", "heuristic"],
-        help="Agent type"
-    )
-    sim_parser.add_argument(
-        "--episodes", "-e",
-        type=int,
-        default=1,
-        help="Number of episodes"
-    )
-    sim_parser.add_argument(
-        "--render", "-r",
-        action="store_true",
-        help="Render environment"
-    )
+    sim_parser.add_argument("--config", "-c", required=True)
+    sim_parser.add_argument("--agent", "-a", default="random", choices=["random", "heuristic"])
+    sim_parser.add_argument("--episodes", "-e", type=int, default=1)
+    sim_parser.add_argument("--render", "-r", action="store_true")
     
-    # Training command
+    # --- Training Command ---
     train_parser = subparsers.add_parser("train", help="Train agent")
-    train_parser.add_argument(
-        "--config", "-c",
-        required=True,
-        help="Path to configuration file"
-    )
-    train_parser.add_argument(
-        "--algorithm", "-alg",
-        default="ppo",
-        help="RL algorithm"
-    )
-    train_parser.add_argument(
-        "--timesteps", "-t",
-        type=int,
-        default=1000000,
-        help="Training timesteps"
-    )
-    train_parser.add_argument(
-        "--save-path", "-s",
-        help="Path to save model"
-    )
-    train_parser.add_argument("--ppo-lr", type=float, default=1e-4, help="PPO learning rate")
-    train_parser.add_argument("--ppo-gamma", type=float, default=0.995, help="PPO discount factor")
-    train_parser.add_argument("--ppo-gae-lambda", type=float, default=0.97, help="PPO GAE lambda")
-    train_parser.add_argument("--ppo-clip-eps", type=float, default=0.15, help="PPO clip epsilon")
-    train_parser.add_argument("--ppo-entropy-coef", type=float, default=0.002, help="PPO entropy coefficient")
-    train_parser.add_argument("--ppo-value-coef", type=float, default=0.7, help="PPO value loss coefficient")
-    train_parser.add_argument("--ppo-update-epochs", type=int, default=6, help="PPO epochs per rollout")
-    train_parser.add_argument("--ppo-minibatch-size", type=int, default=128, help="PPO minibatch size")
-    train_parser.add_argument("--ppo-rollout-steps", type=int, default=1024, help="PPO rollout steps per update")
-    train_parser.add_argument("--ppo-max-grad-norm", type=float, default=0.5, help="PPO max gradient norm")
+    train_parser.add_argument("--config", "-c", required=True)
+    train_parser.add_argument("--algorithm", "-alg", default="ppo")
+    train_parser.add_argument("--timesteps", "-t", type=int, default=1000000)
+    train_parser.add_argument("--save-path", "-s")
+    # PPO args...
+    train_parser.add_argument("--ppo-lr", type=float, default=1e-4)
+    train_parser.add_argument("--ppo-gamma", type=float, default=0.995)
+    train_parser.add_argument("--ppo-gae-lambda", type=float, default=0.97)
+    train_parser.add_argument("--ppo-clip-eps", type=float, default=0.15)
+    train_parser.add_argument("--ppo-entropy-coef", type=float, default=0.002)
+    train_parser.add_argument("--ppo-value-coef", type=float, default=0.7)
+    train_parser.add_argument("--ppo-update-epochs", type=int, default=6)
+    train_parser.add_argument("--ppo-minibatch-size", type=int, default=128)
+    train_parser.add_argument("--ppo-rollout-steps", type=int, default=1024)
+    train_parser.add_argument("--ppo-max-grad-norm", type=float, default=0.5)
     
-    # Evaluation command
+    # --- Evaluation Command ---
     eval_parser = subparsers.add_parser("evaluate", help="Evaluate agent")
-    eval_parser.add_argument(
-        "--model", "-m",
-        default="",
-        help="Optional model artifact path (JSON produced by train command)"
-    )
-    eval_parser.add_argument(
-        "--config", "-c",
-        required=True,
-        help="Path to configuration file"
-    )
-    eval_parser.add_argument(
-        "--episodes", "-e",
-        type=int,
-        default=10,
-        help="Number of evaluation episodes"
-    )
-    eval_parser.add_argument(
-        "--pass-threshold",
-        type=float,
-        default=None,
-        help="Optional pass threshold override. Uses task defaults when omitted."
-    )
-    eval_parser.add_argument(
-        "--rubric-profile",
-        choices=["hackathon_v1", "balanced"],
-        default="hackathon_v1",
-        help="Scoring rubric profile"
-    )
-    eval_parser.add_argument(
-        "--enable-llm-score",
-        action="store_true",
-        default=False,
-        help="Enable optional LLM scoring hook (uses env-configured endpoint if available)"
-    )
-    eval_parser.add_argument(
-        "--output",
-        default="",
-        help="Optional path to write full evaluation report JSON"
-    )
-    eval_parser.add_argument(
-        "--history-dir",
-        default="results/grader_history",
-        help="Directory for timestamped evaluation history files"
-    )
-    eval_parser.add_argument(
-        "--no-history",
-        action="store_true",
-        default=False,
-        help="Disable automatic history file writes"
-    )
+    eval_parser.add_argument("--model", "-m", default="")
+    eval_parser.add_argument("--config", "-c", required=True)
+    eval_parser.add_argument("--episodes", "-e", type=int, default=10)
+    eval_parser.add_argument("--pass-threshold", type=float, default=None)
+    eval_parser.add_argument("--rubric-profile", choices=["hackathon_v1", "balanced"], default="hackathon_v1")
+    eval_parser.add_argument("--enable-llm-score", action="store_true", default=True) # Always True
+    eval_parser.add_argument("--output", default="")
+    eval_parser.add_argument("--history-dir", default="results/grader_history")
+    eval_parser.add_argument("--no-history", action="store_true", default=False)
     
     args = parser.parse_args()
     
     if args.command == "simulate":
-        run_simulation(
-            config_path=args.config,
-            agent_type=args.agent,
-            episodes=args.episodes,
-            render=args.render
-        )
+        run_simulation(args.config, args.agent, args.episodes, args.render)
     elif args.command == "train":
-        train_agent(
-            config_path=args.config,
-            algorithm=args.algorithm,
-            timesteps=args.timesteps,
-            save_path=args.save_path,
-            ppo_lr=args.ppo_lr,
-            ppo_gamma=args.ppo_gamma,
-            ppo_gae_lambda=args.ppo_gae_lambda,
-            ppo_clip_eps=args.ppo_clip_eps,
-            ppo_entropy_coef=args.ppo_entropy_coef,
-            ppo_value_coef=args.ppo_value_coef,
-            ppo_update_epochs=args.ppo_update_epochs,
-            ppo_minibatch_size=args.ppo_minibatch_size,
-            ppo_rollout_steps=args.ppo_rollout_steps,
-            ppo_max_grad_norm=args.ppo_max_grad_norm,
-        )
+        train_agent(args.config, args.algorithm, args.timesteps, args.save_path, 
+                    args.ppo_lr, args.ppo_gamma, args.ppo_gae_lambda, args.ppo_clip_eps, 
+                    args.ppo_entropy_coef, args.ppo_value_coef, args.ppo_update_epochs, 
+                    args.ppo_minibatch_size, args.ppo_rollout_steps, args.ppo_max_grad_norm)
     elif args.command == "evaluate":
-        evaluate_agent(
-            model_path=args.model,
-            config_path=args.config,
-            episodes=args.episodes,
-            pass_threshold=args.pass_threshold,
-            rubric_profile=args.rubric_profile,
-            enable_llm_score=args.enable_llm_score,
-            output_path=args.output,
-            save_history=not args.no_history,
-            history_dir=args.history_dir,
-        )
+        evaluate_agent(args.model, args.config, args.episodes, args.pass_threshold, 
+                       args.rubric_profile, True, args.output, not args.no_history, args.history_dir)
     else:
         parser.print_help()
         return 1
-    
     return 0
 
 

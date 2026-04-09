@@ -1,90 +1,62 @@
-# Smart Hospital Resource Orchestration - Docker Configuration
-# Optimized multi-stage build for production deployment
-
-# Stage 1: Build stage with dependencies
+# Stage 1: Build stage (Dependencies install karne ke liye)
 FROM python:3.10-slim AS builder
 
-# Set build arguments
-ARG BUILD_DATE
-ARG VERSION
-ARG VCS_REF
-
-# Set environment variables for reproducible builds
+# Environment variables for better build performance
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=120
+    PIP_NO_CACHE_DIR=1
 
-# Create virtual environment
+# Virtual env create karna security aur size ke liye achha hai
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy and install Python dependencies
+# Requirements install karna
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
-        pip install \
-            --index-url https://download.pytorch.org/whl/cpu \
-            --extra-index-url https://pypi.org/simple \
-            --retries 20 \
-            --timeout 120 \
-            --resume-retries 20 \
-            -r requirements.txt
+    pip install --index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 
-# Stage 2: Runtime stage
+# Stage 2: Runtime stage (Actual execution stage)
 FROM python:3.10-slim AS runtime
 
-# Re-declare build args in this stage for LABEL interpolation.
-ARG BUILD_DATE
-ARG VERSION
-ARG VCS_REF
+# Metadata labels
+LABEL maintainer="Daksh - Smart Hospital AI"
+LABEL version="1.0.0"
 
-# Set labels for metadata
-LABEL maintainer="Smart Hospital Systems Team" \
-      org.opencontainers.image.title="Smart Hospital Orchestration" \
-      org.opencontainers.image.description="Advanced hospital resource management environment for reinforcement learning" \
-      org.opencontainers.image.version="${VERSION:-1.0.0}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="https://github.com/smart-hospital/orchestration"
-
-# Set environment variables
+# Environment variables setup
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH="/app" \
     PORT=7860
 
-# Copy virtual environment from builder stage
+# Builder stage se virtual env copy karna
 COPY --from=builder /opt/venv /opt/venv
 
-# Create non-root user for security
-RUN mkdir -p /app && \
-    useradd --create-home --shell /bin/bash hospital && \
-    chown -R hospital:hospital /app
-
-# Set working directory
+# Working directory set karna
 WORKDIR /app
 
-# Copy application files
-COPY --chown=hospital:hospital . .
-
-# Install the package in development mode
-RUN pip install -e .
-
-# Create necessary directories
-RUN mkdir -p /app/logs /app/data /app/models && \
+# Non-root user create karna (Hugging Face security ke liye zaroori hai)
+RUN useradd --create-home hospital && \
+    mkdir -p /app/logs /app/data /app/models && \
     chown -R hospital:hospital /app
 
-# Switch to non-root user
+# Saari files copy karna
+COPY --chown=hospital:hospital . .
+
+# Package ko install karna (taaki imports kaam karein)
+RUN pip install -e .
+
+# User switch karna
 USER hospital
 
-# Health check
+# Health check (Hugging Face ko batane ke liye ki system ready hai)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import smart_hospital_orchestration; print('System healthy')" || exit 1
+    CMD python -c "import smart_hospital_orchestration; print('Healthy')" || exit 1
 
-# Expose Hugging Face Space port
+# Port expose karna
 EXPOSE 7860
 
-# Default command: run one inference pass on startup, then serve the API.
-CMD ["sh", "-lc", "python inference.py --task medium --seed 42 --max-steps 5 && uvicorn app:app --host 0.0.0.0 --port 7860"]
+# --- FINAL COMMAND ---
+# 1. Pehle main.py evaluate chalega taaki simulation result generate ho jaye (Scaler Dashboard fix)
+# 2. Phir uvicorn server start hoga (Dashboard UI fix)
+CMD ["sh", "-c", "python main.py evaluate --config configs/medium.yaml --episodes 1 && uvicorn app:app --host 0.0.0.0 --port 7860"]
