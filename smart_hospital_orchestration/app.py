@@ -45,22 +45,57 @@ _jinja_env = Environment(
 # mismatch issues in Starlette's Jinja2Templates on HF runtime.
 
 
+def _url_for(request: Request, name: str, **params: Any) -> str:
+    """Jinja-compatible url_for that works with FastAPI/Starlette.
+
+    - Accepts Flask-style `filename=` and maps it to Starlette's `path=`
+      for the StaticFiles mount named "static".
+    - Falls back gracefully if a route isn't found.
+    """
+    try:
+        if "filename" in params and "path" not in params:
+            params["path"] = params.pop("filename")
+        return request.app.url_path_for(name, **params)
+    except Exception:
+        # Best-effort fallback (prevents template crashes)
+        # Return mounted path for static assets if possible
+        if name == "static":
+            p = params.get("path") or params.get("filename") or ""
+            return f"/static/{p}".rstrip("/")
+        return "/"
+
+
 @app.get("/controls", response_class=HTMLResponse)
 def controls_page_fastapi(request: Request):
     template = _jinja_env.get_template("controls.html")
-    return HTMLResponse(template.render(request=request))
+    return HTMLResponse(
+        template.render(
+            request=request,
+            url_for=lambda name, **kw: _url_for(request, name, **kw),
+        )
+    )
 
 
 @app.get("/analytics", response_class=HTMLResponse)
 def analytics_page_fastapi(request: Request):
     template = _jinja_env.get_template("analytics.html")
-    return HTMLResponse(template.render(request=request))
+    return HTMLResponse(
+        template.render(
+            request=request,
+            url_for=lambda name, **kw: _url_for(request, name, **kw),
+        )
+    )
 
 
 @app.get("/performance", response_class=HTMLResponse)
 def performance_page_fastapi(request: Request):
     template = _jinja_env.get_template("performance.html")
-    return HTMLResponse(template.render(request=request))
+    return HTMLResponse(
+        template.render(
+            request=request,
+            url_for=lambda name, **kw: _url_for(request, name, **kw),
+        )
+    )
 
 
 @app.get("/", include_in_schema=False)
