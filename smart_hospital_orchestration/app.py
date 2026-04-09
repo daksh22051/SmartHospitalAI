@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, pass_context
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 
@@ -65,37 +65,36 @@ def _url_for(request: Request, name: str, **params: Any) -> str:
         return "/"
 
 
+@pass_context
+def jinja_url_for(ctx, name: str, **params: Any) -> str:  # type: ignore[no-redef]
+    """Context-aware url_for for Jinja templates.
+
+    Retrieves the FastAPI Request from the Jinja context and delegates to
+    the helper above so base.html can call {{ url_for('static', filename='...') }}.
+    """
+    request = ctx.get("request")
+    return _url_for(request, name, **params) if request is not None else "/"
+
+# Expose url_for globally so extended templates (base.html) can access it
+_jinja_env.globals["url_for"] = jinja_url_for
+
+
 @app.get("/controls", response_class=HTMLResponse)
 def controls_page_fastapi(request: Request):
     template = _jinja_env.get_template("controls.html")
-    return HTMLResponse(
-        template.render(
-            request=request,
-            url_for=lambda name, **kw: _url_for(request, name, **kw),
-        )
-    )
+    return HTMLResponse(template.render(request=request))
 
 
 @app.get("/analytics", response_class=HTMLResponse)
 def analytics_page_fastapi(request: Request):
     template = _jinja_env.get_template("analytics.html")
-    return HTMLResponse(
-        template.render(
-            request=request,
-            url_for=lambda name, **kw: _url_for(request, name, **kw),
-        )
-    )
+    return HTMLResponse(template.render(request=request))
 
 
 @app.get("/performance", response_class=HTMLResponse)
 def performance_page_fastapi(request: Request):
     template = _jinja_env.get_template("performance.html")
-    return HTMLResponse(
-        template.render(
-            request=request,
-            url_for=lambda name, **kw: _url_for(request, name, **kw),
-        )
-    )
+    return HTMLResponse(template.render(request=request))
 
 
 @app.get("/", include_in_schema=False)
