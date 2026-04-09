@@ -17,4 +17,4 @@ COPY . /app/
 
 EXPOSE 7860
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "-m", "smart_hospital_orchestration.web_interface"]
